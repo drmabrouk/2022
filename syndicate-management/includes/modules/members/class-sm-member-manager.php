@@ -8,6 +8,7 @@ class SM_Member_Manager {
         if (!current_user_can('sm_manage_members')) {
             wp_send_json_error('Unauthorized');
         }
+        check_ajax_referer('sm_admin_action', 'nonce');
         $nid = sanitize_text_field($_POST['national_id'] ?? '');
         $member = SM_DB::get_member_by_national_id($nid);
         if ($member) {
@@ -24,6 +25,7 @@ class SM_Member_Manager {
         if (!current_user_can('sm_manage_members')) {
             wp_send_json_error('Unauthorized');
         }
+        check_ajax_referer('sm_admin_action', 'nonce');
         $query = sanitize_text_field($_POST['query']);
         wp_send_json_success(SM_DB::get_members(['search' => $query]));
     }
@@ -383,11 +385,13 @@ class SM_Member_Manager {
                 }
             }
 
+            $fin_settings = SM_Settings::get_finance_settings();
             SM_Finance::record_payment([
                 'member_id' => $mid,
-                'amount' => 480,
-                'payment_type' => 'membership_fee',
+                'amount' => (float)($fin_settings['membership_new'] ?? 480),
+                'payment_type' => 'membership',
                 'payment_date' => current_time('mysql'),
+                'target_year' => (int)date('Y'),
                 'details_ar' => 'رسوم اشتراك عضوية جديدة - طلب رقم ' . $rid,
                 'notes' => 'طريقة الدفع: ' . ($req->payment_method ?: 'manual')
             ]);
@@ -547,6 +551,7 @@ class SM_Member_Manager {
     }
 
     public static function ajax_track_membership_request() {
+        check_ajax_referer('sm_registration_nonce', 'nonce');
         global $wpdb;
         $req = $wpdb->get_row($wpdb->prepare("SELECT * FROM {$wpdb->prefix}sm_membership_requests WHERE national_id = %s", sanitize_text_field($_POST['national_id'])));
         if (!$req) {

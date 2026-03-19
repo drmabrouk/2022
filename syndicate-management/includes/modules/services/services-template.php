@@ -7,6 +7,7 @@
             <p style="margin: 10px 0 0 0; color: #64748b; font-size: 15px; font-weight: 500;">استعلم عن حالة طلبك الرقمي لحظياً باستخدام كود التتبع الموحد</p>
         </div>
         <div style="display: flex; gap: 15px; max-width: 650px; margin: 0 auto; background: #fff; padding: 10px; border-radius: 20px; border: 1px solid #e2e8f0; box-shadow: 0 10px 15px -3px rgba(0,0,0,0.02);">
+            <?php wp_nonce_field('sm_contact_action', 'nonce_tracking'); ?>
             <div style="flex: 1; position: relative; display: flex; align-items: center;"><span class="dashicons dashicons-text-page" style="position: absolute; right: 15px; color: #94a3b8;"></span><input type="text" id="sm_service_tracking_input" placeholder="أدخل كود الطلب" style="width: 100%; padding: 15px 40px 15px 20px; border-radius: 15px; border: 1px solid transparent; background: #f8fafc; color: var(--sm-dark-color); font-family: 'Rubik', sans-serif; font-size: 15px; outline: none; transition: 0.3s; font-weight: 500;"></div>
             <button onclick="smTrackServiceRequest()" style="background: var(--sm-primary-color); color: #fff; border: none; padding: 0 35px; border-radius: 15px; font-weight: 800; font-size: 15px; cursor: pointer; transition: 0.3s; font-family: 'Rubik', sans-serif; box-shadow: 0 4px 12px rgba(246, 48, 73, 0.3);">بحث وتتبع</button>
         </div>
@@ -77,6 +78,7 @@ window.smTrackServiceRequest = function() {
     const fd = new FormData();
     fd.append('action', 'sm_track_service_request');
     fd.append('tracking_code', code);
+    fd.append('_wpnonce', document.getElementById('nonce_tracking').value);
 
     area.style.display = 'block';
     area.innerHTML = '<div style="text-align:center; padding:20px; color:#64748b;">جاري البحث عن الطلب...</div>';

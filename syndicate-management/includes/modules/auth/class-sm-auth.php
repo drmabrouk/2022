@@ -200,6 +200,7 @@ class SM_Auth {
     }
 
     public static function ajax_forgot_password_otp() {
+        check_ajax_referer('sm_registration_nonce', 'nonce');
         $national_id = sanitize_text_field($_POST['national_id'] ?? '');
         $member = SM_DB::get_member_by_national_id($national_id);
         if (!$member || !$member->wp_user_id) {
@@ -221,6 +222,7 @@ class SM_Auth {
     }
 
     public static function ajax_reset_password_otp() {
+        check_ajax_referer('sm_registration_nonce', 'nonce');
         $national_id = sanitize_text_field($_POST['national_id'] ?? '');
         $otp = sanitize_text_field($_POST['otp'] ?? '');
         $new_pass = $_POST['new_password'] ?? '';
@@ -245,6 +247,7 @@ class SM_Auth {
     }
 
     public static function ajax_activate_account_step1() {
+        check_ajax_referer('sm_registration_nonce', 'nonce');
         $national_id = sanitize_text_field($_POST['national_id'] ?? '');
         $membership_number = sanitize_text_field($_POST['membership_number'] ?? '');
         $branch_slug = sanitize_text_field($_POST['branch'] ?? '');
@@ -264,6 +267,7 @@ class SM_Auth {
     }
 
     public static function ajax_activate_account_final() {
+        check_ajax_referer('sm_registration_nonce', 'nonce');
         $national_id = sanitize_text_field($_POST['national_id'] ?? '');
         $membership_number = sanitize_text_field($_POST['membership_number'] ?? '');
         $new_email = sanitize_email($_POST['email'] ?? '');
@@ -329,6 +333,47 @@ class SM_Auth {
         } else {
             wp_send_json_error('فشل في إرسال الطلب: ' . $wpdb->last_error);
         }
+    }
+
+    public static function ajax_update_profile() {
+        if (!is_user_logged_in()) {
+            wp_send_json_error('يجب تسجيل الدخول أولاً');
+        }
+        check_ajax_referer('sm_profile_action', 'nonce');
+
+        $user_id = get_current_user_id();
+        $user = get_userdata($user_id);
+        $is_member = in_array('sm_member', (array)$user->roles);
+
+        $data = ['ID' => $user_id];
+        $display_name = sanitize_text_field($_POST['display_name'] ?? '');
+        $email = sanitize_email($_POST['user_email'] ?? '');
+        $pass = $_POST['user_pass'] ?? '';
+
+        if (!$is_member) {
+            if (!empty($display_name)) $data['display_name'] = $display_name;
+            if (!empty($email)) $data['user_email'] = $email;
+        }
+
+        if (!empty($pass)) {
+            if (strlen($pass) < 10) {
+                wp_send_json_error('كلمة المرور يجب أن تكون 10 أحرف على الأقل');
+            }
+            $data['user_pass'] = $pass;
+        }
+
+        $res = wp_update_user($data);
+        if (is_wp_error($res)) {
+            wp_send_json_error($res->get_error_message());
+        }
+
+        if (!$is_member && !empty($email)) {
+            global $wpdb;
+            $wpdb->update("{$wpdb->prefix}sm_members", ['email' => $email], ['wp_user_id' => $user_id]);
+        }
+
+        SM_Logger::log('تحديث الملف الشخصي', "قام المستخدم بتحديث بياناته الشخصية");
+        wp_send_json_success('تم تحديث البيانات بنجاح');
     }
 
     public static function ajax_track_membership_request() {

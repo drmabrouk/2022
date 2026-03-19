@@ -466,12 +466,12 @@ class SM_Activator {
         update_option('sm_db_version', SM_VERSION);
         update_option('sm_plugin_version', SM_VERSION);
 
+        self::fix_members_schema();
         self::fix_branches_schema();
         self::fix_services_schema();
         self::fix_service_requests_schema();
         self::fix_surveys_schema();
         self::fix_alerts_schema();
-        self::fix_service_requests_schema();
         self::fix_membership_requests_schema();
         self::setup_roles();
         self::seed_notification_templates();

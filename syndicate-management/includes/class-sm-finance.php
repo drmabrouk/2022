@@ -87,10 +87,27 @@ class SM_Finance {
                 $penalty_owed += $penalty; // Adding license penalty to total penalty balance
 
                 $breakdown[] = [
-                    'item' => "تجديد تصريح مزاولة المهنة",
+                    'item' => "رسوم ترخيص/تجديد مزاولة المهنة",
                     'amount' => $base,
                     'penalty' => $penalty,
                     'total' => $license_total
+                ];
+            }
+        }
+
+        // 3. Facility License Dues
+        if (!empty($member->facility_number) && !empty($member->facility_license_expiration_date)) {
+            $f_exp = $member->facility_license_expiration_date;
+            if ($current_date > $f_exp) {
+                $f_cat = $member->facility_category ?: 'C';
+                $f_base = (float)($settings['facility_' . strtolower($f_cat)] ?? $settings['facility_c']);
+
+                $total_owed += $f_base;
+                $breakdown[] = [
+                    'item' => "تجديد ترخيص منشأة (فئة $f_cat)",
+                    'amount' => $f_base,
+                    'penalty' => 0,
+                    'total' => $f_base
                 ];
             }
         }
@@ -123,6 +140,10 @@ class SM_Finance {
 
         // Simple logic: payments cover penalties first, then membership
         $remaining_paid = $total_paid;
+
+        // 1. Cover Digital Services and other specific dues first?
+        // For simplicity and alignment with the report logic, let's just use the total balance primarily.
+        // But to maintain the sub-balances:
         if ($remaining_paid > 0) {
             $deduct_penalty = min($remaining_paid, $penalty_balance);
             $penalty_balance -= $deduct_penalty;
@@ -131,6 +152,7 @@ class SM_Finance {
         if ($remaining_paid > 0) {
             $deduct_membership = min($remaining_paid, $membership_balance);
             $membership_balance -= $deduct_membership;
+            $remaining_paid -= $deduct_membership;
         }
 
         return [

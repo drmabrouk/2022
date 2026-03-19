@@ -328,6 +328,7 @@ class SM_Public {
             const fd = new FormData();
             fd.append('action', 'sm_acknowledge_alert');
             fd.append('alert_id', aid);
+            fd.append('nonce', '<?php echo wp_create_nonce("sm_admin_action"); ?>');
             fetch(ajaxurl, { method: 'POST', body: fd })
             .then(r => r.json())
             .then(res => {
