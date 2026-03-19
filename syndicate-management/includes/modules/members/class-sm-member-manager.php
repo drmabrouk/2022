@@ -113,7 +113,8 @@ class SM_Member_Manager {
             return false;
         }
         $user = wp_get_current_user();
-        if (in_array('sm_syndicate_member', (array)$user->roles) && $member->wp_user_id == $user->ID) {
+        $roles = (array)$user->roles;
+        if ((in_array('sm_syndicate_member', $roles) || in_array('sm_member', $roles)) && $member->wp_user_id == $user->ID) {
             return true;
         }
         $my_gov = get_user_meta($user->ID, 'sm_governorate', true);
