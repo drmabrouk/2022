@@ -15,6 +15,7 @@ class SM_DB_Education {
             'time_limit' => intval($data['time_limit'] ?? 30),
             'max_attempts' => intval($data['max_attempts'] ?? 1),
             'pass_score' => intval($data['pass_score'] ?? 50),
+            'branch' => sanitize_text_field($data['branch'] ?? 'all'),
             'status' => 'active',
             'created_by' => get_current_user_id(),
             'created_at' => current_time('mysql')
@@ -32,6 +33,7 @@ class SM_DB_Education {
             'time_limit' => intval($data['time_limit']),
             'max_attempts' => intval($data['max_attempts']),
             'pass_score' => intval($data['pass_score']),
+            'branch' => sanitize_text_field($data['branch'] ?? 'all'),
             'status' => sanitize_text_field($data['status'] ?? 'active')
         ), ['id' => intval($id)]);
     }
@@ -68,16 +70,18 @@ class SM_DB_Education {
 
         $placeholders = implode(',', array_fill(0, count($roles), '%s'));
 
-        // Get surveys targeted by role/specialty OR specifically assigned to this user
+        // Get surveys targeted by role/specialty AND branch OR specifically assigned to this user
+        $my_gov = get_user_meta($user_id, 'sm_governorate', true);
+
         $query = "SELECT s.* FROM {$wpdb->prefix}sm_surveys s
                   LEFT JOIN {$wpdb->prefix}sm_test_assignments a ON s.id = a.test_id AND a.user_id = %d
                   WHERE s.status = 'active'
                   AND (
-                      s.recipients IN ($placeholders)
+                      (s.recipients IN ($placeholders) AND (s.branch = 'all' OR s.branch = %s))
                       OR a.id IS NOT NULL
                   )";
 
-        $params = array_merge([$user_id], $roles);
+        $params = array_merge([$user_id], $roles, [$my_gov ?: '']);
 
         if (!empty($specialty)) {
             $query .= " AND (s.specialty = %s OR s.specialty = '' OR a.id IS NOT NULL)";

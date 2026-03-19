@@ -110,6 +110,7 @@ class SM_Activator {
             time_limit int DEFAULT 30,
             max_attempts int DEFAULT 1,
             pass_score int DEFAULT 50,
+            branch varchar(50) DEFAULT 'all',
             status enum('active', 'completed', 'cancelled') DEFAULT 'active',
             created_by bigint(20),
             created_at datetime DEFAULT CURRENT_TIMESTAMP NOT NULL,
@@ -931,7 +932,8 @@ class SM_Activator {
             'test_type' => "varchar(100) DEFAULT 'practice' AFTER specialty",
             'time_limit' => "int DEFAULT 30 AFTER test_type",
             'max_attempts' => "int DEFAULT 1 AFTER time_limit",
-            'pass_score' => "int DEFAULT 50 AFTER max_attempts"
+            'pass_score' => "int DEFAULT 50 AFTER max_attempts",
+            'branch' => "varchar(50) DEFAULT 'all' AFTER pass_score"
         ];
 
         foreach ($cols as $col => $def) {

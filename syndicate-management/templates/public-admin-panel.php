@@ -634,12 +634,11 @@ $greeting = ($hour >= 5 && $hour < 12) ? 'صباح الخير' : 'مساء ال�
                     <li class="sm-sidebar-item <?php echo $active_tab == 'finance' ? 'sm-active' : ''; ?>">
                         <a href="<?php echo add_query_arg('sm_tab', 'finance'); ?>" class="sm-sidebar-link"><span class="dashicons dashicons-money-alt"></span> المحاسبة والمالية</a>
                     </li>
-                    <li class="sm-sidebar-item <?php echo in_array($active_tab, ['practice-licenses', 'facility-licenses']) ? 'sm-active' : ''; ?>">
-                        <a href="<?php echo add_query_arg('sm_tab', 'practice-licenses'); ?>" class="sm-sidebar-link"><span class="dashicons dashicons-id-alt"></span> التراخيص والمنشآت</a>
-                        <ul class="sm-sidebar-dropdown" style="display: <?php echo in_array($active_tab, ['practice-licenses', 'facility-licenses']) ? 'block' : 'none'; ?>;">
-                            <li><a href="<?php echo add_query_arg('sm_tab', 'practice-licenses'); ?>" class="<?php echo $active_tab == 'practice-licenses' ? 'sm-sub-active' : ''; ?>"><span class="dashicons dashicons-id-alt"></span> <?php echo $labels['tab_practice_licenses']; ?></a></li>
-                            <li><a href="<?php echo add_query_arg('sm_tab', 'facility-licenses'); ?>" class="<?php echo $active_tab == 'facility-licenses' ? 'sm-sub-active' : ''; ?>"><span class="dashicons dashicons-building"></span> <?php echo $labels['tab_facility_licenses']; ?></a></li>
-                        </ul>
+                    <li class="sm-sidebar-item <?php echo $active_tab == 'practice-licenses' ? 'sm-active' : ''; ?>">
+                        <a href="<?php echo add_query_arg('sm_tab', 'practice-licenses'); ?>" class="sm-sidebar-link"><span class="dashicons dashicons-id-alt"></span> تراخيص مزاولة المهنة</a>
+                    </li>
+                    <li class="sm-sidebar-item <?php echo $active_tab == 'facility-licenses' ? 'sm-active' : ''; ?>">
+                        <a href="<?php echo add_query_arg('sm_tab', 'facility-licenses'); ?>" class="sm-sidebar-link"><span class="dashicons dashicons-building"></span> تراخيص المنشآت الرياضية</a>
                     </li>
                 <?php endif; ?>
 
