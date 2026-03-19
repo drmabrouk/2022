@@ -27,6 +27,17 @@ class SM_DB_Services {
             $params[] = sanitize_text_field($args['category']);
         }
 
+        $user = wp_get_current_user();
+        if ($user->ID > 0 && !current_user_can('manage_options') && !current_user_can('sm_full_access')) {
+            $my_gov = get_user_meta($user->ID, 'sm_governorate', true);
+            if ($my_gov) {
+                $where .= " AND (branch = %s OR branch = 'all')";
+                $params[] = $my_gov;
+            } else {
+                $where .= " AND branch = 'all'";
+            }
+        }
+
         $query = "SELECT * FROM {$wpdb->prefix}sm_services WHERE $where ORDER BY created_at DESC";
         if (!empty($params)) {
             return $wpdb->get_results($wpdb->prepare($query, $params));

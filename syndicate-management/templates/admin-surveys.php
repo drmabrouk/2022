@@ -5,25 +5,65 @@
         <button class="sm-btn" onclick="smOpenNewSurveyModal()" style="width: auto;">+ إنشاء اختبار جديد</button>
     </div>
 
-    <div class="sm-table-container">
-        <table class="sm-table">
+    <?php
+    $user = wp_get_current_user();
+    $roles = (array)$user->roles;
+    $is_sys_admin = in_array('sm_system_admin', $roles) || current_user_can('manage_options');
+    $is_syndicate_admin = in_array('sm_syndicate_admin', $roles);
+    $my_gov = get_user_meta($user->ID, 'sm_governorate', true);
+    $test_type_map = ['practice' => 'مزاولة مهنة', 'promotion' => 'ترقية درجة', 'training' => 'دورة تدريبية'];
+    ?>
+
+    <!-- Advanced Filter & Search Engine -->
+    <div style="background: #f8fafc; padding: 25px; border-radius: 15px; margin-bottom: 25px; border: 1px solid #e2e8f0; display: grid; grid-template-columns: 2fr 1fr 1fr 1fr; gap: 15px; align-items: flex-end;">
+        <div>
+            <label class="sm-label" style="font-size: 12px; margin-bottom: 8px; display: block; color: #64748b;">ابحث باسم الاختبار:</label>
+            <div style="position: relative;">
+                <input type="text" id="test_search_input" class="sm-input" placeholder="اكتب اسم الاختبار للبحث..." oninput="smApplyTestFilters()">
+                <span class="dashicons dashicons-search" style="position: absolute; left: 10px; top: 12px; color: #94a3b8;"></span>
+            </div>
+        </div>
+        <div>
+            <label class="sm-label" style="font-size: 12px; margin-bottom: 8px; display: block; color: #64748b;">تصفية بالنوع:</label>
+            <select id="test_type_filter" class="sm-select" onchange="smApplyTestFilters()">
+                <option value="all">كل الأنواع</option>
+                <?php foreach($test_type_map as $k => $v) echo "<option value='$k'>$v</option>"; ?>
+            </select>
+        </div>
+        <div>
+            <label class="sm-label" style="font-size: 12px; margin-bottom: 8px; display: block; color: #64748b;">تصفية بالفرع:</label>
+            <select id="test_branch_filter" class="sm-select" onchange="smApplyTestFilters()">
+                <option value="all">كل الفروع</option>
+                <option value="all_branches">عام (لكل الفروع)</option>
+                <?php
+                $db_branches = SM_DB::get_branches_data();
+                foreach($db_branches as $b) echo "<option value='".esc_attr($b->slug)."'>".esc_html($b->name)."</option>";
+                ?>
+            </select>
+        </div>
+        <button class="sm-btn sm-btn-outline" onclick="smResetTestFilters()" style="height: 45px;">إعادة تعيين</button>
+    </div>
+
+    <div class="sm-table-container" style="border-radius: 15px; overflow: hidden; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.05); border: 1px solid #e2e8f0;">
+        <table class="sm-table" id="tests-admin-table">
             <thead>
-                <tr>
+                <tr style="background: #f1f5f9;">
                     <th>بيانات الاختبار</th>
                     <th>الإعدادات والوقت</th>
-                    <th>الفئة / التخصص</th>
+                    <th>الفرع / التخصص</th>
                     <th>تاريخ البدء</th>
                     <th>الحالة</th>
                     <th>المشاركات</th>
-                    <th>الإجراءات</th>
+                    <th style="text-align: left;">الإجراءات</th>
                 </tr>
             </thead>
             <tbody>
                 <?php
-                $surveys = $wpdb->get_results("SELECT * FROM {$wpdb->prefix}sm_surveys ORDER BY created_at DESC");
-                $user = wp_get_current_user();
-                $is_syndicate_admin = in_array('sm_syndicate_admin', (array)$user->roles);
-                $my_gov = get_user_meta($user->ID, 'sm_governorate', true);
+                $query = "SELECT * FROM {$wpdb->prefix}sm_surveys WHERE 1=1";
+                if (!$is_sys_admin && $is_syndicate_admin && $my_gov) {
+                    $query .= $wpdb->prepare(" AND (branch = %s OR branch = 'all')", $my_gov);
+                }
+                $surveys = $wpdb->get_results($query . " ORDER BY created_at DESC");
 
                 $specs_labels = SM_Settings::get_specializations();
                 foreach ($surveys as $s):
@@ -36,41 +76,45 @@
                     }
                     $responses_count = $wpdb->get_var("SELECT COUNT(*) FROM {$wpdb->prefix}sm_survey_responses WHERE $resp_where");
                     $questions_count = $wpdb->get_var($wpdb->prepare("SELECT COUNT(*) FROM {$wpdb->prefix}sm_test_questions WHERE test_id = %d", $s->id));
-                    $test_type_map = ['practice' => 'مزاولة مهنة', 'promotion' => 'ترقية درجة', 'training' => 'دورة تدريبية'];
+                    $branch_label = ($s->branch === 'all') ? 'كل الفروع' : (SM_Settings::get_branch_name($s->branch) ?: $s->branch);
                 ?>
-                <tr>
+                <tr class="sm-test-row"
+                    data-title="<?php echo esc_attr($s->title); ?>"
+                    data-type="<?php echo esc_attr($s->test_type); ?>"
+                    data-branch="<?php echo esc_attr($s->branch); ?>">
                     <td>
-                        <div style="font-weight: 800; color:var(--sm-dark-color);"><?php echo esc_html($s->title); ?></div>
-                        <div style="font-size: 11px; color:#64748b; margin-top:4px;">
-                            <span class="dashicons dashicons-editor-help" style="font-size:14px; width:14px; height:14px;"></span> <?php echo $questions_count; ?> سؤال مدرج
+                        <div style="font-weight: 800; color:var(--sm-dark-color); font-size: 1.1em;"><?php echo esc_html($s->title); ?></div>
+                        <div style="font-size: 11px; color:#64748b; margin-top:5px; display: flex; align-items: center; gap: 5px;">
+                            <span class="dashicons dashicons-editor-help" style="font-size:14px; width:14px; height:14px; color: var(--sm-primary-color);"></span> <?php echo $questions_count; ?> سؤال مدرج
                         </div>
                     </td>
                     <td>
-                        <div style="font-size: 12px;">⏰ <?php echo $s->time_limit; ?> دقيقة</div>
+                        <div style="font-size: 12px; margin-bottom: 3px;">⏰ <span style="font-weight: 700;"><?php echo $s->time_limit; ?></span> دقيقة</div>
                         <div style="font-size: 12px; color:#38a169; font-weight:700;">🎯 نجاح: <?php echo $s->pass_score; ?>%</div>
-                        <div style="font-size: 10px; color:#94a3b8;">المحاولات: <?php echo $s->max_attempts; ?></div>
                     </td>
                     <td>
-                        <div style="font-size: 12px; font-weight:700; color:var(--sm-primary-color);"><?php echo $test_type_map[$s->test_type] ?? $s->test_type; ?></div>
-                        <div style="font-size: 11px; color:#64748b;"><?php echo !empty($s->specialty) ? ($specs_labels[$s->specialty] ?? $s->specialty) : 'تخصص عام'; ?></div>
+                        <div style="font-size: 12px; font-weight:800; color:var(--sm-primary-color);"><?php echo $branch_label; ?></div>
+                        <div style="font-size: 11px; color:#64748b; margin-top: 3px;"><?php echo !empty($s->specialty) ? ($specs_labels[$s->specialty] ?? $s->specialty) : 'تخصص عام'; ?></div>
                     </td>
-                    <td><?php echo date('Y-m-d', strtotime($s->created_at)); ?></td>
+                    <td style="font-size: 12px; color: #4a5568;"><?php echo date('Y-m-d', strtotime($s->created_at)); ?></td>
                     <td>
-                        <span class="sm-badge" style="background: <?php echo $s->status === 'active' ? '#38a169' : '#e53e3e'; ?>;">
-                            <?php echo $s->status === 'active' ? 'نشط' : 'ملغى'; ?>
-                        </span>
+                        <?php if ($s->status === 'active'): ?>
+                            <span class="sm-badge sm-badge-high" style="font-size: 10px; padding: 4px 12px;">نشط</span>
+                        <?php else: ?>
+                            <span class="sm-badge sm-badge-urgent" style="font-size: 10px; padding: 4px 12px;">ملغى</span>
+                        <?php endif; ?>
                     </td>
                     <td>
-                        <button class="sm-btn sm-btn-outline" onclick="smViewSurveyResults(<?php echo $s->id; ?>, '<?php echo esc_js($s->title); ?>')" style="padding: 2px 10px; font-size: 11px;">
+                        <button class="sm-btn sm-btn-outline" onclick="smViewSurveyResults(<?php echo $s->id; ?>, '<?php echo esc_js($s->title); ?>')" style="padding: 4px 12px; font-size: 11px; font-weight: 700; border-radius: 8px;">
                             <?php echo $responses_count; ?> نتيجة
                         </button>
                     </td>
                     <td>
-                        <div style="display:flex; gap:5px;">
-                            <button class="sm-btn" style="padding:4px 8px; font-size:11px; background:var(--sm-dark-color);" onclick='smOpenQuestionBank(<?php echo json_encode($s); ?>)'>الأسئلة</button>
-                            <button class="sm-btn sm-btn-outline" onclick="smOpenEditSurveyModal(<?php echo json_encode($s); ?>)" style="padding: 4px 8px; font-size: 11px;"><span class="dashicons dashicons-edit"></span></button>
+                        <div style="display:flex; gap:8px; justify-content: flex-end;">
+                            <button class="sm-btn" style="padding:6px 12px; font-size:11px; background:var(--sm-dark-color); border-radius: 8px;" onclick='smOpenQuestionBank(<?php echo json_encode($s); ?>)'>الأسئلة</button>
+                            <button class="sm-btn sm-btn-outline" onclick="smOpenEditSurveyModal(<?php echo json_encode($s); ?>)" style="padding: 6px 10px; font-size: 11px; border-radius: 8px;" title="تعديل"><span class="dashicons dashicons-edit"></span></button>
                             <?php if ($s->status === 'active'): ?>
-                                <button class="sm-btn sm-btn-outline" onclick="smOpenAssignModal(<?php echo $s->id; ?>, '<?php echo esc_js($s->title); ?>')" style="padding: 4px 8px; font-size: 11px;">تعيين</button>
+                                <button class="sm-btn" style="padding: 6px 15px; font-size: 11px; border-radius: 8px; background: #3182ce;" onclick="smOpenAssignModal(<?php echo $s->id; ?>, '<?php echo esc_js($s->title); ?>')">تعيين للعضو</button>
                             <?php endif; ?>
                         </div>
                     </td>
@@ -128,14 +172,23 @@
                 </div>
             </div>
 
-            <div class="sm-form-group">
-                <label class="sm-label">الفئة المستهدفة بالظهور التلقائي:</label>
-                <select id="survey_recipients" class="sm-select">
-                    <option value="all">الجميع</option>
-                    <option value="sm_member">الأعضاء فقط</option>
-                    <option value="sm_syndicate_member">أعضاء النقابة فقط</option>
-                    <option value="sm_syndicate_admin">مسؤولو النقابة فقط</option>
-                </select>
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px;">
+                <div class="sm-form-group">
+                    <label class="sm-label">الفئة المستهدفة بالظهور التلقائي:</label>
+                    <select id="survey_recipients" class="sm-select">
+                        <option value="all">الجميع</option>
+                        <option value="sm_member">الأعضاء فقط</option>
+                        <option value="sm_syndicate_member">أعضاء النقابة فقط</option>
+                        <option value="sm_syndicate_admin">مسؤولو النقابة فقط</option>
+                    </select>
+                </div>
+                <div class="sm-form-group">
+                    <label class="sm-label">متاح لفرع محدد:</label>
+                    <select id="survey_branch" class="sm-select">
+                        <option value="all">متاح لكافة الفروع</option>
+                        <?php foreach($db_branches as $b) echo "<option value='".esc_attr($b->slug)."'>".esc_html($b->name)."</option>"; ?>
+                    </select>
+                </div>
             </div>
 
             <div style="margin-top:30px; display:flex; gap:10px;">
@@ -277,6 +330,7 @@ function smOpenEditSurveyModal(s) {
     document.getElementById('survey_specialty').value = s.specialty;
     document.getElementById('survey_test_type').value = s.test_type;
     document.getElementById('survey_recipients').value = s.recipients;
+    document.getElementById('survey_branch').value = s.branch || 'all';
     document.getElementById('new-survey-modal').style.display = 'flex';
 }
 
@@ -295,6 +349,7 @@ function smSaveSurvey() {
     fd.append('specialty', document.getElementById('survey_specialty').value);
     fd.append('test_type', document.getElementById('survey_test_type').value);
     fd.append('recipients', document.getElementById('survey_recipients').value);
+    fd.append('branch', document.getElementById('survey_branch').value);
     fd.append('nonce', '<?php echo wp_create_nonce("sm_admin_action"); ?>');
 
     fetch(ajaxurl, { method: 'POST', body: fd }).then(r=>r.json()).then(res => {
@@ -444,6 +499,31 @@ function smCancelSurvey(id) {
             location.reload();
         }
     });
+}
+
+function smApplyTestFilters() {
+    const search = document.getElementById('test_search_input').value.toLowerCase();
+    const type = document.getElementById('test_type_filter').value;
+    const branch = document.getElementById('test_branch_filter').value;
+
+    document.querySelectorAll('.sm-test-row').forEach(row => {
+        const matchesSearch = row.dataset.title.toLowerCase().includes(search);
+        const matchesType = (type === 'all' || row.dataset.type === type);
+        const matchesBranch = (branch === 'all' || row.dataset.branch === branch || (branch === 'all_branches' && row.dataset.branch === 'all'));
+
+        if (matchesSearch && matchesType && matchesBranch) {
+            row.style.display = '';
+        } else {
+            row.style.display = 'none';
+        }
+    });
+}
+
+function smResetTestFilters() {
+    document.getElementById('test_search_input').value = '';
+    document.getElementById('test_type_filter').value = 'all';
+    document.getElementById('test_branch_filter').value = 'all';
+    smApplyTestFilters();
 }
 
 function smViewSurveyResults(id, title) {
