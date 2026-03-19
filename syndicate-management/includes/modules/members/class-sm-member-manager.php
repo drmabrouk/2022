@@ -172,7 +172,7 @@ class SM_Member_Manager {
         if (username_exists($user_login) || email_exists($email)) {
             wp_send_json_error('User or Email already exists');
         }
-        $pass = !empty($_POST['user_pass']) ? $_POST['user_pass'] : 'IRS' . mt_rand(1000000000, 9999999999);
+        $pass = !empty($_POST['user_pass']) ? $_POST['user_pass'] : null;
         $uid = wp_insert_user([
             'user_login' => $user_login,
             'user_email' => $email,
@@ -183,7 +183,6 @@ class SM_Member_Manager {
         if (is_wp_error($uid)) {
             wp_send_json_error($uid->get_error_message());
         }
-        update_user_meta($uid, 'sm_temp_pass', $pass);
         update_user_meta($uid, 'sm_syndicateMemberIdAttr', sanitize_text_field($_POST['officer_id']));
         update_user_meta($uid, 'sm_phone', sanitize_text_field($_POST['phone']));
         update_user_meta($uid, 'sm_rank', sanitize_text_field($_POST['rank']));
@@ -224,7 +223,6 @@ class SM_Member_Manager {
         ];
         if (!empty($_POST['user_pass'])) {
             $data['user_pass'] = $_POST['user_pass'];
-            update_user_meta($uid, 'sm_temp_pass', $_POST['user_pass']);
         }
         wp_update_user($data);
         $u = new WP_User($uid);

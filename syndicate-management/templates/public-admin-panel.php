@@ -125,6 +125,28 @@
         });
     };
 
+    window.smSubmitProfRequest = function(type, memberId) {
+        if (!confirm('هل أنت متأكد من إرسال هذا الطلب؟')) return;
+
+        const fd = new FormData();
+        fd.append('action', 'sm_submit_professional_request');
+        fd.append('member_id', memberId);
+        fd.append('request_type', type);
+        fd.append('nonce', '<?php echo wp_create_nonce("sm_professional_action"); ?>');
+
+        fetch('<?php echo admin_url('admin-ajax.php'); ?>', { method: 'POST', body: fd })
+        .then(r => r.json())
+        .then(res => {
+            if (res.success) {
+                smShowNotification('تم إرسال الطلب بنجاح. سيظهر في تبويب الطلبات لدى الإدارة.');
+                const menus = document.querySelectorAll('.sm-dropdown-menu');
+                menus.forEach(m => m.style.display = 'none');
+            } else {
+                alert('خطأ: ' + res.data);
+            }
+        });
+    };
+
     window.smMergeGovData = function(input) {
         const gov = document.getElementById('sm_gov_action_target').value;
         if (!gov) return alert('يرجى اختيار الفرع أولاً لدمج البيانات إليها');
@@ -342,7 +364,7 @@
         fd.append('notes', notes);
         fd.append('nonce', '<?php echo wp_create_nonce("sm_admin_action"); ?>');
 
-        fetch(ajaxurl, { method: 'POST', body: fd })
+        fetch('<?php echo admin_url('admin-ajax.php'); ?>', { method: 'POST', body: fd })
         .then(r => r.json())
         .then(res => {
             if (res.success) {
@@ -358,7 +380,7 @@
         fd.append('action', 'sm_delete_alert');
         fd.append('id', id);
         fd.append('nonce', '<?php echo wp_create_nonce("sm_admin_action"); ?>');
-        fetch(ajaxurl, {method: 'POST', body: fd}).then(r=>r.json()).then(res=>{
+        fetch('<?php echo admin_url('admin-ajax.php'); ?>', {method: 'POST', body: fd}).then(r=>r.json()).then(res=>{
             if(res.success) location.reload();
         });
     };
@@ -388,7 +410,7 @@
         const fd = new FormData(this);
         fd.append('action', 'sm_save_alert');
         fd.append('nonce', '<?php echo wp_create_nonce("sm_admin_action"); ?>');
-        fetch(ajaxurl, {method: 'POST', body: fd}).then(r=>r.json()).then(res=>{
+        fetch('<?php echo admin_url('admin-ajax.php'); ?>', {method: 'POST', body: fd}).then(r=>r.json()).then(res=>{
             if(res.success) { smShowNotification('تم حفظ التنبيه'); location.reload(); }
             else alert(res.data);
         });
@@ -410,7 +432,7 @@ $is_officer = $is_syndicate_admin || $is_syndicate_member;
 
 $active_tab = isset($_GET['sm_tab']) ? sanitize_text_field($_GET['sm_tab']) : 'summary';
 $is_restricted = $is_member || $is_syndicate_member;
-if ($is_restricted && !in_array($active_tab, ['my-profile', 'member-profile', 'messaging', 'surveys', 'digital-services'])) {
+if ($is_restricted && !in_array($active_tab, ['my-profile', 'member-profile', 'messaging', 'surveys', 'digital-services', 'permit-status', 'license-status'])) {
     $active_tab = 'my-profile';
 }
 
@@ -555,7 +577,7 @@ $greeting = ($hour >= 5 && $hour < 12) ? 'صباح الخير' : 'مساء ال�
                         <div style="font-size: 0.7em; color: #38a169;">متصل الآن <span class="dashicons dashicons-arrow-down-alt2" style="font-size: 10px; width: 10px; height: 10px;"></span></div>
                     </div>
                     <div style="width: 36px; height: 36px; border-radius: 50%; border: 2px solid #e53e3e; padding: 2px; background: #fff; overflow: hidden; display: flex; align-items: center; justify-content: center; box-shadow: 0 0 0 1px rgba(229, 62, 62, 0.2);">
-                        <?php echo get_avatar($user->ID, 32, '', '', array('style' => 'border-radius: 50%; width: 100%; height: 100%; object-fit: cover;')); ?>
+                        <?php echo get_avatar($user->ID, 36, '', '', array('style' => 'border-radius: 50%; width: 100%; height: 100%; object-fit: cover;')); ?>
                     </div>
                 </div>
                 <div id="sm-user-dropdown-menu" style="display: none; position: absolute; top: 110%; left: 0; background: white; border: 1px solid var(--sm-border-color); border-radius: 8px; width: 260px; box-shadow: 0 10px 25px rgba(0,0,0,0.1); z-index: 1000; animation: smFadeIn 0.2s ease-out; padding: 10px 0;">
@@ -619,11 +641,23 @@ $greeting = ($hour >= 5 && $hour < 12) ? 'صباح الخير' : 'مساء ال�
                     <li class="sm-sidebar-item <?php echo in_array($active_tab, ['my-profile', 'member-profile']) ? 'sm-active' : ''; ?>">
                         <a href="<?php echo add_query_arg('sm_tab', 'my-profile'); ?>" class="sm-sidebar-link"><span class="dashicons dashicons-admin-users"></span> <?php echo $labels['tab_my_profile']; ?></a>
                     </li>
+                    <li class="sm-sidebar-item <?php echo $active_tab == 'permit-status' ? 'sm-active' : ''; ?>">
+                        <a href="<?php echo add_query_arg('sm_tab', 'permit-status'); ?>" class="sm-sidebar-link"><span class="dashicons dashicons-id-alt"></span> حالة تصريح المزاولة</a>
+                    </li>
+                    <li class="sm-sidebar-item <?php echo $active_tab == 'license-status' ? 'sm-active' : ''; ?>">
+                        <a href="<?php echo add_query_arg('sm_tab', 'license-status'); ?>" class="sm-sidebar-link"><span class="dashicons dashicons-building"></span> حالة تراخيص المنشآت</a>
+                    </li>
                 <?php endif; ?>
 
                 <?php if (!$is_restricted && ($is_admin || $is_sys_admin || $is_syndicate_admin)): ?>
-                    <li class="sm-sidebar-item <?php echo in_array($active_tab, ['members', 'update-requests', 'membership-requests']) ? 'sm-active' : ''; ?>">
+                    <li class="sm-sidebar-item <?php echo in_array($active_tab, ['members', 'update-requests', 'membership-requests', 'professional-requests']) ? 'sm-active' : ''; ?>">
                         <a href="<?php echo add_query_arg('sm_tab', 'members'); ?>" class="sm-sidebar-link"><span class="dashicons dashicons-groups"></span> <?php echo $labels['tab_members']; ?></a>
+                        <ul class="sm-sidebar-dropdown" style="display: <?php echo in_array($active_tab, ['members', 'update-requests', 'membership-requests', 'professional-requests']) ? 'block' : 'none'; ?>;">
+                            <li><a href="<?php echo add_query_arg('sm_tab', 'members'); ?>" class="<?php echo $active_tab == 'members' ? 'sm-sub-active' : ''; ?>"><span class="dashicons dashicons-admin-users"></span> قائمة الأعضاء</a></li>
+                            <li><a href="<?php echo add_query_arg('sm_tab', 'membership-requests'); ?>" class="<?php echo $active_tab == 'membership-requests' ? 'sm-sub-active' : ''; ?>"><span class="dashicons dashicons-plus-alt"></span> طلبات العضوية</a></li>
+                            <li><a href="<?php echo add_query_arg('sm_tab', 'update-requests'); ?>" class="<?php echo $active_tab == 'update-requests' ? 'sm-sub-active' : ''; ?>"><span class="dashicons dashicons-edit"></span> طلبات التحديث</a></li>
+                            <li><a href="<?php echo add_query_arg('sm_tab', 'professional-requests'); ?>" class="<?php echo $active_tab == 'professional-requests' ? 'sm-sub-active' : ''; ?>"><span class="dashicons dashicons-awards"></span> طلبات الترقية والمهنة</a></li>
+                        </ul>
                     </li>
                 <?php endif; ?>
 
@@ -703,6 +737,7 @@ $greeting = ($hour >= 5 && $hour < 12) ? 'صباح الخير' : 'مساء ال�
                 case 'members':
                 case 'membership-requests':
                 case 'update-requests':
+                case 'professional-requests':
                     if ($is_admin || current_user_can('sm_manage_members')) {
                         ?>
                         <div class="sm-member-management-wrap">
@@ -712,6 +747,7 @@ $greeting = ($hour >= 5 && $hour < 12) ? 'صباح الخير' : 'مساء ال�
                                 <a href="<?php echo add_query_arg('sm_tab', 'members'); ?>" class="sm-tab-btn <?php echo $active_tab == 'members' ? 'sm-active' : ''; ?>" style="text-decoration:none;">قائمة الأعضاء</a>
                                 <a href="<?php echo add_query_arg('sm_tab', 'membership-requests'); ?>" class="sm-tab-btn <?php echo $active_tab == 'membership-requests' ? 'sm-active' : ''; ?>" style="text-decoration:none;">طلبات العضوية الجديدة</a>
                                 <a href="<?php echo add_query_arg('sm_tab', 'update-requests'); ?>" class="sm-tab-btn <?php echo $active_tab == 'update-requests' ? 'sm-active' : ''; ?>" style="text-decoration:none;">طلبات تحديث البيانات</a>
+                                <a href="<?php echo add_query_arg('sm_tab', 'professional-requests'); ?>" class="sm-tab-btn <?php echo $active_tab == 'professional-requests' ? 'sm-active' : ''; ?>" style="text-decoration:none;">طلبات الترقية والمهنة</a>
                             </div>
 
                             <div class="sm-tab-content-area">
@@ -719,6 +755,7 @@ $greeting = ($hour >= 5 && $hour < 12) ? 'صباح الخير' : 'مساء ال�
                                 if ($active_tab == 'members') include SM_PLUGIN_DIR . 'templates/admin-members.php';
                                 elseif ($active_tab == 'membership-requests') include SM_PLUGIN_DIR . 'templates/admin-membership-requests.php';
                                 elseif ($active_tab == 'update-requests') include SM_PLUGIN_DIR . 'templates/admin-update-requests.php';
+                                elseif ($active_tab == 'professional-requests') include SM_PLUGIN_DIR . 'templates/admin-professional-requests.php';
                                 ?>
                             </div>
                         </div>
@@ -763,6 +800,11 @@ $greeting = ($hour >= 5 && $hour < 12) ? 'صباح الخير' : 'مساء ال�
                         if ($member_by_wp) $_GET['member_id'] = $member_by_wp->id;
                     }
                     include SM_PLUGIN_DIR . 'templates/admin-member-profile.php';
+                    break;
+
+                case 'permit-status':
+                case 'license-status':
+                    include SM_PLUGIN_DIR . 'templates/public-member-licenses.php';
                     break;
 
 

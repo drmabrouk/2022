@@ -47,6 +47,13 @@ $registry = $wpdb->get_results($wpdb->prepare(
         <button class="sm-tab-btn" onclick="smOpenInternalTab('facility-requests', this)">طلبات تراخيص المنشآت</button>
     </div>
 
+    <div id="facility-requests" class="sm-internal-tab" style="display: none;">
+        <?php
+            $_GET['type'] = 'facility_new';
+            include SM_PLUGIN_DIR . 'templates/admin-professional-requests.php';
+        ?>
+    </div>
+
     <div id="facility-registry" class="sm-internal-tab">
 
     <div class="sm-card-grid" style="margin-bottom: 30px;">

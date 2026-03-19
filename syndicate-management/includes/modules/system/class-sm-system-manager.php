@@ -148,7 +148,7 @@ class SM_System_Manager {
                 for ($i = 0; $i < 10; $i++) {
                     $digits .= mt_rand(0, 9);
                 }
-                $tp = 'IRS' . $digits;
+                $tp = null;
                 $uid = wp_insert_user([
                     'user_login' => $data['national_id'],
                     'user_email' => $data['email'] ?: $data['national_id'] . '@irseg.org',
@@ -159,7 +159,6 @@ class SM_System_Manager {
                 if (is_wp_error($uid)) {
                     wp_send_json_error($uid->get_error_message());
                 }
-                update_user_meta($uid, 'sm_temp_pass', $tp);
                 if (!empty($data['governorate'])) {
                     update_user_meta($uid, 'sm_governorate', $data['governorate']);
                 }
@@ -237,7 +236,7 @@ class SM_System_Manager {
                 continue;
             }
             unset($row['id']);
-            $tp = 'IRS' . mt_rand(1000000000, 9999999999);
+            $tp = null;
             $uid = wp_insert_user([
                 'user_login' => $row['national_id'],
                 'user_email' => $row['email'] ?: $row['national_id'] . '@irseg.org',
@@ -247,7 +246,6 @@ class SM_System_Manager {
             ]);
             if (!is_wp_error($uid)) {
                 $row['wp_user_id'] = $uid;
-                update_user_meta($uid, 'sm_temp_pass', $tp);
                 update_user_meta($uid, 'sm_governorate', $gov);
             }
             global $wpdb;

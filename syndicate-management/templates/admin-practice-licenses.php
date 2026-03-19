@@ -46,6 +46,13 @@ $registry = $wpdb->get_results($wpdb->prepare(
         <button class="sm-tab-btn" onclick="smOpenInternalTab('permit-requests', this)">طلبات التصاريح والامتحانات</button>
     </div>
 
+    <div id="permit-requests" class="sm-internal-tab" style="display: none;">
+        <?php
+            $_GET['type'] = 'permit_test';
+            include SM_PLUGIN_DIR . 'templates/admin-professional-requests.php';
+        ?>
+    </div>
+
     <div id="license-registry" class="sm-internal-tab">
 
     <div class="sm-card-grid" style="margin-bottom: 30px;">

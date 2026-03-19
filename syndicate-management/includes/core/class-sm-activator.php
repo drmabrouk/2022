@@ -834,16 +834,14 @@ class SM_Activator {
             for ($i = 0; $i < 10; $i++) {
                 $digits .= mt_rand(0, 9);
             }
-            $temp_pass = 'IRS' . $digits;
             $user_id = wp_insert_user([
                 'user_login' => $m->national_id,
                 'user_email' => $m->email ?: $m->national_id . '@irseg.org',
                 'display_name' => $m->name,
-                'user_pass' => $temp_pass,
+                'user_pass' => null,
                 'role' => 'sm_syndicate_member'
             ]);
             if (!is_wp_error($user_id)) {
-                update_user_meta($user_id, 'sm_temp_pass', $temp_pass);
                 if (!empty($m->governorate)) {
                     update_user_meta($user_id, 'sm_governorate', $m->governorate);
                 }
