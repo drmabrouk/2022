@@ -287,7 +287,6 @@ class SM_Auth {
         if ($member->wp_user_id) {
             wp_update_user(['ID' => $member->wp_user_id, 'user_email' => $new_email, 'user_pass' => $new_pass]);
             update_user_meta($member->wp_user_id, 'sm_phone', $new_phone);
-            delete_user_meta($member->wp_user_id, 'sm_temp_pass');
         }
         wp_send_json_success('تم تفعيل الحساب بنجاح. يمكنك الآن تسجيل الدخول');
         SM_Notifications::send_template_notification($member->id, 'welcome_activation');

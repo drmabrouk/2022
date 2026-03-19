@@ -38,22 +38,26 @@ $syndicate = SM_Settings::get_syndicate_info();
                 <th>اسم العضو</th>
                 <th>الرقم القومي</th>
                 <th>الدرجة الوظيفية</th>
-                <th>كلمة المرور المؤقتة</th>
+                <th>حالة الحساب</th>
             </tr>
         </thead>
         <tbody>
             <?php
             $count = 1;
             foreach ($members as $s):
-                $pass = get_user_meta($s->wp_user_id, 'sm_temp_pass', true);
-                if (empty($pass)) $pass = '********';
+                $user_id = $s->wp_user_id;
+                $status = 'غير مفعل';
+                if ($user_id) {
+                    $u = new WP_User($user_id);
+                    $status = !empty($u->user_pass) ? 'مفعل (تم تعيين كلمة مرور)' : 'بانتظار التفعيل';
+                }
             ?>
                 <tr>
                     <td><?php echo $count++; ?></td>
                     <td style="font-weight: 700;"><?php echo esc_html($s->name); ?></td>
                     <td class="code"><?php echo esc_html($s->national_id); ?></td>
                     <td><?php echo esc_html(SM_Settings::get_professional_grades()[$s->professional_grade] ?? $s->professional_grade); ?></td>
-                    <td class="code"><?php echo esc_html($pass); ?></td>
+                    <td class="code"><?php echo esc_html($status); ?></td>
                 </tr>
             <?php endforeach; ?>
         </tbody>
@@ -61,7 +65,7 @@ $syndicate = SM_Settings::get_syndicate_info();
 
     <div class="footer">
         * يتم استخدام الرقم القومي كاسم مستخدم للدخول للنظام.<br>
-        * ينصح بتغيير كلمة المرور فور الدخول الأول للنظام.
+        * يرجى التواصل مع إدارة النقابة في حال فقدان بيانات الدخول.
     </div>
 
     <div class="no-print" style="margin-top: 30px; text-align: center;">

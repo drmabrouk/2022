@@ -91,6 +91,7 @@ $acc_status = SM_Finance::get_member_status($member->id);
     <!-- Profile Tabs -->
     <div class="sm-tabs-wrapper" style="display: flex; gap: 10px; margin-bottom: 25px; border-bottom: 2px solid #eee; padding-bottom: 10px;">
         <button class="sm-tab-btn sm-active" onclick="smOpenInternalTab('profile-info', this)"><span class="dashicons dashicons-admin-users"></span> بيانات العضوية</button>
+        <button class="sm-tab-btn" onclick="smOpenInternalTab('professional-requests-tab', this)"><span class="dashicons dashicons-awards"></span> طلبات المهنة</button>
         <button class="sm-tab-btn" onclick="smOpenInternalTab('finance-management', this)"><span class="dashicons dashicons-money-alt"></span> الإدارة المالية</button>
         <button class="sm-tab-btn" onclick="smOpenInternalTab('document-vault', this); smLoadDocuments();"><span class="dashicons dashicons-portfolio"></span> الأرشيف والمستندات</button>
         <button class="sm-tab-btn" onclick="smOpenInternalTab('member-chat', this); setTimeout(() => selectConversation(<?php echo $member->id; ?>, '<?php echo esc_js($member->name); ?>', <?php echo $member->wp_user_id ?: 0; ?>), 100);"><span class="dashicons dashicons-email"></span> المراسلات والشكاوى</button>
@@ -132,15 +133,6 @@ $acc_status = SM_Finance::get_member_status($member->id);
                     <div><label class="sm-label">المدينة / المركز:</label> <div class="sm-value"><?php echo esc_html($member->residence_city); ?></div></div>
                     <div style="grid-column: span 2;"><label class="sm-label">العنوان (الشارع / القرية):</label> <div class="sm-value"><?php echo esc_html($member->residence_street); ?></div></div>
                     <div><label class="sm-label">فرع الفرع (النقابة):</label> <div class="sm-value"><?php echo esc_html(SM_Settings::get_branch_name($member->governorate)); ?></div></div>
-                    <?php if ($member->wp_user_id): ?>
-                        <?php $temp_pass = get_user_meta($member->wp_user_id, 'sm_temp_pass', true); if ($temp_pass): ?>
-                            <div style="grid-column: span 2; background: #fffaf0; padding: 15px; border-radius: 8px; border: 1px solid #feebc8; margin-top: 10px;">
-                                <label class="sm-label" style="color: #744210;">كلمة المرور المؤقتة للنظام:</label>
-                                <div style="font-family: monospace; font-size: 1.2em; font-weight: 700; color: #975a16;"><?php echo esc_html($temp_pass); ?></div>
-                                <small style="color: #975a16;">* يرجى تزويد العضو بهذه الكلمة ليتمكن من الدخول لأول مرة.</small>
-                            </div>
-                        <?php endif; ?>
-                    <?php endif; ?>
                 </div>
             </div>
 
@@ -262,6 +254,21 @@ $acc_status = SM_Finance::get_member_status($member->id);
         </div>
 
         <div style="display: flex; flex-direction: column; gap: 30px;">
+            <!-- Account Status -->
+            <div style="background: #fff; padding: 25px; border-radius: 12px; border: 1px solid var(--sm-border-color); box-shadow: var(--sm-shadow);">
+                <h3 style="margin-top:0; border-bottom: 1px solid #eee; padding-bottom: 10px; margin-bottom: 20px;">حالة الحساب</h3>
+                <div style="text-align: center; padding: 10px 0;">
+                    <?php
+                        $u = new WP_User($member->wp_user_id);
+                        $has_pass = !empty($u->user_pass);
+                    ?>
+                    <div style="font-size: 0.9em; color: #718096;">حالة تفعيل الدخول</div>
+                    <div style="font-size: 1.5em; font-weight: 900; color: <?php echo $has_pass ? '#38a169' : '#e53e3e'; ?>;">
+                        <?php echo $has_pass ? 'مفعل' : 'غير مفعل'; ?>
+                    </div>
+                </div>
+            </div>
+
             <!-- Financial Status -->
             <div style="background: #fff; padding: 25px; border-radius: 12px; border: 1px solid var(--sm-border-color); box-shadow: var(--sm-shadow);">
                 <h3 style="margin-top:0; border-bottom: 1px solid #eee; padding-bottom: 10px; margin-bottom: 20px;">الوضع المالي</h3>
@@ -281,6 +288,14 @@ $acc_status = SM_Finance::get_member_status($member->id);
                 </div>
             </div>
         </div>
+    </div>
+
+    <!-- Professional Requests Tab -->
+    <div id="professional-requests-tab" class="sm-internal-tab" style="display: none;">
+        <?php
+            $_GET['member_id'] = $member->id;
+            include SM_PLUGIN_DIR . 'templates/admin-professional-requests.php';
+        ?>
     </div>
 
     <!-- Finance Management Tab -->
@@ -412,27 +427,6 @@ function smToggleCardOptions(id) {
     el.style.display = el.style.display === 'none' ? 'block' : 'none';
 }
 
-function smSubmitProfRequest(type, memberId) {
-    if (!confirm('هل أنت متأكد من إرسال هذا الطلب؟')) return;
-
-    const fd = new FormData();
-    fd.append('action', 'sm_submit_professional_request');
-    fd.append('member_id', memberId);
-    fd.append('request_type', type);
-    fd.append('nonce', '<?php echo wp_create_nonce("sm_professional_action"); ?>');
-
-    fetch('<?php echo admin_url('admin-ajax.php'); ?>', { method: 'POST', body: fd })
-    .then(r => r.json())
-    .then(res => {
-        if (res.success) {
-            smShowNotification('تم إرسال الطلب بنجاح. سيظهر في تبويب الطلبات لدى الإدارة.');
-            const menus = document.querySelectorAll('.sm-dropdown-menu');
-            menus.forEach(m => m.style.display = 'none');
-        } else {
-            alert('خطأ: ' + res.data);
-        }
-    });
-}
 
 function smRequestPermitTest(mid) { smSubmitProfRequest('permit_test', mid); }
 function smRequestPermitRenewal(mid) { smSubmitProfRequest('permit_renewal', mid); }

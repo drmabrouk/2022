@@ -159,11 +159,6 @@ class SM_DB_Members {
 
         // Auto-create WordPress User for the Member
         $wp_user_id = null;
-        $digits = '';
-        for ($i = 0; $i < 10; $i++) {
-            $digits .= mt_rand(0, 9);
-        }
-        $temp_pass = 'IRS' . $digits;
 
         if (!function_exists('wp_insert_user')) {
             require_once(ABSPATH . 'wp-includes/user.php');
@@ -173,12 +168,11 @@ class SM_DB_Members {
             'user_login' => $national_id,
             'user_email' => $email ?: $national_id . '@irseg.org',
             'display_name' => $name,
-            'user_pass' => $temp_pass,
+            'user_pass' => null, // Account needs activation/password set
             'role' => 'sm_syndicate_member'
         ));
 
         if (!is_wp_error($wp_user_id)) {
-            update_user_meta($wp_user_id, 'sm_temp_pass', $temp_pass);
             if (!empty($data['governorate'])) {
                 update_user_meta($wp_user_id, 'sm_governorate', sanitize_text_field($data['governorate']));
             }

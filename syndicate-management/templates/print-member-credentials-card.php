@@ -43,8 +43,12 @@ if (empty($members_to_print) || !$members_to_print[0]) wp_die('Member(s) not fou
     <div class="cards-wrapper">
         <?php foreach ($members_to_print as $member):
             if (!$member) continue;
-            $pass = get_user_meta($member->wp_user_id, 'sm_temp_pass', true);
-            if (empty($pass)) $pass = '********';
+            $user_id = $member->wp_user_id;
+            $status = 'غير مفعل';
+            if ($user_id) {
+                $u = new WP_User($user_id);
+                $status = !empty($u->user_pass) ? 'مفعل (تم تعيين كلمة مرور)' : 'بانتظار التفعيل';
+            }
         ?>
         <div class="card">
             <div class="card-header">
@@ -63,13 +67,13 @@ if (empty($members_to_print) || !$members_to_print[0]) wp_die('Member(s) not fou
                 </div>
 
                 <div class="cred-box" style="margin-bottom: 0;">
-                    <div class="cred-label">كلمة المرور (Password):</div>
-                    <div class="cred-value" style="color: #111F35;"><?php echo esc_html($pass); ?></div>
+                    <div class="cred-label">حالة الحساب:</div>
+                    <div class="cred-value" style="color: #111F35; font-size: 16px; letter-spacing: 0;"><?php echo esc_html($status); ?></div>
                 </div>
 
                 <div class="note">
                     * يستخدم هذا الحساب للدخول لنظام إدارة النقابة (العضو وولي الأمر).<br>
-                    * يرجى الحفاظ على سرية هذه البيانات وتغيير كلمة المرور بعد أول دخول.
+                    * يرجى التواصل مع إدارة النقابة في حال فقدان بيانات الدخول.
                 </div>
             </div>
         </div>
