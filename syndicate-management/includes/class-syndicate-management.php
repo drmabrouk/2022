@@ -106,6 +106,12 @@ class Syndicate_Management {
             'sm_save_alert' => ['SM_System_Manager', 'ajax_save_alert'],
             'sm_reset_system_ajax' => ['SM_System_Manager', 'ajax_reset_system'],
             'sm_rollback_log_ajax' => ['SM_System_Manager', 'ajax_rollback_log'],
+            'sm_update_profile_ajax' => ['SM_Auth', 'ajax_update_profile'],
+            'sm_print_invoice' => ['SM_Finance_Manager', 'ajax_print_invoice'],
+            'sm_delete_alert' => ['SM_System_Manager', 'ajax_delete_alert'],
+            'sm_acknowledge_alert' => ['SM_System_Manager', 'ajax_acknowledge_alert'],
+            'sm_print_pub_doc' => ['SM_System_Manager', 'ajax_print_pub_doc'],
+            'sm_get_template_ajax' => ['SM_Notifications', 'ajax_get_template_ajax'],
 
             'sm_forgot_password_otp' => ['SM_Auth', 'ajax_forgot_password_otp'],
             'sm_reset_password_otp' => ['SM_Auth', 'ajax_reset_password_otp'],
@@ -151,7 +157,6 @@ class Syndicate_Management {
         $this->loader->add_action('wp_ajax_sm_restore_service', 'SM_Service_Manager', 'ajax_restore_service');
         $this->loader->add_action('wp_ajax_sm_print_license', 'SM_License_Manager', 'ajax_print_license');
         $this->loader->add_action('wp_ajax_sm_print_facility', 'SM_License_Manager', 'ajax_print_facility');
-        $this->loader->add_action('wp_ajax_sm_print_invoice', 'SM_Finance_Manager', 'ajax_print_invoice');
         $this->loader->add_action('wp_ajax_sm_print_service_request', 'SM_Service_Manager', 'ajax_print_service_request');
         $this->loader->add_action('wp_ajax_sm_submit_update_request_ajax', 'SM_Member_Manager', 'ajax_submit_update_request_ajax');
         $this->loader->add_action('wp_ajax_sm_process_update_request_ajax', 'SM_Member_Manager', 'ajax_process_update_request_ajax');

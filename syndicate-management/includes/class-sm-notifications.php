@@ -9,6 +9,19 @@ class SM_Notifications {
         return $wpdb->get_row($wpdb->prepare("SELECT * FROM {$wpdb->prefix}sm_notification_templates WHERE template_type = %s", $type));
     }
 
+    public static function ajax_get_template_ajax() {
+        if (!current_user_can('sm_manage_system')) {
+            wp_send_json_error('Unauthorized');
+        }
+        $type = sanitize_text_field($_GET['template_type'] ?? '');
+        $template = self::get_template($type);
+        if ($template) {
+            wp_send_json_success($template);
+        } else {
+            wp_send_json_error('Template not found');
+        }
+    }
+
     public static function save_template($data) {
         global $wpdb;
         return $wpdb->replace("{$wpdb->prefix}sm_notification_templates", [

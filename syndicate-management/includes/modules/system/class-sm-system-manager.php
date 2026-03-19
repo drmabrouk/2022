@@ -31,6 +31,33 @@ class SM_System_Manager {
         }
     }
 
+    public static function ajax_delete_alert() {
+        if (!current_user_can('sm_manage_system')) {
+            wp_send_json_error('Unauthorized');
+        }
+        check_ajax_referer('sm_admin_action', 'nonce');
+        $id = intval($_POST['id']);
+        if (SM_DB::delete_alert($id)) {
+            wp_send_json_success();
+        } else {
+            wp_send_json_error('Failed to delete alert');
+        }
+    }
+
+    public static function ajax_acknowledge_alert() {
+        if (!is_user_logged_in()) {
+            wp_send_json_error('Unauthorized');
+        }
+        check_ajax_referer('sm_admin_action', 'nonce');
+        $aid = intval($_POST['alert_id']);
+        $uid = get_current_user_id();
+        if (SM_DB::acknowledge_alert($aid, $uid)) {
+            wp_send_json_success();
+        } else {
+            wp_send_json_error('Failed to acknowledge alert');
+        }
+    }
+
     public static function ajax_save_alert() {
         if (!current_user_can('sm_manage_system')) {
             wp_send_json_error('Unauthorized');
@@ -330,6 +357,21 @@ class SM_System_Manager {
         fputcsv($out, ['ID', 'Slug', 'Name', 'Phone', 'Email', 'Address']);
         foreach ($bs as $b) fputcsv($out, [$b->id, $b->slug, $b->name, $b->phone, $b->email, $b->address]);
         fclose($out);
+        exit;
+    }
+
+    public static function ajax_print_pub_doc() {
+        if (!current_user_can('sm_manage_system')) {
+            wp_die('Unauthorized');
+        }
+        global $wpdb;
+        $id = intval($_GET['id']);
+        $doc = $wpdb->get_row($wpdb->prepare("SELECT * FROM {$wpdb->prefix}sm_pub_documents WHERE id = %d", $id));
+        if (!$doc) {
+            wp_die('Document not found');
+        }
+        SM_DB::increment_pub_download($id, sanitize_text_field($_GET['format'] ?? 'pdf'));
+        include SM_PLUGIN_DIR . 'templates/print-pub-document.php';
         exit;
     }
 }

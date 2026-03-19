@@ -132,8 +132,9 @@ function smLookupMemberForDoc() {
     btn.innerHTML = '<span class="dashicons dashicons-update" style="animation: smRotate 1s linear infinite;"></span>';
 
     const fd = new FormData();
-    fd.append('action', 'sm_get_member_ajax');
+    fd.append('action', 'sm_get_member');
     fd.append('national_id', val);
+    fd.append('nonce', '<?php echo wp_create_nonce("sm_admin_action"); ?>');
     fetch(ajaxurl, {method:'POST', body:fd}).then(r=>r.json()).then(res=>{
         btn.disabled = false;
         btn.innerHTML = originalHtml;
