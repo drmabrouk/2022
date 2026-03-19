@@ -147,44 +147,108 @@
                         $role = (array)$u->roles;
                         $role_slug = reset($role);
                         if ($u->ID === get_current_user_id()) continue; // Skip current user
+                        $assigned = get_user_meta($u->ID, 'sm_assigned_specializations', true) ?: (get_user_meta($u->ID, 'sm_supervised_grades', true) ?: array());
+                        $user_data_attr = array(
+                            "id" => $u->ID,
+                            "name" => $u->display_name,
+                            "email" => $u->user_email,
+                            "login" => $u->user_login,
+                            "role" => $role_slug,
+                            "rank" => get_user_meta($u->ID, "sm_rank", true),
+                            "assigned" => $assigned,
+                            "officer_id" => get_user_meta($u->ID, "sm_syndicateMemberIdAttr", true),
+                            "national_id" => get_user_meta($u->ID, "sm_national_id", true),
+                            "phone" => get_user_meta($u->ID, "sm_phone", true),
+                            "governorate" => get_user_meta($u->ID, "sm_governorate", true),
+                            "status" => get_user_meta($u->ID, "sm_account_status", true) ?: "active"
+                        );
                     ?>
                         <tr class="user-row" data-user-id="<?php echo $u->ID; ?>">
                             <td><input type="checkbox" class="user-cb" value="<?php echo $u->ID; ?>"></td>
-                            <td style="font-family: 'Rubik', sans-serif; font-weight: 700; color: var(--sm-primary-color);"><?php echo esc_html(get_user_meta($u->ID, 'sm_syndicateMemberIdAttr', true) ?: $u->user_login); ?></td>
+                            <td style="font-family: 'Rubik', sans-serif; font-weight: 700; color: var(--sm-primary-color);"><?php echo esc_html($user_data_attr['officer_id'] ?: $u->user_login); ?></td>
                             <td style="font-weight: 800; color: var(--sm-dark-color);"><?php echo esc_html($u->display_name); ?></td>
                             <td><span class="sm-badge sm-badge-low"><?php echo $role_labels[$role_slug] ?? $role_slug; ?></span></td>
-                            <td><?php echo esc_html(SM_Settings::get_branch_name(get_user_meta($u->ID, 'sm_governorate', true))); ?></td>
-                            <td dir="ltr" style="text-align: right;"><?php echo esc_html(get_user_meta($u->ID, 'sm_phone', true)); ?></td>
+                            <td><?php echo esc_html(SM_Settings::get_branch_name($user_data_attr['governorate'])); ?></td>
+                            <td dir="ltr" style="text-align: right;"><?php echo esc_html($user_data_attr['phone']); ?></td>
                             <td><?php echo esc_html($u->user_email); ?></td>
                             <td>
-                                <div class="sm-actions-dropdown">
-                                    <button class="sm-actions-trigger">الإجراءات <span class="dashicons dashicons-arrow-down-alt2"></span></button>
-                                    <?php
-                                    $assigned = get_user_meta($u->ID, 'sm_assigned_specializations', true) ?: (get_user_meta($u->ID, 'sm_supervised_grades', true) ?: array());
-                                    $user_json = wp_json_encode(array(
-                                        "id" => $u->ID,
-                                        "name" => $u->display_name,
-                                        "email" => $u->user_email,
-                                        "login" => $u->user_login,
-                                        "role" => $role_slug,
-                                        "rank" => get_user_meta($u->ID, "sm_rank", true),
-                                        "assigned" => $assigned,
-                                        "officer_id" => get_user_meta($u->ID, "sm_syndicateMemberIdAttr", true),
-                                        "national_id" => get_user_meta($u->ID, "sm_national_id", true),
-                                        "phone" => get_user_meta($u->ID, "sm_phone", true),
-                                        "governorate" => get_user_meta($u->ID, "sm_governorate", true),
-                                        "status" => get_user_meta($u->ID, "sm_account_status", true) ?: "active"
-                                    ));
-                                    ?>
-                                    <div class="sm-actions-content" data-user='<?php echo esc_attr($user_json); ?>'>
-                                        <a href="javascript:void(0)" onclick="editSmUser(JSON.parse(this.parentElement.dataset.user))" class="sm-action-item">
-                                            <span class="dashicons dashicons-edit"></span> تعديل البيانات
-                                        </a>
-                                        <a href="javascript:void(0)" onclick="deleteSmUser(<?php echo $u->ID; ?>, '<?php echo esc_js($u->display_name); ?>')" class="sm-action-item sm-delete" style="color:#e53e3e;">
-                                            <span class="dashicons dashicons-trash"></span> حذف الحساب
-                                        </a>
-                                    </div>
+                                <div style="display: flex; gap: 8px;">
+                                    <button onclick='toggleEditPanel(<?php echo $u->ID; ?>)' class="sm-btn sm-btn-outline" style="padding: 4px 12px; font-size: 11px; width: auto; height: 32px; display: flex; align-items: center; gap: 5px;">
+                                        <span class="dashicons dashicons-edit" style="font-size: 16px; width: 16px; height: 16px;"></span> تعديل
+                                    </button>
+                                    <button onclick="deleteSmUser(<?php echo $u->ID; ?>, '<?php echo esc_js($u->display_name); ?>')" class="sm-btn" style="background: #e53e3e; padding: 4px 12px; font-size: 11px; width: auto; height: 32px; display: flex; align-items: center; gap: 5px;">
+                                        <span class="dashicons dashicons-trash" style="font-size: 16px; width: 16px; height: 16px;"></span> حذف
+                                    </button>
                                 </div>
+                            </td>
+                        </tr>
+                        <tr id="edit-panel-<?php echo $u->ID; ?>" class="edit-panel-row" style="display:none; background: #f8fafc; border-right: 4px solid var(--sm-primary-color);">
+                            <td colspan="8" style="padding: 25px;">
+                                <form onsubmit="saveInlineEdit(event, <?php echo $u->ID; ?>)" class="inline-edit-form">
+                                    <?php wp_nonce_field('sm_syndicateMemberAction', 'sm_nonce'); ?>
+                                    <input type="hidden" name="edit_officer_id" value="<?php echo $u->ID; ?>">
+                                    <div style="display:grid; grid-template-columns: repeat(3, 1fr); gap:15px;">
+                                        <div class="sm-form-group">
+                                            <label class="sm-label">الاسم الكامل:</label>
+                                            <input type="text" name="display_name" value="<?php echo esc_attr($u->display_name); ?>" class="sm-input" required>
+                                        </div>
+                                        <div class="sm-form-group">
+                                            <label class="sm-label">الرقم القومي / الكود:</label>
+                                            <input type="text" name="officer_id" value="<?php echo esc_attr($user_data_attr['officer_id']); ?>" class="sm-input" required>
+                                        </div>
+                                        <div class="sm-form-group">
+                                            <label class="sm-label">رقم الهاتف:</label>
+                                            <input type="text" name="phone" value="<?php echo esc_attr($user_data_attr['phone']); ?>" class="sm-input">
+                                        </div>
+                                        <div class="sm-form-group">
+                                            <label class="sm-label">البريد الإلكتروني:</label>
+                                            <input type="email" name="user_email" value="<?php echo esc_attr($u->user_email); ?>" class="sm-input" required>
+                                        </div>
+                                        <div class="sm-form-group">
+                                            <label class="sm-label">الدور:</label>
+                                            <select name="role" class="sm-select" onchange="smToggleRankField(this, 'rank-group-<?php echo $u->ID; ?>')">
+                                                <?php foreach($wp_roles->roles as $rk => $rd): ?>
+                                                    <option value="<?php echo esc_attr($rk); ?>" <?php selected($role_slug, $rk); ?>><?php echo esc_html(translate_user_role($rd['name'])); ?></option>
+                                                <?php endforeach; ?>
+                                            </select>
+                                        </div>
+                                        <div class="sm-form-group" id="rank-group-<?php echo $u->ID; ?>" style="<?php echo ($role_slug === 'sm_syndicate_member' || $role_slug === 'sm_member') ? '' : 'display:none;'; ?>">
+                                            <label class="sm-label">الرتبة المهنية:</label>
+                                            <select name="rank" class="sm-select">
+                                                <option value="">-- اختر الرتبة --</option>
+                                                <?php foreach (SM_Settings::get_professional_grades() as $k => $v) echo "<option value='$k' ".selected($user_data_attr['rank'], $k, false).">$v</option>"; ?>
+                                            </select>
+                                        </div>
+                                        <div class="sm-form-group">
+                                            <label class="sm-label">الفرع:</label>
+                                            <select name="governorate" class="sm-select">
+                                                <option value="">-- اختر الفرع --</option>
+                                                <?php
+                                                    if (!empty($db_branches)) {
+                                                        foreach($db_branches as $db) echo "<option value='".esc_attr($db->slug)."' ".selected($user_data_attr['governorate'], $db->slug, false).">".esc_html($db->name)."</option>";
+                                                    } else {
+                                                        foreach (SM_Settings::get_governorates() as $k => $v) echo "<option value='$k' ".selected($user_data_attr['governorate'], $k, false).">$v</option>";
+                                                    }
+                                                ?>
+                                            </select>
+                                        </div>
+                                        <div class="sm-form-group">
+                                            <label class="sm-label">حالة الحساب:</label>
+                                            <select name="account_status" class="sm-select">
+                                                <option value="active" <?php selected($user_data_attr['status'], 'active'); ?>>نشط</option>
+                                                <option value="restricted" <?php selected($user_data_attr['status'], 'restricted'); ?>>مقيد</option>
+                                            </select>
+                                        </div>
+                                        <div class="sm-form-group">
+                                            <label class="sm-label">تغيير كلمة المرور (اختياري):</label>
+                                            <input type="password" name="user_pass" class="sm-input" placeholder="********">
+                                        </div>
+                                    </div>
+                                    <div style="margin-top: 15px; display: flex; gap: 10px; justify-content: flex-end;">
+                                        <button type="submit" class="sm-btn" style="width: auto; padding: 0 30px;">حفظ التعديلات</button>
+                                        <button type="button" onclick="document.getElementById('edit-panel-<?php echo $u->ID; ?>').style.display='none'" class="sm-btn sm-btn-outline" style="width: auto; padding: 0 30px;">إلغاء</button>
+                                    </div>
+                                </form>
                             </td>
                         </tr>
                     <?php endforeach; ?>
@@ -207,86 +271,6 @@
     <?php endif; ?>
 
 
-    <div id="edit-staff-modal" class="sm-modal-overlay">
-        <div class="sm-modal-content">
-            <div class="sm-modal-header">
-                <h3>تعديل بيانات الحساب</h3>
-                <button class="sm-modal-close" onclick="document.getElementById('edit-staff-modal').style.display='none'">&times;</button>
-            </div>
-            <form id="edit-staff-form">
-                <?php wp_nonce_field('sm_syndicateMemberAction', 'sm_nonce'); ?>
-                <input type="hidden" name="edit_officer_id" id="edit_off_db_id">
-                <div style="display:grid; grid-template-columns: 1fr 1fr; gap:20px;">
-                    <div class="sm-form-group">
-                        <label class="sm-label">الاسم الكامل:</label>
-                        <input type="text" name="display_name" id="edit_off_display_name" class="sm-input" required>
-                    </div>
-                    <div class="sm-form-group">
-                        <label class="sm-label">الرقم القومي / كود المستخدم:</label>
-                        <input type="text" name="officer_id" id="edit_off_code" class="sm-input" required>
-                    </div>
-                    <div class="sm-form-group">
-                        <label class="sm-label">رقم الهاتف:</label>
-                        <input type="text" name="phone" id="edit_off_phone" class="sm-input">
-                    </div>
-                    <div class="sm-form-group">
-                        <label class="sm-label">البريد الإلكتروني:</label>
-                        <input type="email" name="user_email" id="edit_off_email" class="sm-input" required>
-                    </div>
-                    <div class="sm-form-group">
-                        <label class="sm-label">تغيير الدور:</label>
-                        <select name="role" id="edit_off_role" class="sm-select" onchange="smToggleRankField(this, 'edit_off_rank_group')">
-                            <?php
-                            global $wp_roles;
-                            foreach($wp_roles->roles as $role_key => $role_data): ?>
-                                <option value="<?php echo esc_attr($role_key); ?>"><?php echo esc_html(translate_user_role($role_data['name'])); ?></option>
-                            <?php endforeach; ?>
-                        </select>
-                    </div>
-                    <div class="sm-form-group" id="edit_off_rank_group">
-                        <label class="sm-label">الرتبة / الدرجة المهنية:</label>
-                        <select name="rank" id="edit_off_rank" class="sm-select">
-                            <option value="">-- اختر الرتبة --</option>
-                            <?php foreach (SM_Settings::get_professional_grades() as $k => $v) echo "<option value='$k'>$v</option>"; ?>
-                        </select>
-                    </div>
-                    <div class="sm-form-group">
-                        <label class="sm-label">الفرع:</label>
-                        <select name="governorate" id="edit_off_gov" class="sm-select" <?php if (!$is_sys_manager && $is_syndicate_admin) echo 'disabled'; ?>>
-                            <option value="">-- اختر الفرع --</option>
-                            <?php
-                                $db_branches = SM_DB::get_branches_data();
-                                if (!empty($db_branches)) {
-                                    foreach($db_branches as $db) echo "<option value='".esc_attr($db->slug)."'>".esc_html($db->name)."</option>";
-                                } else {
-                                    foreach (SM_Settings::get_governorates() as $k => $v) echo "<option value='$k'>$v</option>";
-                                }
-                            ?>
-                        </select>
-                        <?php if (!$is_sys_manager && $is_syndicate_admin): ?>
-                            <input type="hidden" name="governorate" value="<?php echo esc_attr($my_gov); ?>">
-                        <?php endif; ?>
-                    </div>
-                    <div class="sm-form-group">
-                        <label class="sm-label">الرقم القومي:</label>
-                        <input type="text" name="national_id" id="edit_off_nid" class="sm-input" placeholder="14 رقم">
-                    </div>
-                    <div class="sm-form-group">
-                        <label class="sm-label">حالة الحساب:</label>
-                        <select name="account_status" id="edit_off_status" class="sm-select">
-                            <option value="active">نشط</option>
-                            <option value="restricted">مقيد (لا يمكنه الدخول)</option>
-                        </select>
-                    </div>
-                    <div class="sm-form-group">
-                        <label class="sm-label">كلمة مرور جديدة (اختياري):</label>
-                        <input type="password" name="user_pass" class="sm-input" placeholder="اتركه فارغاً لعدم التغيير">
-                    </div>
-                </div>
-                <button type="submit" class="sm-btn" style="margin-top:20px;">حفظ التغييرات</button>
-            </form>
-        </div>
-    </div>
 
     <div id="add-staff-modal" class="sm-modal-overlay">
         <div class="sm-modal-content">
@@ -371,7 +355,6 @@
     window.smToggleRankField = function(roleSelect, groupId) {
         const group = document.getElementById(groupId);
         if (!group) return;
-        // Only sm_syndicate_member (and potentially sm_member) should have professional grades
         if (roleSelect.value === 'sm_syndicate_member' || roleSelect.value === 'sm_member') {
             group.style.display = 'block';
         } else {
@@ -380,19 +363,6 @@
             if (select) select.value = '';
         }
     };
-
-    document.addEventListener('click', function(e) {
-        const trigger = e.target.closest('.sm-actions-trigger');
-        if (trigger) {
-            const content = trigger.nextElementSibling;
-            const isVisible = content.style.display === 'block';
-            document.querySelectorAll('.sm-actions-content').forEach(c => c.style.display = 'none');
-            content.style.display = isVisible ? 'none' : 'block';
-            e.stopPropagation();
-        } else {
-            document.querySelectorAll('.sm-actions-content').forEach(c => c.style.display = 'none');
-        }
-    });
 
     function toggleAllUsers(master) {
         document.querySelectorAll('.user-cb').forEach(cb => cb.checked = master.checked);
@@ -441,25 +411,37 @@
     }
 
     (function() {
-        window.editSmUser = function(u) {
-            document.getElementById('edit_off_db_id').value = u.id;
-            document.getElementById('edit_off_display_name').value = u.name;
-            document.getElementById('edit_off_code').value = u.officer_id;
-            document.getElementById('edit_off_phone').value = u.phone;
-            document.getElementById('edit_off_email').value = u.email;
-            document.getElementById('edit_off_status').value = u.status || 'active';
-            document.getElementById('edit_off_role').value = u.role;
-            document.getElementById('edit_off_rank').value = u.rank || '';
-            document.getElementById('edit_off_nid').value = u.national_id || '';
-
-            smToggleRankField(document.getElementById('edit_off_role'), 'edit_off_rank_group');
-
-            const govField = document.getElementById('edit_off_gov');
-            if (govField) {
-                govField.value = u.governorate || '';
+        window.toggleEditPanel = function(userId) {
+            const panel = document.getElementById('edit-panel-' + userId);
+            const isVisible = panel.style.display !== 'none';
+            document.querySelectorAll('.edit-panel-row').forEach(p => p.style.display = 'none');
+            if (!isVisible) {
+                panel.style.display = 'table-row';
             }
+        };
 
-            document.getElementById('edit-staff-modal').style.display = 'flex';
+        window.saveInlineEdit = function(e, userId) {
+            e.preventDefault();
+            const form = e.target;
+            const formData = new FormData(form);
+            formData.append('action', 'sm_update_staff_ajax');
+
+            const btn = form.querySelector('button[type="submit"]');
+            btn.disabled = true;
+            btn.innerText = 'جاري الحفظ...';
+
+            fetch('<?php echo admin_url('admin-ajax.php'); ?>', { method: 'POST', body: formData })
+            .then(r => r.json())
+            .then(res => {
+                if (res.success) {
+                    smShowNotification('تم تحديث بيانات المستخدم بنجاح');
+                    setTimeout(() => location.reload(), 500);
+                } else {
+                    alert('خطأ: ' + res.data);
+                    btn.disabled = false;
+                    btn.innerText = 'حفظ التعديلات';
+                }
+            });
         };
 
         const addForm = document.getElementById('add-staff-form');
@@ -478,24 +460,7 @@
                         smShowNotification('خطأ: ' + res.data, true);
                     }
                 });
-            });
-        }
-
-        const editForm = document.getElementById('edit-staff-form');
-        if (editForm) {
-            editForm.onsubmit = function(e) {
-                e.preventDefault();
-                const formData = new FormData(this);
-                formData.append('action', 'sm_update_staff_ajax');
-                fetch('<?php echo admin_url('admin-ajax.php'); ?>', { method: 'POST', body: formData })
-                .then(r => r.json())
-                .then(res => {
-                    if (res.success) {
-                        smShowNotification('تم تحديث بيانات المستخدم');
-                        setTimeout(() => location.reload(), 500);
-                    }
-                });
-            });
+            };
         }
     })();
     </script>

@@ -182,6 +182,10 @@ class SM_DB_Services {
                  JOIN {$wpdb->prefix}sm_members m ON r.member_id = m.id WHERE 1=1";
         $params = [];
 
+        if (!empty($args['member_id'])) {
+            $query .= " AND r.member_id = %d";
+            $params[] = intval($args['member_id']);
+        }
         if (!empty($args['status'])) {
             $query .= " AND r.status = %s";
             $params[] = $args['status'];
