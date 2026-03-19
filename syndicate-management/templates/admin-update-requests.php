@@ -15,7 +15,6 @@ $degrees = SM_Settings::get_academic_degrees();
 <div class="sm-admin-dashboard" dir="rtl">
     <div class="sm-header">
         <div class="sm-header-title">
-            <span class="dashicons dashicons-update"></span>
             <div>
                 <h1>طلبات تحديث البيانات</h1>
                 <p>مراجعة واعتماد طلبات التعديل المقدمة من الأعضاء</p>
@@ -24,9 +23,9 @@ $degrees = SM_Settings::get_academic_degrees();
     </div>
 
     <div class="sm-filters-bar" style="margin-bottom: 20px;">
-        <a href="?sm_tab=update_requests&status=pending" class="sm-btn <?php echo $status_filter === 'pending' ? '' : 'sm-btn-outline'; ?>">قيد الانتظار</a>
-        <a href="?sm_tab=update_requests&status=approved" class="sm-btn <?php echo $status_filter === 'approved' ? '' : 'sm-btn-outline'; ?>" style="margin-right: 10px;">تم الاعتماد</a>
-        <a href="?sm_tab=update_requests&status=rejected" class="sm-btn <?php echo $status_filter === 'rejected' ? '' : 'sm-btn-outline'; ?>" style="margin-right: 10px;">مرفوضة</a>
+        <a href="?sm_tab=update_requests&status=pending" class="sm-btn <?php echo $status_filter === 'pending' ? '' : 'sm-btn-outline'; ?>" style="text-decoration:none;">قيد الانتظار</a>
+        <a href="?sm_tab=update_requests&status=approved" class="sm-btn <?php echo $status_filter === 'approved' ? '' : 'sm-btn-outline'; ?>" style="margin-right: 10px; text-decoration:none;">تم الاعتماد</a>
+        <a href="?sm_tab=update_requests&status=rejected" class="sm-btn <?php echo $status_filter === 'rejected' ? '' : 'sm-btn-outline'; ?>" style="margin-right: 10px; text-decoration:none;">مرفوضة</a>
     </div>
 
     <div class="sm-card">

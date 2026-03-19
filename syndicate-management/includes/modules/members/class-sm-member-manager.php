@@ -551,7 +551,7 @@ class SM_Member_Manager {
     }
 
     public static function ajax_track_membership_request() {
-        check_ajax_referer('sm_registration_nonce', 'nonce');
+        check_ajax_referer('sm_registration_nonce');
         global $wpdb;
         $req = $wpdb->get_row($wpdb->prepare("SELECT * FROM {$wpdb->prefix}sm_membership_requests WHERE national_id = %s", sanitize_text_field($_POST['national_id'])));
         if (!$req) {

@@ -22,6 +22,16 @@ if ($branch_filter) {
     $params[] = $branch_filter;
 }
 
+// Union Officer filtering
+$user = wp_get_current_user();
+if (in_array('sm_syndicate_admin', (array)$user->roles) && !current_user_can('manage_options')) {
+    $my_gov = get_user_meta($user->ID, 'sm_governorate', true);
+    if ($my_gov) {
+        $query .= " AND governorate = %s";
+        $params[] = $my_gov;
+    }
+}
+
 if ($search_query) {
     $query .= " AND (name LIKE %s OR national_id LIKE %s)";
     $params[] = '%' . $wpdb->esc_like($search_query) . '%';
@@ -141,8 +151,8 @@ $status_labels = [
                                         <div class="sm-actions-content" style="display:none; position:absolute; left:0; top:100%; background:#fff; border:1px solid #e2e8f0; border-radius:8px; box-shadow:0 10px 15px -3px rgba(0,0,0,0.1); z-index:100; min-width:160px;">
                                             <a href="#" onclick="processMembership(<?php echo $r->id; ?>, 'update'); return false;" style="display:block; padding:10px 15px; font-size:12px; color:#4a5568; text-decoration:none; border-bottom:1px solid #f1f5f9;">تحديث الحالة</a>
                                             <a href="#" onclick="smPrintReqForm(<?php echo $r->id; ?>); return false;" style="display:block; padding:10px 15px; font-size:12px; color:#4a5568; text-decoration:none; border-bottom:1px solid #f1f5f9;">طباعة النموذج (A4)</a>
-                                            <?php if($r->status === 'Under Final Review'): ?>
-                                                <a href="#" onclick="processMembership(<?php echo $r->id; ?>, 'approved'); return false;" style="display:block; padding:10px 15px; font-size:12px; color:#27ae60; text-decoration:none; border-bottom:1px solid #f1f5f9; font-weight:700;">اعتماد نهائي</a>
+                                            <?php if($r->status === 'Under Final Review' || in_array('sm_syndicate_admin', (array)$user->roles)): ?>
+                                                <a href="#" onclick="processMembership(<?php echo $r->id; ?>, 'approved'); return false;" style="display:block; padding:10px 15px; font-size:12px; color:#27ae60; text-decoration:none; border-bottom:1px solid #f1f5f9; font-weight:700;">اعتماد نهائي (Approve Request)</a>
                                             <?php endif; ?>
                                             <a href="#" onclick="rejectMembership(<?php echo $r->id; ?>); return false;" style="display:block; padding:10px 15px; font-size:12px; color:#e53e3e; text-decoration:none;">رفض الطلب</a>
                                         </div>

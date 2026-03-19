@@ -2,7 +2,9 @@
 <div class="sm-content-wrapper">
     <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:30px;">
         <h2 style="margin:0; font-weight:800; color:var(--sm-dark-color);">إدارة فروع ولجان النقابة</h2>
-        <button onclick="smOpenBranchModal()" class="sm-btn" style="width:auto; padding:10px 25px;">+ إضافة فرع جديد</button>
+        <?php if (!in_array('sm_syndicate_admin', (array)wp_get_current_user()->roles)): ?>
+            <button onclick="smOpenBranchModal()" class="sm-btn" style="width:auto; padding:10px 25px;">+ إضافة فرع جديد</button>
+        <?php endif; ?>
     </div>
 
     <div id="sm-branches-grid" style="display:grid; grid-template-columns: repeat(auto-fill, minmax(320px, 1fr)); gap:25px;">
@@ -19,8 +21,10 @@
                         <span class="dashicons dashicons-location"></span>
                     </div>
                     <div style="display:flex; gap:5px;">
-                        <button onclick='smEditBranch(<?php echo json_encode($b); ?>)' class="sm-btn sm-btn-outline" style="padding:4px 8px; font-size:11px;">تعديل</button>
-                        <button onclick="smDeleteBranch(<?php echo $b->id; ?>)" class="sm-btn" style="background:#e53e3e; padding:4px 8px; font-size:11px;">حذف</button>
+                        <button onclick='smEditBranch(<?php echo json_encode($b); ?>)' class="sm-btn sm-btn-outline" style="padding:4px 8px; font-size:11px;">عرض التفاصيل</button>
+                        <?php if (!in_array('sm_syndicate_admin', (array)wp_get_current_user()->roles)): ?>
+                            <button onclick="smDeleteBranch(<?php echo $b->id; ?>)" class="sm-btn" style="background:#e53e3e; padding:4px 8px; font-size:11px;">حذف</button>
+                        <?php endif; ?>
                     </div>
                 </div>
                 <h3 style="margin:0 0 10px 0; font-weight:800; color:var(--sm-dark-color);"><?php echo esc_html($b->name); ?></h3>
@@ -75,7 +79,13 @@
                     <div class="sm-form-group"><label class="sm-label">الرمز البريدي:</label><input type="text" name="postal_code" class="sm-input"></div>
                 </div>
             </div>
-            <button type="submit" class="sm-btn" style="width:100%; margin-top:20px;">حفظ بيانات الفرع</button>
+            <?php if (!in_array('sm_syndicate_admin', (array)wp_get_current_user()->roles)): ?>
+                <button type="submit" class="sm-btn" style="width:100%; margin-top:20px;">حفظ بيانات الفرع</button>
+            <?php else: ?>
+                <div style="margin-top:20px; padding:15px; background:#f8fafc; border:1px solid #e2e8f0; border-radius:10px; text-align:center; color:#64748b; font-size:13px;">
+                    العرض فقط: لا تملك صلاحية تعديل بيانات الفروع.
+                </div>
+            <?php endif; ?>
         </form>
     </div>
 </div>
