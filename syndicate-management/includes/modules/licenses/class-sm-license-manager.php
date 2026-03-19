@@ -60,71 +60,93 @@ class SM_License_Manager {
     public static function ajax_verify_document() {
         global $wpdb;
         $val = trim(sanitize_text_field($_POST['search_value'] ?? ''));
-        $type = sanitize_text_field($_POST['search_type'] ?? 'all');
         if (empty($val)) {
             wp_send_json_error('يرجى إدخال قيمة للبحث');
         }
 
-        $member = null;
         $results = [];
-        if ($type === 'all') {
-            $member = $wpdb->get_row($wpdb->prepare(
-                "SELECT * FROM {$wpdb->prefix}sm_members
-                 WHERE national_id = %s OR membership_number = %s OR license_number = %s OR facility_number = %s OR name = %s
-                 LIMIT 1",
-                $val, $val, $val, $val, $val
-            ));
-            if (!$member && strlen($val) >= 3) {
-                $member = $wpdb->get_row($wpdb->prepare(
-                    "SELECT * FROM {$wpdb->prefix}sm_members WHERE name LIKE %s LIMIT 1",
-                    '%' . $wpdb->esc_like($val) . '%'
-                ));
-            }
-        } else {
-            switch ($type) {
-                case 'membership': $member = SM_DB::get_member_by_membership_number($val); break;
-                case 'license': $member = SM_DB::get_member_by_facility_number($val); break;
-                case 'practice': $member = SM_DB::get_member_by_license_number($val); break;
-            }
-        }
 
-        if ($member) {
-            if ($member->membership_number) {
-                $results['membership'] = [
-                    'label' => 'بيانات العضوية',
+        // 1. Intelligent Input Detection: National ID (14 digits) -> Full Profile
+        if (preg_match('/^[0-9]{14}$/', $val)) {
+            $member = SM_DB::get_member_by_national_id($val);
+            if ($member) {
+                $results['profile'] = [
+                    'label' => 'ملف بيانات العضو الكامل',
                     'name' => $member->name,
-                    'number' => $member->membership_number,
-                    'status' => $member->membership_status,
-                    'specialization' => $member->specialization ?: 'غير محدد',
-                    'grade' => $member->professional_grade ?: 'غير محدد',
+                    'national_id' => $member->national_id,
+                    'membership_number' => $member->membership_number ?: 'غير متوفر',
+                    'professional_grade' => SM_Settings::get_professional_grades()[$member->professional_grade] ?? $member->professional_grade,
+                    'specialization' => SM_Settings::get_specializations()[$member->specialization] ?? $member->specialization,
+                    'governorate' => SM_Settings::get_branch_name($member->governorate),
+                    'status' => $member->membership_status ?: 'Active',
                     'expiry' => $member->membership_expiration_date
                 ];
-            }
-            if ($member->facility_number) {
-                $results['license'] = [
-                    'label' => 'رخصة المنشأة',
-                    'facility_name' => $member->facility_name,
-                    'number' => $member->facility_number,
-                    'category' => $member->facility_category,
-                    'address' => $member->facility_address ?: 'غير محدد',
-                    'expiry' => $member->facility_license_expiration_date
-                ];
-            }
-            if ($member->license_number) {
-                $results['practice'] = [
-                    'label' => 'تصريح مزاولة المهنة',
-                    'name' => $member->name,
-                    'number' => $member->license_number,
-                    'issue_date' => $member->license_issue_date ?: 'غير محدد',
-                    'expiry' => $member->license_expiration_date
-                ];
+                wp_send_json_success($results);
             }
         }
 
-        if (empty($results)) {
-            wp_send_json_error('عذراً، لم يتم العثور على بيانات.');
+        // 2. Check for Membership Number Match
+        $member = SM_DB::get_member_by_membership_number($val);
+        if ($member) {
+            $results['membership'] = [
+                'label' => 'بيانات العضوية والتسجيل النقابي',
+                'name' => $member->name,
+                'number' => $member->membership_number,
+                'status' => $member->membership_status ?: 'Active',
+                'specialization' => SM_Settings::get_specializations()[$member->specialization] ?? ($member->specialization ?: 'غير محدد'),
+                'grade' => SM_Settings::get_professional_grades()[$member->professional_grade] ?? ($member->professional_grade ?: 'غير محدد'),
+                'expiry' => $member->membership_expiration_date
+            ];
+            wp_send_json_success($results);
         }
-        wp_send_json_success($results);
+
+        // 3. Check for Practice Permit Number Match
+        $member = SM_DB::get_member_by_license_number($val);
+        if ($member) {
+            $results['practice'] = [
+                'label' => 'بيانات تصريح مزاولة المهنة المعتمد',
+                'name' => $member->name,
+                'number' => $member->license_number,
+                'issue_date' => $member->license_issue_date ?: 'غير محدد',
+                'expiry' => $member->license_expiration_date
+            ];
+            wp_send_json_success($results);
+        }
+
+        // 4. Check for Facility License Number Match
+        $member = SM_DB::get_member_by_facility_number($val);
+        if ($member) {
+            $results['license'] = [
+                'label' => 'رخصة تشغيل المنشأة / الأكاديمية',
+                'facility_name' => $member->facility_name,
+                'number' => $member->facility_number,
+                'category' => $member->facility_category,
+                'address' => $member->facility_address ?: 'غير محدد',
+                'expiry' => $member->facility_license_expiration_date
+            ];
+            wp_send_json_success($results);
+        }
+
+        // 5. Fallback: Search by Name (Partial) -> Basic Info
+        if (strlen($val) >= 3) {
+            $member = $wpdb->get_row($wpdb->prepare(
+                "SELECT * FROM {$wpdb->prefix}sm_members WHERE name LIKE %s LIMIT 1",
+                '%' . $wpdb->esc_like($val) . '%'
+            ));
+            if ($member) {
+                $results['profile'] = [
+                    'label' => 'نتيجة البحث بالاسم',
+                    'name' => $member->name,
+                    'national_id' => '************' . substr($member->national_id, -2),
+                    'membership_number' => $member->membership_number ?: '---',
+                    'governorate' => SM_Settings::get_branch_name($member->governorate),
+                    'status' => $member->membership_status ?: 'Active'
+                ];
+                wp_send_json_success($results);
+            }
+        }
+
+        wp_send_json_error('عذراً، لم يتم العثور على أية بيانات مطابقة لقيمة البحث المدخلة في السجلات الرسمية.');
     }
 
     public static function ajax_print_license() {
