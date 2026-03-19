@@ -188,7 +188,7 @@ class SM_Service_Manager {
     public static function ajax_track_service_request() {
         // This is a public tracking form, no login required, but we should use a nonce if possible.
         // Let's check for it if it was provided.
-        check_ajax_referer('sm_contact_action', 'nonce');
+        check_ajax_referer('sm_contact_action');
         $code = trim(sanitize_text_field($_POST['tracking_code'] ?? ''));
         if (empty($code)) {
             wp_send_json_error('يرجى إدخال كود التتبع');

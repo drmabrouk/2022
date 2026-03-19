@@ -445,12 +445,12 @@ $greeting = ($hour >= 5 && $hour < 12) ? 'صباح الخير' : 'مساء ال�
                 <h1 style="margin:0; border: none; padding: 0; color: var(--sm-dark-color); font-weight: 800; font-size: 1.3em; text-decoration: none; line-height: 1;">
                     <?php echo esc_html($syndicate['syndicate_name']); ?>
                 </h1>
-                <div style="display: inline-flex; flex-direction: column; align-items: center; padding: 5px 15px; background: #f0f4f8; color: #111F35; border-radius: 12px; font-size: 11px; font-weight: 700; margin-top: 6px; border: 1px solid #cbd5e0; line-height: 1.4;">
-                    <div>
+                <div style="display: inline-flex; align-items: center; padding: 6px 16px; background: #f0f4f8; color: #111F35; border-radius: 12px; font-size: 11px; font-weight: 700; margin-top: 8px; border: 1px solid #cbd5e0; line-height: 1.4; gap: 8px;">
+                    <div style="color: #4a5568;">
                         <?php
                         if ($is_admin || $is_sys_admin) echo 'مدير النظام';
-                        elseif ($is_syndicate_admin) echo 'مسؤول نقابة';
-                        elseif ($is_syndicate_member) echo 'عضو نقابة';
+                        elseif ($is_syndicate_admin) echo 'مسؤول النقابة';
+                        elseif ($is_syndicate_member) echo 'عضو النقابة';
                         elseif ($is_member) echo 'عضو';
                         else echo 'مستخدم النظام';
                         ?>
@@ -460,8 +460,8 @@ $greeting = ($hour >= 5 && $hour < 12) ? 'صباح الخير' : 'مساء ال�
                     $govs = SM_Settings::get_governorates();
                     $my_gov_label = $govs[$my_gov_key] ?? '';
                     if ($my_gov_label): ?>
-                        <div style="width: 100%; height: 1px; background: #cbd5e0; margin: 3px 0;"></div>
-                        <div style="color: var(--sm-primary-color); font-size: 10px;"><?php echo esc_html($my_gov_label); ?></div>
+                        <div style="width: 1px; height: 14px; background: #cbd5e0;"></div>
+                        <div style="color: var(--sm-primary-color);"><?php echo esc_html($my_gov_label); ?></div>
                     <?php endif; ?>
                 </div>
             </div>
@@ -554,7 +554,9 @@ $greeting = ($hour >= 5 && $hour < 12) ? 'صباح الخير' : 'مساء ال�
                         <div style="font-size: 0.85em; font-weight: 700; color: var(--sm-dark-color);"><?php echo $greeting . '، ' . $user->display_name; ?></div>
                         <div style="font-size: 0.7em; color: #38a169;">متصل الآن <span class="dashicons dashicons-arrow-down-alt2" style="font-size: 10px; width: 10px; height: 10px;"></span></div>
                     </div>
-                    <?php echo get_avatar($user->ID, 32, '', '', array('style' => 'border-radius: 50%; border: 2px solid var(--sm-primary-color); width: 32px; height: 32px; object-fit: cover;')); ?>
+                    <div style="width: 36px; height: 36px; border-radius: 50%; border: 2px solid #e53e3e; padding: 2px; background: #fff; overflow: hidden; display: flex; align-items: center; justify-content: center; box-shadow: 0 0 0 1px rgba(229, 62, 62, 0.2);">
+                        <?php echo get_avatar($user->ID, 32, '', '', array('style' => 'border-radius: 50%; width: 100%; height: 100%; object-fit: cover;')); ?>
+                    </div>
                 </div>
                 <div id="sm-user-dropdown-menu" style="display: none; position: absolute; top: 110%; left: 0; background: white; border: 1px solid var(--sm-border-color); border-radius: 8px; width: 260px; box-shadow: 0 10px 25px rgba(0,0,0,0.1); z-index: 1000; animation: smFadeIn 0.2s ease-out; padding: 10px 0;">
                     <div id="sm-profile-view">

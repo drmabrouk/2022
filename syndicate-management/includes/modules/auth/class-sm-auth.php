@@ -200,7 +200,7 @@ class SM_Auth {
     }
 
     public static function ajax_forgot_password_otp() {
-        check_ajax_referer('sm_registration_nonce', 'nonce');
+        check_ajax_referer('sm_registration_nonce');
         $national_id = sanitize_text_field($_POST['national_id'] ?? '');
         $member = SM_DB::get_member_by_national_id($national_id);
         if (!$member || !$member->wp_user_id) {
@@ -222,7 +222,7 @@ class SM_Auth {
     }
 
     public static function ajax_reset_password_otp() {
-        check_ajax_referer('sm_registration_nonce', 'nonce');
+        check_ajax_referer('sm_registration_nonce');
         $national_id = sanitize_text_field($_POST['national_id'] ?? '');
         $otp = sanitize_text_field($_POST['otp'] ?? '');
         $new_pass = $_POST['new_password'] ?? '';
@@ -247,7 +247,7 @@ class SM_Auth {
     }
 
     public static function ajax_activate_account_step1() {
-        check_ajax_referer('sm_registration_nonce', 'nonce');
+        check_ajax_referer('sm_registration_nonce');
         $national_id = sanitize_text_field($_POST['national_id'] ?? '');
         $membership_number = sanitize_text_field($_POST['membership_number'] ?? '');
         $branch_slug = sanitize_text_field($_POST['branch'] ?? '');
@@ -267,7 +267,7 @@ class SM_Auth {
     }
 
     public static function ajax_activate_account_final() {
-        check_ajax_referer('sm_registration_nonce', 'nonce');
+        check_ajax_referer('sm_registration_nonce');
         $national_id = sanitize_text_field($_POST['national_id'] ?? '');
         $membership_number = sanitize_text_field($_POST['membership_number'] ?? '');
         $new_email = sanitize_email($_POST['email'] ?? '');
