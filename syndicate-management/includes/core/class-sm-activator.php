@@ -848,8 +848,12 @@ class SM_Activator {
                 'title' => 'تسجيل الدخول للنظام',
                 'content' => '[sm_login]'
             ),
-            'sm-admin' => array(
-                'title' => 'لوحة الإدارة النقابية',
+            'dashboard' => array(
+                'title' => 'لوحة التحكم',
+                'content' => '[sm_admin]'
+            ),
+            'my-account' => array(
+                'title' => 'حسابي',
                 'content' => '[sm_admin]'
             ),
             'services' => array(
