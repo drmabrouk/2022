@@ -13,9 +13,13 @@ class SM_DB_Finance {
         $is_officer = in_array('sm_syndicate_admin', (array)$user->roles);
         $my_gov = get_user_meta($user->ID, 'sm_governorate', true);
 
+        // Allow overriding governorate filter for branch management views
+        $target_gov = $filters['governorate'] ?? null;
+
         $where_member = "1=1";
-        // Union Officer (sm_syndicate_admin) must be restricted to their branch
-        if ($is_officer || !$has_full_access) {
+        if ($target_gov) {
+            $where_member = $wpdb->prepare("governorate = %s", $target_gov);
+        } elseif ($is_officer || !$has_full_access) {
             if ($my_gov) {
                 $where_member = $wpdb->prepare("governorate = %s", $my_gov);
             } else {

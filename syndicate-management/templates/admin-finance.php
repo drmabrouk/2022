@@ -37,7 +37,7 @@ foreach ($members as $m) {
     </div>
 
     <!-- Overall Metrics -->
-    <div class="sm-card-grid" style="margin-bottom: 30px; grid-template-columns: repeat(4, 1fr); gap: 20px;">
+    <div class="sm-card-grid" style="margin-bottom: 30px;">
         <?php
         // Total Collected Amount
         $icon = 'dashicons-money-alt'; $label = 'إجمالي المبالغ المحصلة'; $value = number_format($stats['total_paid'], 2); $color = '#38a169'; $suffix = 'ج.م';

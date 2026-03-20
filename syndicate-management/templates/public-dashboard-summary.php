@@ -198,7 +198,7 @@ function smExitTest() {
 </script>
 
 <?php if ($is_officer): ?>
-<div class="sm-card-grid" style="margin-bottom: 30px; grid-template-columns: repeat(4, 1fr); gap: 20px;">
+<div class="sm-card-grid" style="margin-bottom: 30px;">
     <?php
     // Stat Box 1: Members
     $icon = 'dashicons-groups'; $label = 'إجمالي الأعضاء'; $value = number_format($stats['total_members'] ?? 0); $color = '#3182ce'; $url = add_query_arg('sm_tab', 'members');
