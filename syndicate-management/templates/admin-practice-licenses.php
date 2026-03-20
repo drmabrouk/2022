@@ -55,23 +55,24 @@ $registry = $wpdb->get_results($wpdb->prepare(
 
     <div id="license-registry" class="sm-internal-tab">
 
-    <div class="sm-card-grid" style="margin-bottom: 20px;">
-        <div class="sm-stat-card">
-            <div style="font-size: 0.85em; color: var(--sm-text-gray);">إجمالي التراخيص</div>
-            <div style="font-size: 2em; font-weight: 900; color: var(--sm-dark-color);"><?php echo $stats['total']; ?></div>
-        </div>
-        <div class="sm-stat-card" style="border-right: 5px solid #27ae60;">
-            <div style="font-size: 0.85em; color: var(--sm-text-gray);">تراخيص سارية</div>
-            <div style="font-size: 2em; font-weight: 900; color: #27ae60;"><?php echo $stats['active']; ?></div>
-        </div>
-        <div class="sm-stat-card" style="border-right: 5px solid #e67e22;">
-            <div style="font-size: 0.85em; color: var(--sm-text-gray);">تنتهي قريباً (30 يوم)</div>
-            <div style="font-size: 2em; font-weight: 900; color: #e67e22;"><?php echo $stats['expiring_soon']; ?></div>
-        </div>
-        <div class="sm-stat-card" style="border-right: 5px solid #e53e3e;">
-            <div style="font-size: 0.85em; color: var(--sm-text-gray);">تراخيص منتهية</div>
-            <div style="font-size: 2em; font-weight: 900; color: #e53e3e;"><?php echo $stats['expired']; ?></div>
-        </div>
+    <div class="sm-card-grid" style="margin-bottom: 30px; grid-template-columns: repeat(4, 1fr); gap: 20px;">
+        <?php
+        // Total Licenses
+        $icon = 'dashicons-id-alt'; $label = 'إجمالي التراخيص'; $value = $stats['total']; $color = '#111F35';
+        include SM_PLUGIN_DIR . 'templates/component-stat-card.php';
+
+        // Active Licenses
+        $icon = 'dashicons-yes-alt'; $label = 'تراخيص سارية'; $value = $stats['active']; $color = '#38a169';
+        include SM_PLUGIN_DIR . 'templates/component-stat-card.php';
+
+        // Expiring Soon
+        $icon = 'dashicons-clock'; $label = 'تنتهي قريباً (30 يوم)'; $value = $stats['expiring_soon']; $color = '#dd6b20';
+        include SM_PLUGIN_DIR . 'templates/component-stat-card.php';
+
+        // Expired
+        $icon = 'dashicons-no-alt'; $label = 'تراخيص منتهية'; $value = $stats['expired']; $color = '#e53e3e';
+        include SM_PLUGIN_DIR . 'templates/component-stat-card.php';
+        ?>
     </div>
 
     <div style="background: #f8fafc; padding: 30px; border-radius: 12px; border: 1px solid #e2e8f0; margin-bottom: 20px;">

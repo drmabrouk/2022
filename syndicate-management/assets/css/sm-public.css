@@ -268,6 +268,7 @@
     display: grid;
     grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
     gap: 25px;
+    direction: rtl;
 }
 .sm-stat-card {
     background: #fff;
@@ -281,6 +282,64 @@
 
 .sm-stat-card:hover {
     transform: translateY(-3px);
+}
+
+.sm-stat-card-modern {
+    background: #fff;
+    padding: 25px 20px;
+    border-radius: var(--sm-radius);
+    border: 1px solid var(--sm-border-color);
+    display: flex;
+    align-items: center;
+    justify-content: flex-start;
+    gap: 20px;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.05);
+    transition: 0.3s;
+}
+
+.sm-stat-card-modern:hover {
+    transform: translateY(-3px);
+    box-shadow: 0 8px 24px rgba(0,0,0,0.1);
+}
+
+.sm-stat-card-icon {
+    width: 48px;
+    height: 48px;
+    border-radius: 12px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+}
+
+.sm-stat-card-icon .dashicons {
+    font-size: 24px;
+    width: 24px;
+    height: 24px;
+}
+
+.sm-stat-card-info {
+    text-align: right;
+    flex: 1;
+}
+
+.sm-stat-card-label {
+    font-size: 0.85em;
+    color: var(--sm-text-gray);
+    font-weight: 700;
+    margin-bottom: 2px;
+}
+
+.sm-stat-card-value {
+    font-size: 1.6em;
+    font-weight: 900;
+    color: var(--sm-dark-color);
+    line-height: 1.2;
+}
+
+.sm-stat-card-suffix {
+    font-size: 0.5em;
+    margin-right: 4px;
 }
 
 /* Tabs */

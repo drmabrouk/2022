@@ -56,23 +56,24 @@ $registry = $wpdb->get_results($wpdb->prepare(
 
     <div id="facility-registry" class="sm-internal-tab">
 
-    <div class="sm-card-grid" style="margin-bottom: 20px;">
-        <div class="sm-stat-card" style="border-right: 5px solid var(--sm-dark-color);">
-            <div style="font-size: 0.85em; color: var(--sm-text-gray);">إجمالي المنشآت</div>
-            <div style="font-size: 2em; font-weight: 900;"><?php echo $stats['total']; ?></div>
-        </div>
-        <div class="sm-stat-card" style="border-right: 5px solid #27ae60;">
-            <div style="font-size: 0.85em; color: var(--sm-text-gray);">فئة A</div>
-            <div style="font-size: 2em; font-weight: 900; color: #27ae60;"><?php echo $stats['cat_a']; ?></div>
-        </div>
-        <div class="sm-stat-card" style="border-right: 5px solid #3498db;">
-            <div style="font-size: 0.85em; color: var(--sm-text-gray);">فئة B</div>
-            <div style="font-size: 2em; font-weight: 900; color: #3498db;"><?php echo $stats['cat_b']; ?></div>
-        </div>
-        <div class="sm-stat-card" style="border-right: 5px solid #e53e3e;">
-            <div style="font-size: 0.85em; color: var(--sm-text-gray);">منتهي</div>
-            <div style="font-size: 2em; font-weight: 900; color: #e53e3e;"><?php echo $stats['expired']; ?></div>
-        </div>
+    <div class="sm-card-grid" style="margin-bottom: 30px; grid-template-columns: repeat(4, 1fr); gap: 20px;">
+        <?php
+        // Total Facilities
+        $icon = 'dashicons-building'; $label = 'إجمالي المنشآت'; $value = $stats['total']; $color = '#111F35';
+        include SM_PLUGIN_DIR . 'templates/component-stat-card.php';
+
+        // Category A
+        $icon = 'dashicons-star-filled'; $label = 'فئة A (كبرى)'; $value = $stats['cat_a']; $color = '#27ae60';
+        include SM_PLUGIN_DIR . 'templates/component-stat-card.php';
+
+        // Category B
+        $icon = 'dashicons-star-half'; $label = 'فئة B (متوسطة)'; $value = $stats['cat_b']; $color = '#3498db';
+        include SM_PLUGIN_DIR . 'templates/component-stat-card.php';
+
+        // Expired
+        $icon = 'dashicons-warning'; $label = 'تراخيص منتهية'; $value = $stats['expired']; $color = '#e53e3e';
+        include SM_PLUGIN_DIR . 'templates/component-stat-card.php';
+        ?>
     </div>
 
     <div style="background: #f8fafc; padding: 30px; border-radius: 12px; border: 1px solid #e2e8f0; margin-bottom: 20px;">
