@@ -26,7 +26,7 @@ $statuses = array(
 <div class="sm-messaging-center" dir="rtl" style="font-family: 'Rubik', sans-serif;">
 
     <!-- Header with Tabs -->
-    <div style="background: #fff; border-radius: 12px; border: 1px solid var(--sm-border-color); padding: 30px; margin-bottom: 30px; box-shadow: var(--sm-shadow);">
+    <div style="background: #fff; border-radius: 12px; border: 1px solid var(--sm-border-color); padding: 15px; margin-bottom: 30px; box-shadow: var(--sm-shadow);">
         <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 15px;">
             <div style="display: flex; align-items: center; gap: 15px;">
                 <div style="width: 45px; height: 45px; background: var(--sm-primary-color); color: #fff; border-radius: 10px; display: flex; align-items: center; justify-content: center; font-size: 20px;">
@@ -52,7 +52,7 @@ $statuses = array(
         <div style="display: grid; grid-template-columns: 280px 1fr; gap: 15px;">
             <!-- Sidebar: Ticket Filters & Stats -->
             <div style="display: flex; flex-direction: column; gap: 15px;">
-                <div style="background: #fff; border-radius: 12px; border: 1px solid var(--sm-border-color); padding: 30px; box-shadow: var(--sm-shadow);">
+                <div style="background: #fff; border-radius: 12px; border: 1px solid var(--sm-border-color); padding: 15px; box-shadow: var(--sm-shadow);">
                     <h4 style="margin: 0 0 12px 0; font-size: 13px; font-weight: 800; color: var(--sm-dark-color); border-bottom: 1px solid #eee; padding-bottom: 8px;">تصفية التذاكر</h4>
 
                     <div class="sm-form-group" style="margin-bottom: 20px;">
@@ -78,7 +78,7 @@ $statuses = array(
                     <?php endif; ?>
                 </div>
 
-                <div style="background: #fff; border-radius: 12px; border: 1px solid var(--sm-border-color); padding: 30px; box-shadow: var(--sm-shadow);">
+                <div style="background: #fff; border-radius: 12px; border: 1px solid var(--sm-border-color); padding: 15px; box-shadow: var(--sm-shadow);">
                     <h4 style="margin: 0 0 10px 0; font-size: 13px; font-weight: 800; color: var(--sm-dark-color);">إحصائيات الدعم</h4>
                     <div style="display: flex; flex-direction: column; gap: 8px;">
                         <div style="display: flex; justify-content: space-between; font-size: 12px;"><span>تذاكر مفتوحة:</span><strong id="stat-open-count">-</strong></div>
@@ -110,7 +110,7 @@ $statuses = array(
         <div style="display: grid; grid-template-columns: 350px 1fr; gap: 20px;">
             <!-- Member Selection Sidebar -->
             <div style="display: flex; flex-direction: column; gap: 15px;">
-                <div style="background: #fff; border-radius: 12px; border: 1px solid var(--sm-border-color); padding: 30px; box-shadow: var(--sm-shadow);">
+                <div style="background: #fff; border-radius: 12px; border: 1px solid var(--sm-border-color); padding: 15px; box-shadow: var(--sm-shadow);">
                     <h4 style="margin: 0 0 15px 0; font-size: 14px; font-weight: 800; color: var(--sm-dark-color);">اختيار العضو المستهدف</h4>
                     <div style="position: relative; margin-bottom: 30px;">
                         <input type="text" id="member-search-comm" class="sm-input" placeholder="بحث بالاسم، الهوية، أو الكود..." style="padding-left: 35px;" oninput="smSearchMembersForComm()">
@@ -125,7 +125,7 @@ $statuses = array(
             <!-- Communication Form Hub -->
             <div id="direct-comm-form-area" style="display: none;">
                 <div style="background: #fff; border-radius: 12px; border: 1px solid var(--sm-border-color); box-shadow: var(--sm-shadow); overflow: hidden;">
-                    <div style="background: #f8fafc; padding: 30px 25px; border-bottom: 1px solid #e2e8f0; display: flex; justify-content: space-between; align-items: center;">
+                    <div style="background: #f8fafc; padding: 15px 25px; border-bottom: 1px solid #e2e8f0; display: flex; justify-content: space-between; align-items: center;">
                         <div style="display: flex; align-items: center; gap: 12px;">
                             <div id="comm-target-photo" style="width: 40px; height: 40px; border-radius: 50%; overflow: hidden; border: 2px solid #fff; box-shadow: 0 2px 4px rgba(0,0,0,0.1);">
                                 <img src="" style="width: 100%; height: 100%; object-fit: cover;">
@@ -167,7 +167,7 @@ $statuses = array(
                             </div>
 
                             <!-- Channel Selection -->
-                            <div style="background: #f1f5f9; padding: 30px; border-radius: 10px; margin-top: 20px;">
+                            <div style="background: #f1f5f9; padding: 15px; border-radius: 10px; margin-top: 20px;">
                                 <label class="sm-label" style="font-size: 13px; margin-bottom: 25px;">قنوات الإرسال (يمكن اختيار أكثر من قناة):</label>
                                 <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 15px;">
                                     <label style="display: flex; align-items: center; gap: 10px; cursor: pointer; background: #fff; padding: 20px; border-radius: 8px; border: 1px solid #e2e8f0;">
@@ -216,7 +216,7 @@ $statuses = array(
             <h3>فتح تذكرة دعم جديدة</h3>
             <button class="sm-modal-close" onclick="document.getElementById('create-ticket-modal').style.display='none'">&times;</button>
         </div>
-        <form id="create-ticket-form" style="padding: 30px;">
+        <form id="create-ticket-form" style="padding: 15px;">
             <div class="sm-form-group">
                 <label class="sm-label">موضوع التذكرة:</label>
                 <input type="text" name="subject" class="sm-input" required placeholder="مثال: مشكلة في تحديث البيانات">
@@ -258,7 +258,7 @@ $statuses = array(
             <h3>سجل مراسلات العضو</h3>
             <button class="sm-modal-close" onclick="document.getElementById('comm-history-modal').style.display='none'">&times;</button>
         </div>
-        <div id="comm-history-body" style="padding: 30px; max-height: 500px; overflow-y: auto;">
+        <div id="comm-history-body" style="padding: 15px; max-height: 500px; overflow-y: auto;">
             <!-- Loaded via JS -->
         </div>
     </div>
@@ -378,7 +378,7 @@ $statuses = array(
                 $('#ticket-details-view').html(`
                     <div style="background: #fff; border-radius: 12px; border: 1px solid var(--sm-border-color); overflow: hidden; box-shadow: var(--sm-shadow);">
                         <!-- Ticket Header -->
-                        <div style="padding: 30px 25px; border-bottom: 1px solid #f1f5f9; background: #fafafa; display: flex; justify-content: space-between; align-items: center;">
+                        <div style="padding: 15px 25px; border-bottom: 1px solid #f1f5f9; background: #fafafa; display: flex; justify-content: space-between; align-items: center;">
                             <div style="display: flex; gap: 15px; align-items: center;">
                                 <button onclick="smBackToList()" class="sm-btn sm-btn-outline" style="width: auto; padding: 5px 12px; height: 32px;"><span class="dashicons dashicons-arrow-right-alt2"></span> العودة</button>
                                 <div>
@@ -411,7 +411,7 @@ $statuses = array(
                                     </div>
                                 </form>
                             </div>
-                        ` : '<div style="padding: 30px; text-align: center; background: #fff5f5; color: #c53030; font-weight: 700; font-size: 13px;">هذه التذكرة مغلقة.</div>'}
+                        ` : '<div style="padding: 15px; text-align: center; background: #fff5f5; color: #c53030; font-weight: 700; font-size: 13px;">هذه التذكرة مغلقة.</div>'}
                     </div>
                 `);
 
@@ -604,7 +604,7 @@ $statuses = array(
                     const channelColors = { whatsapp: '#25D366', email: '#3182ce', ticket: '#e53e3e' };
 
                     body.append(`
-                        <div style="padding: 30px; border-bottom: 1px solid #eee; display: flex; gap: 15px;">
+                        <div style="padding: 15px; border-bottom: 1px solid #eee; display: flex; gap: 15px;">
                             <div style="color: ${channelColors[l.channel]};"><span class="dashicons dashicons-${channelIcons[l.channel]}"></span></div>
                             <div style="flex: 1;">
                                 <div style="display: flex; justify-content: space-between; margin-bottom: 5px;">

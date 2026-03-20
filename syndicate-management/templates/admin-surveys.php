@@ -386,7 +386,7 @@ function smLoadBankQuestions(testId) {
         let html = '<div style="display:grid; gap:15px;">';
         res.data.forEach((q, idx) => {
             html += `
-                <div style="background:#fff; border:1px solid #e2e8f0; border-radius:12px; padding: 20px; position:relative; box-shadow:0 2px 4px rgba(0,0,0,0.02);">
+                <div style="background:#fff; border:1px solid #e2e8f0; border-radius:12px; padding: 30px; position:relative; box-shadow:0 2px 4px rgba(0,0,0,0.02);">
                     <div style="position:absolute; left:20px; top:20px; display:flex; gap:10px;">
                         <span class="sm-badge sm-badge-low" style="font-size:10px;">${q.difficulty}</span>
                         <button onclick="smDeleteQuestion(${q.id}, ${testId})" style="border:none; background:none; color:#e53e3e; cursor:pointer;"><span class="dashicons dashicons-trash"></span></button>

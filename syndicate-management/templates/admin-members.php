@@ -14,17 +14,17 @@ if ($import_results) {
                 <h4 style="margin:0; color: var(--sm-dark-color); font-weight: 800;">تقرير استيراد الأعضاء الأخير</h4>
                 <span style="font-size: 12px; color: #718096;">إجمالي السجلات المعالجة: <?php echo $import_results['total']; ?></span>
             </div>
-            <div style="padding: 20px;">
+            <div style="padding: 15px;">
                 <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 20px; margin-bottom: 8px;">
-                    <div style="background: #f0fff4; padding: 20px; border-radius: 8px; border: 1px solid #c6f6d5; text-align: center;">
+                    <div style="background: #f0fff4; padding: 15px; border-radius: 8px; border: 1px solid #c6f6d5; text-align: center;">
                         <div style="font-size: 20px; font-weight: 800; color: #2f855a;"><?php echo $import_results['success']; ?></div>
                         <div style="font-size: 12px; color: #38a169;">تم الاستيراد بنجاح</div>
                     </div>
-                    <div style="background: #fffaf0; padding: 20px; border-radius: 8px; border: 1px solid #feebc8; text-align: center;">
+                    <div style="background: #fffaf0; padding: 15px; border-radius: 8px; border: 1px solid #feebc8; text-align: center;">
                         <div style="font-size: 20px; font-weight: 800; color: #c05621;"><?php echo $import_results['warning']; ?></div>
                         <div style="font-size: 12px; color: #dd6b20;">تنبيهات (بيانات ناقصة)</div>
                     </div>
-                    <div style="background: #fff5f5; padding: 20px; border-radius: 8px; border: 1px solid #fed7d7; text-align: center;">
+                    <div style="background: #fff5f5; padding: 15px; border-radius: 8px; border: 1px solid #fed7d7; text-align: center;">
                         <div style="font-size: 20px; font-weight: 800; color: #c53030;"><?php echo $import_results['error']; ?></div>
                         <div style="font-size: 12px; color: #e53e3e;">أخطاء (فشل الاستيراد)</div>
                     </div>
@@ -33,7 +33,7 @@ if ($import_results) {
         </div>
     <?php endif; ?>
 
-    <div style="background: white; padding: 20px; border: 1px solid var(--sm-border-color); border-radius: var(--sm-radius); margin-bottom: 8px; box-shadow: var(--sm-shadow);">
+    <div style="background: white; padding: 15px; border: 1px solid var(--sm-border-color); border-radius: var(--sm-radius); margin-bottom: 8px; box-shadow: var(--sm-shadow);">
         <form method="get" style="display: grid; grid-template-columns: 1.5fr 1fr 1fr 1fr auto; gap: 12px; align-items: end;">
             <input type="hidden" name="page" value="<?php echo esc_attr($_GET['page'] ?? ''); ?>">
             <input type="hidden" name="sm_tab" value="members">
@@ -93,14 +93,14 @@ if ($import_results) {
     </div>
 
     <!-- CSV Import Form -->
-    <div id="csv-import-form" style="display:none; background: #f8fafc; padding: 20px; border: 2px dashed #cbd5e0; border-radius: 12px; margin-bottom: 8px;">
+    <div id="csv-import-form" style="display:none; background: #f8fafc; padding: 15px; border: 2px dashed #cbd5e0; border-radius: 12px; margin-bottom: 8px;">
         <h3 style="margin-top:0; color:var(--sm-secondary-color);">استيراد الأعضاء من ملف CSV / Excel</h3>
         <p style="font-size: 13px; color: #64748b; margin-bottom: 8px;">تأكد من أن الملف يحتوي على الأعمدة التالية بالترتيب: (الرقم القومي، الاسم، الدرجة الوظيفية، التخصص، الفرع، رقم الهاتف، البريد الإلكتروني)</p>
 
         <form method="post" enctype="multipart/form-data">
             <?php wp_nonce_field('sm_admin_action', 'sm_admin_nonce'); ?>
             <div style="display: flex; gap: 15px; align-items: center;">
-                <input type="file" name="member_csv_file" accept=".csv" required style="flex: 1; padding: 20px; background: white; border: 1px solid #e2e8f0; border-radius: 8px;">
+                <input type="file" name="member_csv_file" accept=".csv" required style="flex: 1; padding: 15px; background: white; border: 1px solid #e2e8f0; border-radius: 8px;">
                 <button type="submit" name="sm_import_members_csv" class="sm-btn" style="width: auto; background: #27ae60;">بدء الاستيراد الآن</button>
                 <button type="button" onclick="document.getElementById('csv-import-form').style.display='none'" class="sm-btn sm-btn-outline" style="width: auto;">إلغاء</button>
             </div>
@@ -138,7 +138,7 @@ if ($import_results) {
                     'offset' => $offset
                 ));
                 if (empty($members)): ?>
-                    <tr><td colspan="9" style="padding: 30px; text-align: center;">لا يوجد أعضاء يطابقون البحث.</td></tr>
+                    <tr><td colspan="9" style="padding: 15px; text-align: center;">لا يوجد أعضاء يطابقون البحث.</td></tr>
                 <?php else:
                     $grades = SM_Settings::get_professional_grades();
                     $specs = SM_Settings::get_specializations();
@@ -192,7 +192,7 @@ if ($import_results) {
             <div class="sm-modal-header"><h3>تسجيل عضو جديد</h3><button class="sm-modal-close" onclick="document.getElementById('add-single-member-modal').style.display='none'">&times;</button></div>
             <form id="add-member-form">
                 <?php wp_nonce_field('sm_add_member', 'sm_nonce'); ?>
-                <div style="padding: 20px;">
+                <div style="padding: 15px;">
                     <div style="display: grid; grid-template-columns: 2fr 1.2fr; gap: 15px; margin-bottom: 8px;">
                         <div class="sm-form-group"><input name="name" type="text" class="sm-input" required placeholder="الاسم كما في الهوية الوطنية"></div>
                         <div class="sm-form-group"><input name="national_id" type="text" class="sm-input" required maxlength="14" placeholder="الرقم القومي (14 رقم)"></div>
@@ -267,7 +267,7 @@ if ($import_results) {
             <form id="edit-member-form">
                 <?php wp_nonce_field('sm_add_member', 'sm_nonce'); ?>
                 <input type="hidden" name="member_id" id="edit_member_id_hidden">
-                <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 15px; padding: 20px;">
+                <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 15px; padding: 15px;">
                     <div class="sm-form-group"><label class="sm-label">الاسم الكامل:</label><input name="name" id="edit_name" type="text" class="sm-input" required></div>
                     <div class="sm-form-group"><label class="sm-label">الدرجة الوظيفية:</label><select name="professional_grade" id="edit_grade" class="sm-select"><?php foreach (SM_Settings::get_professional_grades() as $k => $v) echo "<option value='$k'>$v</option>"; ?></select></div>
 
@@ -303,7 +303,7 @@ if ($import_results) {
                 <?php wp_nonce_field('sm_admin_action', 'nonce'); ?>
                 <input type="hidden" name="member_id" id="acc_member_id">
                 <input type="hidden" name="wp_user_id" id="acc_wp_user_id">
-                <div style="padding: 20px;">
+                <div style="padding: 15px;">
                     <div class="sm-form-group">
                         <label class="sm-label">البريد الإلكتروني:</label>
                         <input name="email" id="acc_email" type="email" class="sm-input" required>
