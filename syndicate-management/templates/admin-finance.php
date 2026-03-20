@@ -37,23 +37,24 @@ foreach ($members as $m) {
     </div>
 
     <!-- Overall Metrics -->
-    <div class="sm-card-grid" style="margin-bottom: 20px;">
-        <div class="sm-stat-card" style="border-right: 5px solid #27ae60;">
-            <div style="font-size: 0.85em; color: var(--sm-text-gray); margin-bottom: 5px; font-weight: 700;">إجمالي المبالغ المحصلة</div>
-            <div style="font-size: 1.8em; font-weight: 900; color: #27ae60;"><?php echo number_format($stats['total_paid'], 2); ?> <span style="font-size: 0.5em;">ج.م</span></div>
-        </div>
-        <div class="sm-stat-card" style="border-right: 5px solid #e67e22;">
-            <div style="font-size: 0.85em; color: var(--sm-text-gray); margin-bottom: 5px; font-weight: 700;">إجمالي المستحقات المتأخرة</div>
-            <div style="font-size: 1.8em; font-weight: 900; color: #e67e22;"><?php echo number_format($stats['total_balance'], 2); ?> <span style="font-size: 0.5em;">ج.م</span></div>
-        </div>
-        <div class="sm-stat-card" style="border-right: 5px solid #e53e3e;">
-            <div style="font-size: 0.85em; color: var(--sm-text-gray); margin-bottom: 5px; font-weight: 700;">إجمالي الغرامات المقررة</div>
-            <div style="font-size: 1.8em; font-weight: 900; color: #e53e3e;"><?php echo number_format($stats['total_penalty'], 2); ?> <span style="font-size: 0.5em;">ج.م</span></div>
-        </div>
-        <div class="sm-stat-card" style="border-right: 5px solid #111F35;">
-            <div style="font-size: 0.85em; color: var(--sm-text-gray); margin-bottom: 5px; font-weight: 700;">القيمة الإجمالية للمطالبات</div>
-            <div style="font-size: 1.8em; font-weight: 900; color: #111F35;"><?php echo number_format($stats['total_owed'], 2); ?> <span style="font-size: 0.5em;">ج.م</span></div>
-        </div>
+    <div class="sm-card-grid" style="margin-bottom: 30px; grid-template-columns: repeat(4, 1fr); gap: 20px;">
+        <?php
+        // Total Collected Amount
+        $icon = 'dashicons-money-alt'; $label = 'إجمالي المبالغ المحصلة'; $value = number_format($stats['total_paid'], 2); $color = '#38a169'; $suffix = 'ج.م';
+        include SM_PLUGIN_DIR . 'templates/component-stat-card.php';
+
+        // Total Overdue Receivables
+        $icon = 'dashicons-warning'; $label = 'إجمالي المستحقات المتأخرة'; $value = number_format($stats['total_balance'], 2); $color = '#dd6b20'; $suffix = 'ج.م';
+        include SM_PLUGIN_DIR . 'templates/component-stat-card.php';
+
+        // Total Assigned Penalties
+        $icon = 'dashicons-hammer'; $label = 'إجمالي الغرامات المقررة'; $value = number_format($stats['total_penalty'], 2); $color = '#e53e3e'; $suffix = 'ج.م';
+        include SM_PLUGIN_DIR . 'templates/component-stat-card.php';
+
+        // Total Claims Value
+        $icon = 'dashicons-calculator'; $label = 'القيمة الإجمالية للمطالبات'; $value = number_format($stats['total_owed'], 2); $color = '#111F35'; $suffix = 'ج.م';
+        include SM_PLUGIN_DIR . 'templates/component-stat-card.php';
+        ?>
     </div>
 
     <!-- Search & Filter -->

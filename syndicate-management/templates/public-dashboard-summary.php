@@ -198,50 +198,24 @@ function smExitTest() {
 </script>
 
 <?php if ($is_officer): ?>
-<div class="sm-card-grid" style="margin-bottom: 30px; grid-template-columns: repeat(4, 1fr); gap: 20px; direction: rtl;">
-    <!-- Stat Box 1: Members -->
-    <div onclick="window.location.href='<?php echo add_query_arg('sm_tab', 'members'); ?>'" style="cursor:pointer; background: #fff; padding: 25px 20px; border-radius: 12px; border: 1px solid var(--sm-border-color); display: flex; align-items: center; justify-content: flex-start; gap: 20px; box-shadow: 0 4px 12px rgba(0,0,0,0.05); transition: 0.3s;">
-        <div style="width: 48px; height: 48px; background: rgba(49, 130, 206, 0.1); color: #3182ce; border-radius: 12px; display: flex; align-items: center; justify-content: center; flex-shrink: 0;">
-            <span class="dashicons dashicons-groups" style="font-size: 24px; width: 24px; height: 24px;"></span>
-        </div>
-        <div style="text-align: right; flex: 1;">
-            <div style="font-size: 0.85em; color: #64748b; font-weight: 700; margin-bottom: 2px;">إجمالي الأعضاء</div>
-            <div style="font-size: 1.6em; font-weight: 900; color: var(--sm-dark-color); line-height: 1.2;"><?php echo number_format($stats['total_members'] ?? 0); ?></div>
-        </div>
-    </div>
+<div class="sm-card-grid" style="margin-bottom: 30px; grid-template-columns: repeat(4, 1fr); gap: 20px;">
+    <?php
+    // Stat Box 1: Members
+    $icon = 'dashicons-groups'; $label = 'إجمالي الأعضاء'; $value = number_format($stats['total_members'] ?? 0); $color = '#3182ce'; $url = add_query_arg('sm_tab', 'members');
+    include SM_PLUGIN_DIR . 'templates/component-stat-card.php';
 
-    <!-- Stat Box 2: Practice Licenses -->
-    <div onclick="window.location.href='<?php echo add_query_arg('sm_tab', 'practice-licenses'); ?>'" style="cursor:pointer; background: #fff; padding: 25px 20px; border-radius: 12px; border: 1px solid var(--sm-border-color); display: flex; align-items: center; justify-content: flex-start; gap: 20px; box-shadow: 0 4px 12px rgba(0,0,0,0.05); transition: 0.3s;">
-        <div style="width: 48px; height: 48px; background: rgba(221, 107, 32, 0.1); color: #dd6b20; border-radius: 12px; display: flex; align-items: center; justify-content: center; flex-shrink: 0;">
-            <span class="dashicons dashicons-id-alt" style="font-size: 24px; width: 24px; height: 24px;"></span>
-        </div>
-        <div style="text-align: right; flex: 1;">
-            <div style="font-size: 0.85em; color: #64748b; font-weight: 700; margin-bottom: 2px;">تصاريح المزاولة</div>
-            <div style="font-size: 1.6em; font-weight: 900; color: var(--sm-dark-color); line-height: 1.2;"><?php echo number_format($stats['total_practice_licenses'] ?? 0); ?></div>
-        </div>
-    </div>
+    // Stat Box 2: Practice Licenses
+    $icon = 'dashicons-id-alt'; $label = 'تصاريح المزاولة'; $value = number_format($stats['total_practice_licenses'] ?? 0); $color = '#dd6b20'; $url = add_query_arg('sm_tab', 'practice-licenses');
+    include SM_PLUGIN_DIR . 'templates/component-stat-card.php';
 
-    <!-- Stat Box 3: Facility Licenses -->
-    <div onclick="window.location.href='<?php echo add_query_arg('sm_tab', 'facility-licenses'); ?>'" style="cursor:pointer; background: #fff; padding: 25px 20px; border-radius: 12px; border: 1px solid var(--sm-border-color); display: flex; align-items: center; justify-content: flex-start; gap: 20px; box-shadow: 0 4px 12px rgba(0,0,0,0.05); transition: 0.3s;">
-        <div style="width: 48px; height: 48px; background: rgba(128, 90, 213, 0.1); color: #805ad5; border-radius: 12px; display: flex; align-items: center; justify-content: center; flex-shrink: 0;">
-            <span class="dashicons dashicons-building" style="font-size: 24px; width: 24px; height: 24px;"></span>
-        </div>
-        <div style="text-align: right; flex: 1;">
-            <div style="font-size: 0.85em; color: #64748b; font-weight: 700; margin-bottom: 2px;">تراخيص المنشآت</div>
-            <div style="font-size: 1.6em; font-weight: 900; color: var(--sm-dark-color); line-height: 1.2;"><?php echo number_format($stats['total_facility_licenses'] ?? 0); ?></div>
-        </div>
-    </div>
+    // Stat Box 3: Facility Licenses
+    $icon = 'dashicons-building'; $label = 'تراخيص المنشآت'; $value = number_format($stats['total_facility_licenses'] ?? 0); $color = '#805ad5'; $url = add_query_arg('sm_tab', 'facility-licenses');
+    include SM_PLUGIN_DIR . 'templates/component-stat-card.php';
 
-    <!-- Stat Box 4: Revenue -->
-    <div onclick="window.location.href='<?php echo add_query_arg('sm_tab', 'finance'); ?>'" style="cursor:pointer; background: #fff; padding: 25px 20px; border-radius: 12px; border: 1px solid var(--sm-border-color); display: flex; align-items: center; justify-content: flex-start; gap: 20px; box-shadow: 0 4px 12px rgba(0,0,0,0.05); transition: 0.3s;">
-        <div style="width: 48px; height: 48px; background: rgba(56, 161, 105, 0.1); color: #38a169; border-radius: 12px; display: flex; align-items: center; justify-content: center; flex-shrink: 0;">
-            <span class="dashicons dashicons-money-alt" style="font-size: 24px; width: 24px; height: 24px;"></span>
-        </div>
-        <div style="text-align: right; flex: 1;">
-            <div style="font-size: 0.85em; color: #64748b; font-weight: 700; margin-bottom: 2px;">إجمالي الإيرادات</div>
-            <div style="font-size: 1.6em; font-weight: 900; color: #38a169; line-height: 1.2;"><?php echo number_format($stats['total_revenue'] ?? 0, 2); ?> <span style="font-size: 0.5em;">ج.م</span></div>
-        </div>
-    </div>
+    // Stat Box 4: Revenue
+    $icon = 'dashicons-money-alt'; $label = 'إجمالي الإيرادات'; $value = number_format($stats['total_revenue'] ?? 0, 2); $color = '#38a169'; $suffix = 'ج.م'; $url = add_query_arg('sm_tab', 'finance');
+    include SM_PLUGIN_DIR . 'templates/component-stat-card.php';
+    ?>
 </div>
 
 
