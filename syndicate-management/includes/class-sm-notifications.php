@@ -13,7 +13,7 @@ class SM_Notifications {
         if (!current_user_can('sm_manage_system')) {
             wp_send_json_error('Unauthorized');
         }
-        $type = sanitize_text_field($_GET['template_type'] ?? '');
+        $type = sanitize_text_field($_REQUEST['type'] ?? ($_REQUEST['template_type'] ?? ''));
         $template = self::get_template($type);
         if ($template) {
             wp_send_json_success($template);
@@ -67,48 +67,87 @@ class SM_Notifications {
         ]);
 
         $synd = SM_Settings::get_syndicate_info();
+
+        // Append Branch Details
+        $branch_contact = '';
+        if (!empty($m->governorate)) {
+            global $wpdb;
+            $branch = $wpdb->get_row($wpdb->prepare("SELECT * FROM {$wpdb->prefix}sm_branches_data WHERE slug = %s", $m->governorate));
+            if ($branch) {
+                $branch_contact = "\n\n---\nللتواصل مع فرعك النقابي ({$branch->name}):\n";
+                if ($branch->phone) $branch_contact .= "الهاتف: {$branch->phone}\n";
+                if ($branch->email) $branch_contact .= "البريد: {$branch->email}\n";
+                if ($branch->address) $branch_contact .= "العنوان: {$branch->address}\n";
+            }
+        }
+        $body .= $branch_contact;
+
         $html = self::wrap_in_template($subj, $body, $dsgn, $synd);
         $from = get_option('sm_noreply_email', 'noreply@irseg.org');
+        $from_name = "Injuries and Rehabilitation Syndicate";
 
-        add_filter('wp_mail_from', function() use ($from) { return $from; });
-        add_filter('wp_mail_from_name', function() use ($synd) { return $synd['syndicate_name']; });
+        $from_filter = function() use ($from) { return $from; };
+        $name_filter = function() use ($from_name) { return $from_name; };
+        $type_filter = function() { return 'text/html'; };
+
+        add_filter('wp_mail_from', $from_filter);
+        add_filter('wp_mail_from_name', $name_filter);
+        add_filter('wp_mail_content_type', $type_filter);
 
         $headers = array('Content-Type: text/html; charset=UTF-8');
         $sent = wp_mail($m->email, $subj, $html, $headers);
+
+        remove_filter('wp_mail_from', $from_filter);
+        remove_filter('wp_mail_from_name', $name_filter);
+        remove_filter('wp_mail_content_type', $type_filter);
         self::log_notification($mid, $type, $m->email, $subj, $sent ? 'success' : 'failed');
 
         return $sent;
     }
 
     private static function wrap_in_template($subj, $body, $d, $s) {
-        $logo = !empty($s['syndicate_logo']) ? '<img src="'.esc_url($s['syndicate_logo']).'" style="max-height:80px; margin-bottom:15px;">' : '';
+        $logo = !empty($s['syndicate_logo']) ? '<img src="'.esc_url($s['syndicate_logo']).'" style="max-height:80px; margin-bottom:25px;">' : '';
+        $primary_color = $d['accent_color'] ?: '#F63049';
+        $header_bg = $d['header_bg'] ?: '#111F35';
+        $header_text = $d['header_text'] ?: '#ffffff';
+        $footer_text = $d['footer_text'] ?: '#64748b';
+
         ob_start();
         ?>
         <!DOCTYPE html>
         <html dir="rtl" lang="ar">
         <head>
             <meta charset="UTF-8">
+            <meta name="viewport" content="width=device-width, initial-scale=1.0">
             <style>
-                body { background:#f6f9fc; margin:0; }
-                .container { max-width:600px; margin:20px auto; background:#fff; border-radius:15px; overflow:hidden; border:1px solid #e1e8ed; }
-                .header { background:<?php echo $d['header_bg']; ?>; color:<?php echo $d['header_text']; ?>; padding:40px 20px; text-align:center; }
-                .content { padding:40px; text-align:right; font-size:16px; line-height:1.7; }
-                .footer { background:#f8fafc; padding:25px; text-align:center; font-size:12px; color:<?php echo $d['footer_text']; ?>; }
+                body { font-family: 'Tahoma', sans-serif; background-color: #f8fafc; margin: 0; padding: 0; -webkit-font-smoothing: antialiased; }
+                .wrapper { width: 100%; table-layout: fixed; background-color: #f8fafc; padding: 40px 0; }
+                .container { width: 100%; max-width: 650px; margin: 0 auto; background-color: #ffffff; border-radius: 16px; overflow: hidden; box-shadow: 0 10px 25px rgba(0,0,0,0.05); }
+                .header { background-color: <?php echo $header_bg; ?>; padding: 40px; text-align: center; color: <?php echo $header_text; ?>; }
+                .header h1 { margin: 0; font-size: 22px; font-weight: 800; }
+                .content { padding: 50px; text-align: right; line-height: 1.8; color: #1e293b; }
+                .content h2 { color: <?php echo $primary_color; ?>; margin-top: 0; margin-bottom: 30px; font-size: 20px; border-bottom: 1px solid #e2e8f0; padding-bottom: 15px; }
+                .footer { background-color: #f1f5f9; padding: 30px; text-align: center; font-size: 12px; color: <?php echo $footer_text; ?>; }
+                .footer p { margin: 0; }
+                .footer .copyright { margin: 15px 0 0 0; font-weight: 700; color: #475569; }
             </style>
         </head>
         <body>
-            <div class="container">
-                <div class="header">
-                    <?php echo $logo; ?>
-                    <h1><?php echo esc_html($s['syndicate_name']); ?></h1>
-                </div>
-                <div class="content">
-                    <h2 style="color:<?php echo $d['accent_color']; ?>;"><?php echo esc_html($subj); ?></h2>
-                    <div style="white-space:pre-line;"><?php echo esc_html($body); ?></div>
-                </div>
-                <div class="footer">
-                    <p><?php echo esc_html($s['syndicate_name']); ?></p>
-                    <p><?php echo esc_html($s['address']); ?></p>
+            <div class="wrapper">
+                <div class="container">
+                    <div class="header">
+                        <?php echo $logo; ?>
+                        <h1><?php echo esc_html($s['syndicate_name']); ?></h1>
+                    </div>
+                    <div class="content">
+                        <h2><?php echo esc_html($subj); ?></h2>
+                        <div style="white-space: pre-wrap; font-size: 16px;"><?php echo esc_html($body); ?></div>
+                    </div>
+                    <div class="footer">
+                        <p>هذه رسالة رسمية صادرة عن المنصة الرقمية لنقابة الإصابات والتأهيل.</p>
+                        <p>يرجى عدم الرد على هذا البريد الإلكتروني لأنه مخصص للإرسال فقط.</p>
+                        <p class="copyright">&copy; <?php echo date('Y'); ?> <?php echo esc_html($s['syndicate_name']); ?> | جميع الحقوق محفوظة</p>
+                    </div>
                 </div>
             </div>
         </body>

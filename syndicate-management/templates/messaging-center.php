@@ -111,12 +111,22 @@ $statuses = array(
             <!-- Member Selection Sidebar -->
             <div style="display: flex; flex-direction: column; gap: 15px;">
                 <div style="background: #fff; border-radius: 12px; border: 1px solid var(--sm-border-color); padding: 15px; box-shadow: var(--sm-shadow);">
-                    <h4 style="margin: 0 0 15px 0; font-size: 14px; font-weight: 800; color: var(--sm-dark-color);">اختيار العضو المستهدف</h4>
-                    <div style="position: relative; margin-bottom: 30px;">
-                        <input type="text" id="member-search-comm" class="sm-input" placeholder="بحث بالاسم، الهوية، أو الكود..." style="padding-left: 35px;" oninput="smSearchMembersForComm()">
+                    <h4 style="margin: 0 0 15px 0; font-size: 14px; font-weight: 800; color: var(--sm-dark-color); display: flex; justify-content: space-between; align-items: center;">
+                        <span>اختيار الأعضاء</span>
+                        <span id="comm-selected-count" class="sm-badge sm-badge-low" style="font-size: 10px;">0 مختار</span>
+                    </h4>
+
+                    <div style="display: flex; gap: 5px; margin-bottom: 15px;">
+                        <button onclick="smBulkActionComm('all')" class="sm-btn sm-btn-outline" style="flex: 1; font-size: 10px; padding: 5px; height: auto;">تحديد الكل</button>
+                        <button onclick="smBulkActionComm('none')" class="sm-btn sm-btn-outline" style="flex: 1; font-size: 10px; padding: 5px; height: auto;">إلغاء الكل</button>
+                    </div>
+
+                    <div style="position: relative; margin-bottom: 20px;">
+                        <input type="text" id="member-search-comm" class="sm-input" placeholder="بحث بالاسم، الهوية، أو الكود..." style="padding-left: 35px; height: 38px; font-size: 13px;" oninput="smSearchMembersForComm()">
                         <span class="dashicons dashicons-search" style="position: absolute; left: 10px; top: 11px; color: #94a3b8;"></span>
                     </div>
-                    <div id="member-comm-results" style="max-height: 450px; overflow-y: auto; display: flex; flex-direction: column; gap: 8px;">
+
+                    <div id="member-comm-results" style="max-height: 500px; overflow-y: auto; display: flex; flex-direction: column; gap: 8px;">
                         <div style="text-align: center; padding: 20px; color: #94a3b8; font-size: 12px;">ابدأ البحث لاختيار عضو...</div>
                     </div>
                 </div>
@@ -127,8 +137,8 @@ $statuses = array(
                 <div style="background: #fff; border-radius: 12px; border: 1px solid var(--sm-border-color); box-shadow: var(--sm-shadow); overflow: hidden;">
                     <div style="background: #f8fafc; padding: 15px 25px; border-bottom: 1px solid #e2e8f0; display: flex; justify-content: space-between; align-items: center;">
                         <div style="display: flex; align-items: center; gap: 12px;">
-                            <div id="comm-target-photo" style="width: 40px; height: 40px; border-radius: 50%; overflow: hidden; border: 2px solid #fff; box-shadow: 0 2px 4px rgba(0,0,0,0.1);">
-                                <img src="" style="width: 100%; height: 100%; object-fit: cover;">
+                            <div id="comm-target-photos" style="display: flex; -webkit-margin-start: 10px;">
+                                <!-- Stacked photos -->
                             </div>
                             <div>
                                 <h3 id="comm-target-name" style="margin: 0; font-size: 15px; font-weight: 900; color: var(--sm-dark-color);"></h3>
@@ -139,13 +149,13 @@ $statuses = array(
                             <a id="comm-call-btn" href="" class="sm-btn sm-btn-outline" style="width: 36px; height: 36px; border-radius: 50%; padding: 0;" title="اتصال هاتفي">
                                 <span class="dashicons dashicons-phone"></span>
                             </a>
-                            <button onclick="smShowCommHistory()" class="sm-btn sm-btn-outline" style="height: 36px; padding: 0 15px; font-size: 12px; font-weight: 700;">سجل المراسلات</button>
+                            <button id="comm-history-btn" onclick="smShowCommHistory()" class="sm-btn sm-btn-outline" style="height: 36px; padding: 0 15px; font-size: 12px; font-weight: 700;">سجل المراسلات</button>
                         </div>
                     </div>
 
                     <div style="padding: 25px;">
                         <form id="direct-comm-form">
-                            <input type="hidden" name="member_id" id="comm-member-id">
+                            <div id="comm-member-ids-hidden"></div>
 
                             <!-- Template Selection -->
                             <div class="sm-form-group" style="margin-bottom: 20px;">
@@ -163,6 +173,12 @@ $statuses = array(
                                 <div class="sm-form-group">
                                     <label class="sm-label" style="font-size: 13px;">نص الرسالة:</label>
                                     <textarea name="message" id="comm-message" class="sm-textarea" rows="6" required></textarea>
+                                    <p style="font-size: 11px; color: #718096; margin-top: 5px;">يمكنك استخدام الوسوم: {member_name}, {membership_number}, {year}, {balance}</p>
+                                </div>
+                                <div class="sm-form-group">
+                                    <label class="sm-label" style="font-size: 13px;">إرفاق ملفات (اختياري):</label>
+                                    <input type="file" name="attachments[]" class="sm-input" multiple style="padding: 8px;">
+                                    <p style="font-size: 11px; color: #64748b; margin-top: 5px;">سيتم إرفاق هذه الملفات في رسائل البريد الإلكتروني ونظام التذاكر.</p>
                                 </div>
                             </div>
 
@@ -269,7 +285,8 @@ $statuses = array(
     let currentActiveTicketId = null;
     let autoRefreshInterval = null;
     let commTemplates = [];
-    let selectedMember = null;
+    let selectedMembers = new Map();
+    let lastSearchResults = [];
 
     const categories = <?php echo json_encode($categories); ?>;
     const statuses = <?php echo json_encode($statuses); ?>;
@@ -500,55 +517,112 @@ $statuses = array(
         .then(res => {
             const results = $('#member-comm-results').empty();
             if (res.success && res.data.length > 0) {
+                lastSearchResults = res.data;
                 res.data.forEach(m => {
+                    const isSelected = selectedMembers.has(m.id);
                     results.append(`
-                        <div onclick='smSelectCommMember(${JSON.stringify(m)})' class="sm-comm-member-item" style="padding: 20px; background: #fff; border: 1px solid #eee; border-radius: 8px; cursor: pointer; display: flex; align-items: center; gap: 10px; transition: 0.2s;">
-                            <div style="width: 32px; height: 32px; border-radius: 50%; background: #f1f5f9; overflow: hidden; flex-shrink: 0;">
+                        <div onclick='smSelectCommMember(${JSON.stringify(m)})' class="sm-comm-member-item" data-id="${m.id}" style="padding: 12px 15px; background: ${isSelected ? 'var(--sm-pastel-red)' : '#fff'}; border: 1px solid ${isSelected ? 'var(--sm-primary-color)' : '#eee'}; border-radius: 8px; cursor: pointer; display: flex; align-items: center; gap: 10px; transition: 0.2s;">
+                            <div style="width: 20px; height: 20px; border: 2px solid #cbd5e0; border-radius: 4px; display: flex; align-items: center; justify-content: center; background: ${isSelected ? 'var(--sm-primary-color)' : '#fff'}">
+                                ${isSelected ? '<span class="dashicons dashicons-yes" style="color:#fff; font-size:16px; width:16px; height:16px;"></span>' : ''}
+                            </div>
+                            <div style="width: 32px; height: 32px; border-radius: 50%; background: #f1f5f9; overflow: hidden; flex-shrink: 0; border: 1px solid #eee;">
                                 <img src="${m.photo_url || ''}" style="width: 100%; height: 100%; object-fit: cover;">
                             </div>
                             <div style="flex: 1; min-width: 0;">
-                                <div style="font-size: 13px; font-weight: 800; color: var(--sm-dark-color); overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">${m.name}</div>
-                                <div style="font-size: 10px; color: #64748b;">${m.national_id} | ${m.governorate}</div>
+                                <div style="font-size: 12px; font-weight: 800; color: var(--sm-dark-color); overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">${m.name}</div>
+                                <div style="font-size: 10px; color: #64748b;">${m.national_id} | ${m.branch_label || m.governorate}</div>
                             </div>
                         </div>
                     `);
                 });
             } else {
+                lastSearchResults = [];
                 results.html('<div style="text-align: center; padding: 20px; color: #94a3b8; font-size: 12px;">لم يتم العثور على نتائج.</div>');
             }
         });
     };
 
+    window.smBulkActionComm = function(type) {
+        if (type === 'all') {
+            lastSearchResults.forEach(m => selectedMembers.set(m.id, m));
+        } else {
+            selectedMembers.clear();
+        }
+        smUpdateCommUI();
+        smSearchMembersForComm();
+    };
+
     window.smSelectCommMember = function(m) {
-        selectedMember = m;
-        $('.sm-comm-member-item').css('border-color', '#eee').css('background', '#fff');
-        // Simple visual select
-        $(`div[onclick*='${m.national_id}']`).css('border-color', 'var(--sm-primary-color)').css('background', 'var(--sm-pastel-red)');
+        if (selectedMembers.has(m.id)) {
+            selectedMembers.delete(m.id);
+        } else {
+            selectedMembers.set(m.id, m);
+        }
+        smUpdateCommUI();
 
-        $('#direct-comm-empty').hide();
-        $('#direct-comm-form-area').show();
+        const item = $(`.sm-comm-member-item[data-id="${m.id}"]`);
+        const isSelected = selectedMembers.has(m.id);
+        item.css('border-color', isSelected ? 'var(--sm-primary-color)' : '#eee')
+            .css('background', isSelected ? 'var(--sm-pastel-red)' : '#fff');
+        item.find('div:first').css('background', isSelected ? 'var(--sm-primary-color)' : '#fff')
+            .html(isSelected ? '<span class="dashicons dashicons-yes" style="color:#fff; font-size:16px; width:16px; height:16px;"></span>' : '');
+    };
 
-        $('#comm-member-id').val(m.id);
-        $('#comm-target-name').text(m.name);
-        $('#comm-target-meta').text(`${m.membership_number || 'بدون رقم قيد'} • ${m.professional_grade || '---'} • ${m.phone}`);
-        $('#comm-target-photo img').attr('src', m.photo_url || '');
-        $('#comm-call-btn').attr('href', `tel:${m.phone}`);
+    window.smUpdateCommUI = function() {
+        const count = selectedMembers.size;
+        $('#comm-selected-count').text(`${count} مختار`);
 
-        $('#direct-comm-form')[0].reset();
-        $('#comm-template-select').val('');
+        if (count > 0) {
+            $('#direct-comm-empty').hide();
+            $('#direct-comm-form-area').show();
+
+            const photos = $('#comm-target-photos').empty();
+            const names = [];
+            const idsHidden = $('#comm-member-ids-hidden').empty();
+
+            let i = 0;
+            selectedMembers.forEach(m => {
+                idsHidden.append(`<input type="hidden" name="member_ids[]" value="${m.id}">`);
+                if (i < 3) {
+                    photos.append(`<div style="width: 36px; height: 36px; border-radius: 50%; overflow: hidden; border: 2px solid #fff; box-shadow: 0 2px 4px rgba(0,0,0,0.1); margin-inline-start: ${i === 0 ? '0' : '-15px'}; z-index: ${10-i};"><img src="${m.photo_url || ''}" style="width:100%; height:100%; object-fit:cover;"></div>`);
+                }
+                names.push(m.name);
+                i++;
+            });
+
+            if (count === 1) {
+                const m = Array.from(selectedMembers.values())[0];
+                $('#comm-target-name').text(m.name);
+                $('#comm-target-meta').text(`${m.membership_number || 'بدون رقم قيد'} • ${m.branch_label || m.governorate} • ${m.phone}`);
+                $('#comm-call-btn').show().attr('href', `tel:${m.phone}`);
+                $('#comm-history-btn').show();
+            } else {
+                $('#comm-target-name').text(`${count} أعضاء مختارين`);
+                $('#comm-target-meta').text(names.slice(0, 3).join(', ') + (count > 3 ? '...' : ''));
+                $('#comm-call-btn').hide();
+                $('#comm-history-btn').hide();
+            }
+        } else {
+            $('#direct-comm-empty').show();
+            $('#direct-comm-form-area').hide();
+        }
     };
 
     window.smApplyCommTemplate = function() {
         const type = $('#comm-template-select').val();
-        if (!type || !selectedMember) return;
+        if (!type || selectedMembers.size === 0) return;
 
         const t = commTemplates.find(x => x.template_type === type);
         if (t) {
-            let body = t.body
-                .replace(/{member_name}/g, selectedMember.name)
-                .replace(/{membership_number}/g, selectedMember.membership_number || '---')
-                .replace(/{year}/g, new Date().getFullYear())
-                .replace(/{amount}/g, '0.00');
+            let body = t.body;
+            if (selectedMembers.size === 1) {
+                const m = Array.from(selectedMembers.values())[0];
+                body = body
+                    .replace(/{member_name}/g, m.name)
+                    .replace(/{membership_number}/g, m.membership_number || '---')
+                    .replace(/{year}/g, new Date().getFullYear())
+                    .replace(/{amount}/g, '0.00');
+            }
 
             $('#comm-subject').val(t.subject);
             $('#comm-message').val(body);
@@ -576,13 +650,14 @@ $statuses = array(
         .then(res => {
             btn.prop('disabled', false).html('<span class="dashicons dashicons-share-alt" style="margin-top: 4px;"></span> إرسال المراسلات الآن');
             if (res.success) {
-                if (channels.includes('whatsapp')) {
+                if (channels.includes('whatsapp') && selectedMembers.size === 1) {
+                    const m = Array.from(selectedMembers.values())[0];
                     const msg = encodeURIComponent($('#comm-message').val());
-                    const waUrl = `https://api.whatsapp.com/send?phone=${selectedMember.phone.replace(/^0/, '+20')}&text=${msg}`;
+                    const waUrl = `https://api.whatsapp.com/send?phone=${m.phone.replace(/^0/, '+20')}&text=${msg}`;
                     window.open(waUrl, '_blank');
                 }
-                alert('تمت العملية بنجاح. تم تسجيل المراسلات في السجل.');
-                smShowCommHistory();
+                alert('تمت العملية بنجاح لعدد (' + Object.keys(res.data).length + ') أعضاء. تم تسجيل المراسلات في السجل.');
+                if (selectedMembers.size === 1) smShowCommHistory();
             } else {
                 alert('خطأ: ' + res.data);
             }
@@ -590,11 +665,12 @@ $statuses = array(
     });
 
     window.smShowCommHistory = function() {
-        if (!selectedMember) return;
+        if (selectedMembers.size !== 1) return;
+        const m = Array.from(selectedMembers.values())[0];
         const body = $('#comm-history-body').html('<div style="text-align: center; padding: 50px;"><div class="sm-loader-mini"></div></div>');
         $('#comm-history-modal').fadeIn().css('display', 'flex');
 
-        fetch(ajaxurl + `?action=sm_get_member_comms_log&member_id=${selectedMember.id}`)
+        fetch(ajaxurl + `?action=sm_get_member_comms_log&member_id=${m.id}`)
         .then(r => r.json())
         .then(res => {
             if (res.success && res.data.length > 0) {
