@@ -55,7 +55,7 @@ $registry = $wpdb->get_results($wpdb->prepare(
 
     <div id="license-registry" class="sm-internal-tab">
 
-    <div class="sm-card-grid" style="margin-bottom: 30px; grid-template-columns: repeat(4, 1fr); gap: 20px;">
+    <div class="sm-card-grid" style="margin-bottom: 30px;">
         <?php
         // Total Licenses
         $icon = 'dashicons-id-alt'; $label = 'إجمالي التراخيص'; $value = $stats['total']; $color = '#111F35';

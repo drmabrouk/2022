@@ -38,6 +38,25 @@
                 <h3 style="margin:0 0 10px 0; font-weight:800; color:var(--sm-dark-color);"><?php echo esc_html($b->name); ?></h3>
                 <div style="font-size:13px; color:#64748b; margin-bottom:15px; min-height:40px; line-height:1.6;"><?php echo esc_html($b->address); ?></div>
 
+                <?php if (current_user_can('sm_full_access') || current_user_can('manage_options')):
+                    $b_stats = SM_DB_Finance::get_statistics(['governorate' => $b->slug]);
+                ?>
+                <div style="background: #f8fafc; border-radius: 12px; padding: 15px; margin-bottom: 20px; display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; border: 1px solid #edf2f7;">
+                    <div style="text-align: center;">
+                        <div style="font-size: 9px; color: #94a3b8; font-weight: 700; margin-bottom: 2px;">إجمالي الأعضاء</div>
+                        <div style="font-size: 13px; font-weight: 800; color: var(--sm-dark-color);"><?php echo number_format($b_stats['total_members']); ?></div>
+                    </div>
+                    <div style="text-align: center; border-right: 1px solid #e2e8f0; border-left: 1px solid #e2e8f0;">
+                        <div style="font-size: 9px; color: #94a3b8; font-weight: 700; margin-bottom: 2px;">تراخيص مزاولة</div>
+                        <div style="font-size: 13px; font-weight: 800; color: var(--sm-dark-color);"><?php echo number_format($b_stats['total_practice_licenses']); ?></div>
+                    </div>
+                    <div style="text-align: center;">
+                        <div style="font-size: 9px; color: #94a3b8; font-weight: 700; margin-bottom: 2px;">تراخيص منشآت</div>
+                        <div style="font-size: 13px; font-weight: 800; color: var(--sm-dark-color);"><?php echo number_format($b_stats['total_facility_licenses']); ?></div>
+                    </div>
+                </div>
+                <?php endif; ?>
+
                 <div style="border-top:1px solid #f1f5f9; padding-top:15px; display:grid; gap:8px;">
                     <div style="display:flex; align-items:center; gap:8px; font-size:12px; color:#4a5568;">
                         <span class="dashicons dashicons-admin-users" style="font-size:16px; width:16px; height:16px; color:var(--sm-primary-color);"></span>

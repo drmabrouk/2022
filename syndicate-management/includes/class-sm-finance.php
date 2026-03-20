@@ -300,7 +300,7 @@ class SM_Finance {
         }
 
         $paid = $wpdb->get_var("SELECT SUM(p.amount) FROM {$wpdb->prefix}sm_payments p $j_p WHERE $w_p") ?: 0;
-        $members = $wpdb->get_results("SELECT id FROM {$wpdb->prefix}sm_members WHERE $w_m LIMIT 250");
+        $members = $wpdb->get_results("SELECT id FROM {$wpdb->prefix}sm_members WHERE $w_m");
 
         $owed = 0;
         $penalty = 0;

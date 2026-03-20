@@ -30,7 +30,7 @@ $bg_color = (strpos($color, '#') === 0 && strlen($color) === 7) ? $color . '1a' 
     <div class="sm-stat-card-info">
         <div class="sm-stat-card-label"><?php echo esc_html($label); ?></div>
         <div class="sm-stat-card-value" style="<?php echo !empty($suffix) ? 'color: '.esc_attr($color).';' : ''; ?>">
-            <?php echo $value; ?>
+            <?php echo esc_html($value); ?>
             <?php if ($suffix): ?>
                 <span class="sm-stat-card-suffix"><?php echo esc_html($suffix); ?></span>
             <?php endif; ?>
