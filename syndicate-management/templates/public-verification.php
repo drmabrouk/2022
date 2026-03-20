@@ -1,8 +1,8 @@
 <?php if (!defined('ABSPATH')) exit; ?>
-<div class="sm-verify-portal" dir="rtl" style="max-width: 900px; margin: 0 auto; padding: 15px 0; font-family: 'Rubik', sans-serif;">
+<div class="sm-verify-portal" dir="rtl" style="max-width: 900px; margin: 0 auto; padding: 30px 0; font-family: 'Rubik', sans-serif;">
 
     <!-- Professional Portal Header -->
-    <div style="text-align: center; margin-bottom: 10px;">
+    <div style="text-align: center; margin-bottom: 20px;">
         <div style="width: 50px; height: 50px; background: #fff; border: 2px solid var(--sm-primary-color); border-radius: 50%; display: inline-flex; align-items: center; justify-content: center; margin-bottom: 8px; box-shadow: 0 4px 10px rgba(246, 48, 73, 0.15);">
             <span class="dashicons dashicons-shield-check" style="font-size: 24px; width: 24px; height: 24px; color: var(--sm-primary-color);"></span>
         </div>
@@ -11,7 +11,7 @@
     </div>
 
     <!-- Compact Search Interface -->
-    <div style="background: #fff; padding: 12px; border-radius: 10px; border: 1px solid var(--sm-border-color); box-shadow: 0 1px 3px rgba(0,0,0,0.02); margin-bottom: 15px;">
+    <div style="background: #fff; padding: 25px; border-radius: 10px; border: 1px solid var(--sm-border-color); box-shadow: 0 1px 3px rgba(0,0,0,0.02); margin-bottom: 30px;">
         <form id="sm-verify-form">
             <div style="display: flex; gap: 8px; align-items: stretch;">
                 <div style="flex: 1; position: relative;">
@@ -32,7 +32,7 @@
         </form>
     </div>
 
-    <div id="sm-verify-loading" style="display: none; text-align: center; padding: 15px;">
+    <div id="sm-verify-loading" style="display: none; text-align: center; padding: 30px;">
         <div class="sm-spinner-minimal" style="margin: 0 auto 8px;"></div>
         <p style="color: var(--sm-text-gray); font-size: 11px; font-weight: 600;">جاري مراجعة السجلات...</p>
     </div>
@@ -68,7 +68,7 @@
 
 .sm-report-header {
     background: linear-gradient(135deg, #f8fafc 0%, #f1f5f9 100%);
-    padding: 15px 20px;
+    padding: 30px 20px;
     border-bottom: 1px solid #e2e8f0;
     display: flex;
     justify-content: space-between;
@@ -76,7 +76,7 @@
 }
 
 .sm-report-section {
-    padding: 15px 20px;
+    padding: 30px 20px;
     border-bottom: 1px solid #f1f5f9;
 }
 .sm-report-section:last-child { border-bottom: none; }
@@ -85,7 +85,7 @@
     font-size: 11px;
     font-weight: 800;
     color: var(--sm-text-gray);
-    margin-bottom: 10px;
+    margin-bottom: 20px;
     display: flex;
     align-items: center;
     gap: 6px;
@@ -99,7 +99,7 @@
 }
 
 .sm-data-cell {
-    padding: 10px 12px;
+    padding: 20px 12px;
     background: #fcfcfc;
     border: 1px solid #f8fafc;
     border-radius: 6px;
@@ -127,7 +127,7 @@
 .sm-status-invalid { background: #fee2e2; color: #991b1b; }
 
 .sm-verify-suggestion-item {
-    padding: 10px 15px;
+    padding: 20px 15px;
     cursor: pointer;
     border-bottom: 1px solid #f8fafc;
     font-size: 13px;
@@ -196,7 +196,7 @@
                 renderResults(res.data, resultsArea);
             } else {
                 resultsArea.append(`
-                    <div style="background: #fff; padding: 15px; border-radius: 10px; text-align: center; border: 1px dashed #feb2b2;">
+                    <div style="background: #fff; padding: 30px; border-radius: 10px; text-align: center; border: 1px dashed #feb2b2;">
                         <div style="font-size: 30px; margin-bottom: 8px;">🔍</div>
                         <h3 style="color: #c53030; font-weight: 800; font-size: 1.05em; margin-bottom: 4px;">عذراً، لا توجد بيانات مطابقة</h3>
                         <p style="color: var(--sm-text-gray); font-size: 11px;">يرجى التأكد من الرقم المدخل وإعادة المحاولة.</p>
@@ -322,7 +322,7 @@
 
         // Final Official Footer
         html += `
-                <div style="background: #f8fafc; padding: 12px 20px; border-top: 1px solid #e2e8f0; display: flex; justify-content: space-between; align-items: center;">
+                <div style="background: #f8fafc; padding: 25px 20px; border-top: 1px solid #e2e8f0; display: flex; justify-content: space-between; align-items: center;">
                     <div style="font-size: 9px; color: #94a3b8; font-weight: 700;">
                         * هذا التقرير صادر إلكترونياً من بوابة التحقق الرسمية ولا يعتد به كبديل عن أصول المستندات.
                     </div>

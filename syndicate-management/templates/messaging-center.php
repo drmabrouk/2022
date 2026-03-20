@@ -8,16 +8,6 @@ $is_officer = in_array('sm_syndicate_admin', $roles);
 $is_member = in_array('sm_syndicate_member', $roles);
 $is_official = $is_admin || $is_officer;
 
-// Get member data if applicable
-$member_id = 0;
-$member_gov = '';
-global $wpdb;
-$member = $wpdb->get_row($wpdb->prepare("SELECT id, governorate FROM {$wpdb->prefix}sm_members WHERE wp_user_id = %d", $my_id));
-if ($member) {
-    $member_id = $member->id;
-    $member_gov = $member->governorate;
-}
-
 $categories = array(
     'inquiry' => array('label' => 'استفسار عام', 'color' => '#EBF8FF', 'text' => '#3182CE'),
     'finance' => array('label' => 'مشكلة مالية', 'color' => '#FEF3C7', 'text' => '#B45309'),
@@ -31,68 +21,192 @@ $statuses = array(
     'in-progress' => array('label' => 'قيد التنفيذ', 'class' => 'sm-badge-mid'),
     'closed' => array('label' => 'مغلق', 'class' => 'sm-badge-low')
 );
-
-$priorities = array(
-    'low' => 'منخفض',
-    'medium' => 'متوسط',
-    'high' => 'عاجل'
-);
 ?>
 
-<div class="sm-tickets-wrapper" dir="rtl" style="min-height: 700px; font-family: 'Rubik', sans-serif;">
+<div class="sm-messaging-center" dir="rtl" style="font-family: 'Rubik', sans-serif;">
 
-    <!-- Top Filter Bar -->
-    <div class="sm-tickets-top-bar" style="background: #fff; border-radius: 15px; border: 1px solid var(--sm-border-color); padding: 15px 25px; box-shadow: var(--sm-shadow); margin-bottom: 15px;">
-        <div style="display: flex; flex-wrap: wrap; gap: 15px; align-items: center;">
-            <h2 style="margin: 0; font-weight: 800; color: var(--sm-dark-color); font-size: 1.2em; flex: 1; min-width: 200px;">نظام التذاكر والدعم</h2>
+    <!-- Header with Tabs -->
+    <div style="background: #fff; border-radius: 12px; border: 1px solid var(--sm-border-color); padding: 30px; margin-bottom: 30px; box-shadow: var(--sm-shadow);">
+        <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 15px;">
+            <div style="display: flex; align-items: center; gap: 15px;">
+                <div style="width: 45px; height: 45px; background: var(--sm-primary-color); color: #fff; border-radius: 10px; display: flex; align-items: center; justify-content: center; font-size: 20px;">
+                    <span class="dashicons dashicons-email-alt2"></span>
+                </div>
+                <div>
+                    <h2 style="margin: 0; font-weight: 900; font-size: 1.3em; color: var(--sm-dark-color); border:none; padding:0;">مركز المراسلات والدعم</h2>
+                    <p style="margin: 2px 0 0 0; font-size: 11px; color: #64748b; font-weight: 500;">بوابة التواصل المركزية بين الإدارة والأعضاء</p>
+                </div>
+            </div>
 
-            <div style="display: flex; gap: 10px; flex-wrap: wrap;">
-                <select id="filter-status" class="sm-select" onchange="smLoadTickets()" style="width: 120px; height: 40px; padding: 0 10px;">
-                    <option value="">كل الحالات</option>
-                    <?php foreach($statuses as $k => $v) echo "<option value='$k'>{$v['label']}</option>"; ?>
-                </select>
-
-                <select id="filter-category" class="sm-select" onchange="smLoadTickets()" style="width: 130px; height: 40px; padding: 0 10px;">
-                    <option value="">كل الأقسام</option>
-                    <?php foreach($categories as $k => $v) echo "<option value='$k'>{$v['label']}</option>"; ?>
-                </select>
-
-                <select id="filter-priority" class="sm-select" onchange="smLoadTickets()" style="width: 110px; height: 40px; padding: 0 10px;">
-                    <option value="">كل الأولويات</option>
-                    <?php foreach($priorities as $k => $v) echo "<option value='$k'>$v</option>"; ?>
-                </select>
-
-                <?php if ($is_admin): ?>
-                    <select id="filter-province" class="sm-select" onchange="smLoadTickets()" style="width: 130px; height: 40px; padding: 0 10px;">
-                        <option value="">كل المحافظات</option>
-                        <?php foreach(SM_Settings::get_governorates() as $k => $v) echo "<option value='$k'>$v</option>"; ?>
-                    </select>
+            <div class="sm-tabs-wrapper" style="margin: 0; border: none; padding: 0;">
+                <button class="sm-tab-btn sm-active" onclick="smSwitchMessagingTab('tickets', this)">تذاكر الدعم</button>
+                <?php if ($is_official): ?>
+                    <button class="sm-tab-btn" onclick="smSwitchMessagingTab('direct-comm', this)">التواصل المباشر مع الأعضاء</button>
                 <?php endif; ?>
+            </div>
+        </div>
+    </div>
 
-                <div style="position: relative;">
-                    <input type="text" id="filter-search" class="sm-input" placeholder="بحث..." oninput="smLoadTickets()" style="width: 180px; height: 40px; padding-left: 30px;">
-                    <span class="dashicons dashicons-search" style="position: absolute; left: 8px; top: 10px; color: #94a3b8; font-size: 18px;"></span>
+    <!-- TICKET SYSTEM CONTENT -->
+    <div id="messaging-tab-tickets" class="messaging-tab-content">
+        <div style="display: grid; grid-template-columns: 280px 1fr; gap: 15px;">
+            <!-- Sidebar: Ticket Filters & Stats -->
+            <div style="display: flex; flex-direction: column; gap: 15px;">
+                <div style="background: #fff; border-radius: 12px; border: 1px solid var(--sm-border-color); padding: 30px; box-shadow: var(--sm-shadow);">
+                    <h4 style="margin: 0 0 12px 0; font-size: 13px; font-weight: 800; color: var(--sm-dark-color); border-bottom: 1px solid #eee; padding-bottom: 8px;">تصفية التذاكر</h4>
+
+                    <div class="sm-form-group" style="margin-bottom: 20px;">
+                        <input type="text" id="ticket-search" class="sm-input" placeholder="بحث بالموضوع أو الرقم..." style="font-size: 12px; height: 36px;" oninput="smLoadTickets()">
+                    </div>
+
+                    <div class="sm-form-group" style="margin-bottom: 20px;">
+                        <select id="ticket-filter-status" class="sm-select" style="font-size: 12px; height: 36px;" onchange="smLoadTickets()">
+                            <option value="">كل الحالات</option>
+                            <?php foreach($statuses as $k => $v) echo "<option value='$k'>{$v['label']}</option>"; ?>
+                        </select>
+                    </div>
+
+                    <div class="sm-form-group" style="margin-bottom: 30px;">
+                        <select id="ticket-filter-category" class="sm-select" style="font-size: 12px; height: 36px;" onchange="smLoadTickets()">
+                            <option value="">كل الأقسام</option>
+                            <?php foreach($categories as $k => $v) echo "<option value='$k'>{$v['label']}</option>"; ?>
+                        </select>
+                    </div>
+
+                    <?php if ($is_member): ?>
+                        <button onclick="smOpenCreateTicketModal()" class="sm-btn" style="width: 100%; height: 38px; font-weight: 700;">+ فتح تذكرة جديدة</button>
+                    <?php endif; ?>
                 </div>
 
-                <?php if ($is_member): ?>
-                    <button onclick="smOpenCreateTicketModal()" class="sm-btn" style="height: 40px; padding: 0 15px; font-weight: 700;">+ تذكرة</button>
-                <?php endif; ?>
+                <div style="background: #fff; border-radius: 12px; border: 1px solid var(--sm-border-color); padding: 30px; box-shadow: var(--sm-shadow);">
+                    <h4 style="margin: 0 0 10px 0; font-size: 13px; font-weight: 800; color: var(--sm-dark-color);">إحصائيات الدعم</h4>
+                    <div style="display: flex; flex-direction: column; gap: 8px;">
+                        <div style="display: flex; justify-content: space-between; font-size: 12px;"><span>تذاكر مفتوحة:</span><strong id="stat-open-count">-</strong></div>
+                        <div style="display: flex; justify-content: space-between; font-size: 12px;"><span>قيد التنفيذ:</span><strong id="stat-progress-count">-</strong></div>
+                        <div style="display: flex; justify-content: space-between; font-size: 12px;"><span>تم إغلاقها:</span><strong id="stat-closed-count">-</strong></div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Main Ticket Area -->
+            <div style="min-height: 600px;">
+                <div id="tickets-list-view">
+                    <div id="sm-tickets-grid" style="display: grid; grid-template-columns: 1fr; gap: 10px;">
+                        <!-- Loaded via JS -->
+                        <div style="text-align: center; padding: 100px; color: #94a3b8;">جاري تحميل التذاكر...</div>
+                    </div>
+                </div>
+
+                <div id="ticket-details-view" style="display: none;">
+                    <!-- Loaded via JS -->
+                </div>
             </div>
         </div>
     </div>
 
-    <!-- Main Content -->
-    <div class="sm-tickets-main">
-        <div id="tickets-list-container">
-            <div id="sm-tickets-grid" style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 20px;">
-                <!-- Loaded via JS -->
+    <!-- DIRECT COMMUNICATION HUB CONTENT -->
+    <?php if ($is_official): ?>
+    <div id="messaging-tab-direct-comm" class="messaging-tab-content" style="display: none;">
+        <div style="display: grid; grid-template-columns: 350px 1fr; gap: 20px;">
+            <!-- Member Selection Sidebar -->
+            <div style="display: flex; flex-direction: column; gap: 15px;">
+                <div style="background: #fff; border-radius: 12px; border: 1px solid var(--sm-border-color); padding: 30px; box-shadow: var(--sm-shadow);">
+                    <h4 style="margin: 0 0 15px 0; font-size: 14px; font-weight: 800; color: var(--sm-dark-color);">اختيار العضو المستهدف</h4>
+                    <div style="position: relative; margin-bottom: 30px;">
+                        <input type="text" id="member-search-comm" class="sm-input" placeholder="بحث بالاسم، الهوية، أو الكود..." style="padding-left: 35px;" oninput="smSearchMembersForComm()">
+                        <span class="dashicons dashicons-search" style="position: absolute; left: 10px; top: 11px; color: #94a3b8;"></span>
+                    </div>
+                    <div id="member-comm-results" style="max-height: 450px; overflow-y: auto; display: flex; flex-direction: column; gap: 8px;">
+                        <div style="text-align: center; padding: 20px; color: #94a3b8; font-size: 12px;">ابدأ البحث لاختيار عضو...</div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Communication Form Hub -->
+            <div id="direct-comm-form-area" style="display: none;">
+                <div style="background: #fff; border-radius: 12px; border: 1px solid var(--sm-border-color); box-shadow: var(--sm-shadow); overflow: hidden;">
+                    <div style="background: #f8fafc; padding: 30px 25px; border-bottom: 1px solid #e2e8f0; display: flex; justify-content: space-between; align-items: center;">
+                        <div style="display: flex; align-items: center; gap: 12px;">
+                            <div id="comm-target-photo" style="width: 40px; height: 40px; border-radius: 50%; overflow: hidden; border: 2px solid #fff; box-shadow: 0 2px 4px rgba(0,0,0,0.1);">
+                                <img src="" style="width: 100%; height: 100%; object-fit: cover;">
+                            </div>
+                            <div>
+                                <h3 id="comm-target-name" style="margin: 0; font-size: 15px; font-weight: 900; color: var(--sm-dark-color);"></h3>
+                                <div id="comm-target-meta" style="font-size: 11px; color: #64748b; margin-top: 2px;"></div>
+                            </div>
+                        </div>
+                        <div style="display: flex; gap: 8px;">
+                            <a id="comm-call-btn" href="" class="sm-btn sm-btn-outline" style="width: 36px; height: 36px; border-radius: 50%; padding: 0;" title="اتصال هاتفي">
+                                <span class="dashicons dashicons-phone"></span>
+                            </a>
+                            <button onclick="smShowCommHistory()" class="sm-btn sm-btn-outline" style="height: 36px; padding: 0 15px; font-size: 12px; font-weight: 700;">سجل المراسلات</button>
+                        </div>
+                    </div>
+
+                    <div style="padding: 25px;">
+                        <form id="direct-comm-form">
+                            <input type="hidden" name="member_id" id="comm-member-id">
+
+                            <!-- Template Selection -->
+                            <div class="sm-form-group" style="margin-bottom: 20px;">
+                                <label class="sm-label" style="font-size: 13px;">قوالب الرسائل الجاهزة:</label>
+                                <select id="comm-template-select" class="sm-select" onchange="smApplyCommTemplate()">
+                                    <option value="">-- رسالة حرة (بدون قالب) --</option>
+                                </select>
+                            </div>
+
+                            <div style="display: grid; grid-template-columns: 1fr; gap: 15px;">
+                                <div class="sm-form-group">
+                                    <label class="sm-label" style="font-size: 13px;">عنوان الرسالة / الموضوع:</label>
+                                    <input type="text" name="subject" id="comm-subject" class="sm-input" required>
+                                </div>
+                                <div class="sm-form-group">
+                                    <label class="sm-label" style="font-size: 13px;">نص الرسالة:</label>
+                                    <textarea name="message" id="comm-message" class="sm-textarea" rows="6" required></textarea>
+                                </div>
+                            </div>
+
+                            <!-- Channel Selection -->
+                            <div style="background: #f1f5f9; padding: 30px; border-radius: 10px; margin-top: 20px;">
+                                <label class="sm-label" style="font-size: 13px; margin-bottom: 25px;">قنوات الإرسال (يمكن اختيار أكثر من قناة):</label>
+                                <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 15px;">
+                                    <label style="display: flex; align-items: center; gap: 10px; cursor: pointer; background: #fff; padding: 20px; border-radius: 8px; border: 1px solid #e2e8f0;">
+                                        <input type="checkbox" name="channels[]" value="whatsapp" checked>
+                                        <span style="color: #25D366; font-size: 18px;" class="dashicons dashicons-whatsapp"></span>
+                                        <span style="font-size: 13px; font-weight: 700;">WhatsApp</span>
+                                    </label>
+                                    <label style="display: flex; align-items: center; gap: 10px; cursor: pointer; background: #fff; padding: 20px; border-radius: 8px; border: 1px solid #e2e8f0;">
+                                        <input type="checkbox" name="channels[]" value="email" checked>
+                                        <span style="color: #3182ce; font-size: 18px;" class="dashicons dashicons-email"></span>
+                                        <span style="font-size: 13px; font-weight: 700;">Email</span>
+                                    </label>
+                                    <label style="display: flex; align-items: center; gap: 10px; cursor: pointer; background: #fff; padding: 20px; border-radius: 8px; border: 1px solid #e2e8f0;">
+                                        <input type="checkbox" name="channels[]" value="ticket" checked>
+                                        <span style="color: #e53e3e; font-size: 18px;" class="dashicons dashicons-megaphone"></span>
+                                        <span style="font-size: 13px; font-weight: 700;">نظام التذاكر</span>
+                                    </label>
+                                </div>
+                            </div>
+
+                            <div style="margin-top: 25px; text-align: left;">
+                                <button type="submit" class="sm-btn" style="width: 250px; height: 48px; font-weight: 900; font-size: 16px;">
+                                    <span class="dashicons dashicons-share-alt" style="margin-top: 4px;"></span> إرسال المراسلات الآن
+                                </button>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Empty State for Direct Comm -->
+            <div id="direct-comm-empty" style="background: #fff; border-radius: 12px; border: 1px dashed #cbd5e0; display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 100px; color: #94a3b8;">
+                <span class="dashicons dashicons-search" style="font-size: 50px; width: 50px; height: 50px; margin-bottom: 30px;"></span>
+                <p style="font-size: 16px; font-weight: 700;">يرجى اختيار عضو من القائمة الجانبية للبدء بالتواصل المباشر</p>
             </div>
         </div>
-
-        <div id="ticket-details-container" style="display: none; animation: smFadeIn 0.3s ease-out;">
-            <!-- Loaded via JS -->
-        </div>
     </div>
+    <?php endif; ?>
+
 </div>
 
 <!-- Modal: Create Ticket -->
@@ -102,7 +216,7 @@ $priorities = array(
             <h3>فتح تذكرة دعم جديدة</h3>
             <button class="sm-modal-close" onclick="document.getElementById('create-ticket-modal').style.display='none'">&times;</button>
         </div>
-        <form id="create-ticket-form" style="padding: 15px;">
+        <form id="create-ticket-form" style="padding: 30px;">
             <div class="sm-form-group">
                 <label class="sm-label">موضوع التذكرة:</label>
                 <input type="text" name="subject" class="sm-input" required placeholder="مثال: مشكلة في تحديث البيانات">
@@ -132,8 +246,21 @@ $priorities = array(
                 <input type="file" name="attachment" class="sm-input">
                 <p style="font-size: 11px; color: #64748b; margin-top: 5px;">يسمح بملفات الصور و PDF (بحد أقصى 5 ميجابايت)</p>
             </div>
-            <button type="submit" class="sm-btn" style="width: 100%; height: 45px; font-weight: 700; margin-top: 10px;">إرسال التذكرة</button>
+            <button type="submit" class="sm-btn" style="width: 100%; height: 45px; font-weight: 700; margin-top: 20px;">إرسال التذكرة</button>
         </form>
+    </div>
+</div>
+
+<!-- Comm History Modal -->
+<div id="comm-history-modal" class="sm-modal-overlay">
+    <div class="sm-modal-content" style="max-width: 800px;">
+        <div class="sm-modal-header">
+            <h3>سجل مراسلات العضو</h3>
+            <button class="sm-modal-close" onclick="document.getElementById('comm-history-modal').style.display='none'">&times;</button>
+        </div>
+        <div id="comm-history-body" style="padding: 30px; max-height: 500px; overflow-y: auto;">
+            <!-- Loaded via JS -->
+        </div>
     </div>
 </div>
 
@@ -141,79 +268,94 @@ $priorities = array(
 (function($) {
     let currentActiveTicketId = null;
     let autoRefreshInterval = null;
+    let commTemplates = [];
+    let selectedMember = null;
 
     const categories = <?php echo json_encode($categories); ?>;
     const statuses = <?php echo json_encode($statuses); ?>;
-    const priorities = <?php echo json_encode($priorities); ?>;
     const isOfficial = <?php echo $is_official ? 'true' : 'false'; ?>;
     const currentUserId = <?php echo $my_id; ?>;
+
+    window.smSwitchMessagingTab = function(tab, btn) {
+        $('.messaging-tab-content').hide();
+        $(`#messaging-tab-${tab}`).show();
+        $('.sm-tab-btn').removeClass('sm-active');
+        $(btn).addClass('sm-active');
+
+        if (tab === 'direct-comm' && commTemplates.length === 0) {
+            smLoadCommTemplates();
+        }
+    };
 
     window.smOpenCreateTicketModal = function() {
         $('#create-ticket-form')[0].reset();
         $('#create-ticket-modal').fadeIn().css('display', 'flex');
     };
 
+    // TICKET SYSTEM LOGIC
     window.smLoadTickets = function(showLoader = true) {
         const grid = $('#sm-tickets-grid');
         if (showLoader) grid.css('opacity', '0.5');
 
-        const status = $('#filter-status').val();
-        const category = $('#filter-category').val();
-        const priority = $('#filter-priority').val();
-        const province = $('#filter-province').val() || '';
-        const search = $('#filter-search').val();
+        const status = $('#ticket-filter-status').val();
+        const category = $('#ticket-filter-category').val();
+        const search = $('#ticket-search').val();
         const nonce = '<?php echo wp_create_nonce("sm_ticket_action"); ?>';
 
-        fetch(ajaxurl + `?action=sm_get_tickets&status=${status}&category=${category}&priority=${priority}&province=${province}&search=${search}&nonce=${nonce}&t=${Date.now()}`)
+        fetch(ajaxurl + `?action=sm_get_tickets&status=${status}&category=${category}&search=${search}&nonce=${nonce}`)
         .then(r => r.json())
         .then(res => {
             grid.css('opacity', '1').empty();
+            let counts = { open: 0, 'in-progress': 0, closed: 0 };
+
             if (res.success && res.data.length > 0) {
                 res.data.forEach(t => {
+                    counts[t.status]++;
                     const cat = categories[t.category] || categories['other'];
                     const stat = statuses[t.status];
-                    const priorityLabel = priorities[t.priority];
 
                     const card = $(`
-                        <div class="sm-ticket-card" onclick="smViewTicket(${t.id})" style="background: #fff; border: 1px solid var(--sm-border-color); border-radius: 12px; padding: 15px; cursor: pointer; transition: 0.3s; display: flex; align-items: center; gap: 20px;">
-                            <div style="width: 50px; height: 50px; border-radius: 50%; background: #f1f5f9; display: flex; align-items: center; justify-content: center; flex-shrink: 0; overflow: hidden; border: 1px solid #e2e8f0;">
-                                ${t.member_photo ? `<img src="${t.member_photo}" style="width: 100%; height: 100%; object-fit: cover;">` : `<span class="dashicons dashicons-admin-users" style="color: #94a3b8;"></span>`}
-                            </div>
-                            <div style="flex: 1; min-width: 0;">
-                                <div style="display: flex; align-items: center; gap: 10px; margin-bottom: 5px;">
-                                    <span style="font-size: 10px; font-weight: 700; color: #94a3b8;">#${t.id}</span>
-                                    <h4 style="margin: 0; font-size: 15px; font-weight: 700; color: var(--sm-dark-color); white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">${t.subject}</h4>
-                                    <span style="background: ${cat.color}; color: ${cat.text}; padding: 2px 10px; border-radius: 20px; font-size: 10px; font-weight: 700;">${cat.label}</span>
+                        <div class="sm-ticket-list-item" onclick="smViewTicket(${t.id})" style="background: #fff; border: 1px solid var(--sm-border-color); border-radius: 10px; padding: 25px 20px; cursor: pointer; transition: 0.2s; display: flex; align-items: center; justify-content: space-between; border-right: 4px solid ${t.priority === 'high' ? '#e53e3e' : '#e2e8f0'}; margin-bottom: 8px;">
+                            <div style="display: flex; align-items: center; gap: 15px; flex: 1;">
+                                <div style="width: 40px; height: 40px; border-radius: 8px; background: #f1f5f9; display: flex; align-items: center; justify-content: center; flex-shrink: 0; overflow: hidden; border: 1px solid #eee;">
+                                    ${t.member_photo ? `<img src="${t.member_photo}" style="width: 100%; height: 100%; object-fit: cover;">` : `<span class="dashicons dashicons-admin-users" style="color: #94a3b8;"></span>`}
                                 </div>
-                                <div style="display: flex; align-items: center; gap: 15px; font-size: 12px; color: #64748b;">
-                                    <span style="font-weight: 600;">${t.member_name}</span>
-                                    <span>•</span>
-                                    <span>${t.updated_at}</span>
+                                <div>
+                                    <div style="display: flex; align-items: center; gap: 8px;">
+                                        <span style="font-size: 10px; font-weight: 800; color: #94a3b8;">#${t.id}</span>
+                                        <h4 style="margin: 0; font-size: 14px; font-weight: 800; color: var(--sm-dark-color);">${t.subject}</h4>
+                                    </div>
+                                    <div style="font-size: 11px; color: #64748b; margin-top: 2px;">
+                                        <strong>${t.member_name}</strong> • ${t.updated_at} • <span style="color: ${cat.text}">${cat.label}</span>
+                                    </div>
                                 </div>
                             </div>
-                            <div style="text-align: left; flex-shrink: 0;">
-                                <div class="sm-badge ${stat.class}" style="margin-bottom: 5px;">${stat.label}</div>
-                                <div style="font-size: 10px; color: ${t.priority === 'high' ? '#e53e3e' : '#94a3b8'}; font-weight: 700;">الأولوية: ${priorityLabel}</div>
+                            <div style="text-align: left;">
+                                <span class="sm-badge ${stat.class}">${stat.label}</span>
                             </div>
                         </div>
                     `);
                     grid.append(card);
                 });
             } else {
-                grid.html('<div style="text-align: center; padding: 35px; background: #fff; border-radius: 12px; border: 1px dashed #cbd5e0; color: #94a3b8;">لا توجد تذاكر حالياً تتطابق مع البحث.</div>');
+                grid.html('<div style="text-align: center; padding: 50px; background: #fff; border-radius: 10px; border: 1px dashed #cbd5e0; color: #94a3b8;">لا توجد تذاكر حالياً.</div>');
             }
+
+            $('#stat-open-count').text(counts.open);
+            $('#stat-progress-count').text(counts['in-progress']);
+            $('#stat-closed-count').text(counts.closed);
         });
     };
 
     window.smViewTicket = function(id, silent = false) {
         currentActiveTicketId = id;
         if (!silent) {
-            $('#tickets-list-container').hide();
-            $('#ticket-details-container').show().html('<div style="text-align: center; padding: 100px;"><div class="sm-loader-mini"></div></div>');
+            $('#tickets-list-view').hide();
+            $('#ticket-details-view').show().html('<div style="text-align: center; padding: 100px;"><div class="sm-loader-mini"></div></div>');
         }
         const nonce = '<?php echo wp_create_nonce("sm_ticket_action"); ?>';
 
-        fetch(ajaxurl + `?action=sm_get_ticket_details&id=${id}&nonce=${nonce}&t=${Date.now()}`)
+        fetch(ajaxurl + `?action=sm_get_ticket_details&id=${id}&nonce=${nonce}`)
         .then(r => r.json())
         .then(res => {
             if (res.success) {
@@ -222,68 +364,54 @@ $priorities = array(
 
                 if (silent) {
                     const threadHtml = renderThreadHtml(thread);
-                    const oldHtml = $('#ticket-thread-body').html();
-                    if (threadHtml.trim() !== oldHtml.trim()) {
+                    if (threadHtml.trim() !== $('#ticket-thread-body').html().trim()) {
                         $('#ticket-thread-body').html(threadHtml);
                         const threadBody = $('#ticket-thread-body');
                         threadBody.scrollTop(threadBody[0].scrollHeight);
                     }
                     return;
                 }
+
                 const cat = categories[t.category] || categories['other'];
                 const stat = statuses[t.status];
 
-                const threadHtml = renderThreadHtml(thread);
-
-                const container = $('#ticket-details-container');
-                container.html(`
-                    <div style="background: #fff; border-radius: 15px; border: 1px solid var(--sm-border-color); overflow: hidden; box-shadow: var(--sm-shadow);">
-                        <div style="padding: 15px 30px; border-bottom: 1px solid #f1f5f9; display: flex; justify-content: space-between; align-items: center; background: #fafafa;">
-                            <div style="display: flex; align-items: center; gap: 15px;">
-                                <button onclick="smBackToList()" class="sm-btn sm-btn-outline" style="width: auto; padding: 5px 10px;"><span class="dashicons dashicons-arrow-right-alt2"></span> العودة</button>
+                $('#ticket-details-view').html(`
+                    <div style="background: #fff; border-radius: 12px; border: 1px solid var(--sm-border-color); overflow: hidden; box-shadow: var(--sm-shadow);">
+                        <!-- Ticket Header -->
+                        <div style="padding: 30px 25px; border-bottom: 1px solid #f1f5f9; background: #fafafa; display: flex; justify-content: space-between; align-items: center;">
+                            <div style="display: flex; gap: 15px; align-items: center;">
+                                <button onclick="smBackToList()" class="sm-btn sm-btn-outline" style="width: auto; padding: 5px 12px; height: 32px;"><span class="dashicons dashicons-arrow-right-alt2"></span> العودة</button>
                                 <div>
-                                    <h3 style="margin: 0; font-weight: 800; color: var(--sm-dark-color);">${t.subject}</h3>
-                                    <div style="display: flex; align-items: center; gap: 10px; font-size: 12px; color: #64748b; margin-top: 5px;">
-                                        <span>تذكرة رقم: #${t.id}</span>
-                                        <span>•</span>
-                                        <span style="background: ${cat.color}; color: ${cat.text}; padding: 1px 8px; border-radius: 10px; font-weight: 700;">${cat.label}</span>
+                                    <h3 style="margin:0; font-weight: 900; font-size: 15px;">${t.subject}</h3>
+                                    <div style="font-size: 11px; color: #64748b; margin-top: 3px;">
+                                        تذكرة #${t.id} • ${cat.label} • مقدمة من: <strong>${t.member_name}</strong>
                                     </div>
                                 </div>
                             </div>
                             <div style="display: flex; gap: 10px; align-items: center;">
                                 <span class="sm-badge ${stat.class}">${stat.label}</span>
-                                ${isOfficial && t.status !== 'closed' ? `<button onclick="smCloseTicket(${t.id})" class="sm-btn" style="background: #e53e3e; width: auto; padding: 5px 15px; font-size: 12px;">إغلاق التذكرة</button>` : ''}
+                                ${isOfficial && t.status !== 'closed' ? `<button onclick="smCloseTicket(${t.id})" class="sm-btn" style="background:#e53e3e; height: 32px; width:auto; font-size: 11px;">إغلاق التذكرة</button>` : ''}
                             </div>
                         </div>
 
-                        <div style="padding: 15px; background: #f8fafc; max-height: 500px; overflow-y: auto;" id="ticket-thread-body">
-                            ${threadHtml}
+                        <!-- Ticket Thread -->
+                        <div id="ticket-thread-body" style="padding: 20px; background: #f8fafc; height: 450px; overflow-y: auto;">
+                            ${renderThreadHtml(thread)}
                         </div>
 
+                        <!-- Reply Form -->
                         ${t.status !== 'closed' ? `
-                            <div style="padding: 15px 30px; border-top: 1px solid #f1f5f9;">
-                                <form id="ticket-reply-form" style="display: flex; flex-direction: column; gap: 15px;">
+                            <div style="padding: 20px; border-top: 1px solid #f1f5f9;">
+                                <form id="ticket-reply-form">
                                     <input type="hidden" name="ticket_id" value="${t.id}">
-                                    <textarea name="message" class="sm-textarea" rows="3" required placeholder="اكتب ردك هنا..."></textarea>
+                                    <textarea name="message" class="sm-textarea" rows="3" required placeholder="اكتب ردك هنا..." style="margin-bottom: 20px;"></textarea>
                                     <div style="display: flex; justify-content: space-between; align-items: center;">
-                                        <input type="file" name="attachment" style="font-size: 12px;">
-                                        <button type="submit" class="sm-btn" style="width: auto; padding: 0 30px; height: 40px;">إرسال الرد</button>
+                                        <input type="file" name="attachment" style="font-size: 11px;">
+                                        <button type="submit" class="sm-btn" style="width: 150px; height: 40px; font-weight: 800;">إرسال الرد</button>
                                     </div>
                                 </form>
                             </div>
-                        ` : `
-                            <div style="padding: 15px; text-align: center; background: #fff5f5; color: #c53030; font-weight: 700; font-size: 14px;">هذه التذكرة مغلقة. لا يمكنك إضافة ردود جديدة.</div>
-                        `}
-                    </div>
-
-                    <div style="margin-top: 10px; background: #fff; border-radius: 15px; border: 1px solid var(--sm-border-color); padding: 15px; box-shadow: var(--sm-shadow);">
-                        <h4 style="margin: 0 0 15px 0; border-bottom: 1px solid #eee; padding-bottom: 10px;">بيانات مقدم الطلب</h4>
-                        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 20px; font-size: 13px;">
-                            <div><label style="color: #94a3b8; display: block;">الاسم:</label><strong>${t.member_name}</strong></div>
-                            <div><label style="color: #94a3b8; display: block;">الفرع:</label><strong>${t.member_province}</strong></div>
-                            <div><label style="color: #94a3b8; display: block;">رقم الهاتف:</label><strong>${t.member_phone}</strong></div>
-                            <div><label style="color: #94a3b8; display: block;">تاريخ الفتح:</label><strong>${t.created_at}</strong></div>
-                        </div>
+                        ` : '<div style="padding: 30px; text-align: center; background: #fff5f5; color: #c53030; font-weight: 700; font-size: 13px;">هذه التذكرة مغلقة.</div>'}
                     </div>
                 `);
 
@@ -302,20 +430,12 @@ $priorities = array(
                     fetch(ajaxurl, { method: 'POST', body: fd })
                     .then(r => r.json())
                     .then(res => {
-                        if (res.success) {
-                            smViewTicket(t.id);
-                        } else alert('خطأ: ' + res.data);
+                        if (res.success) smViewTicket(t.id);
+                        else { alert(res.data); btn.prop('disabled', false).text('إرسال الرد'); }
                     });
                 });
             }
         });
-    };
-
-    window.smBackToList = function() {
-        currentActiveTicketId = null;
-        $('#ticket-details-container').hide();
-        $('#tickets-list-container').show();
-        smLoadTickets();
     };
 
     function renderThreadHtml(thread) {
@@ -324,17 +444,14 @@ $priorities = array(
             const isMe = m.sender_id == currentUserId;
             let fileHtml = '';
             if (m.file_url) {
-                const fileName = m.file_url.split('/').pop();
-                fileHtml = `<a href="${m.file_url}" target="_blank" style="display: inline-flex; align-items: center; gap: 5px; margin-top: 10px; padding: 8px 12px; background: rgba(0,0,0,0.05); border-radius: 8px; text-decoration: none; color: inherit; font-size: 12px;">
-                    <span class="dashicons dashicons-paperclip"></span> ${fileName}
-                </a>`;
+                fileHtml = `<a href="${m.file_url}" target="_blank" style="display: block; margin-top: 8px; font-size: 11px; color: inherit; text-decoration: underline;"><span class="dashicons dashicons-paperclip"></span> مرفق</a>`;
             }
 
             html += `
-                <div style="display: flex; flex-direction: column; align-items: ${isMe ? 'flex-end' : 'flex-start'}; margin-bottom: 10px;">
-                    <div style="background: ${isMe ? 'var(--sm-primary-color)' : '#fff'}; color: ${isMe ? '#fff' : 'inherit'}; padding: 15px 20px; border-radius: 15px; border-bottom-${isMe ? 'left' : 'right'}-radius: 4px; box-shadow: 0 2px 4px rgba(0,0,0,0.05); border: ${isMe ? 'none' : '1px solid #e2e8f0'}; max-width: 80%;">
-                        <div style="font-weight: 800; font-size: 11px; margin-bottom: 5px; opacity: 0.8;">${m.sender_name} • ${m.created_at}</div>
-                        <div style="font-size: 14px; line-height: 1.6; white-space: pre-wrap;">${m.message}</div>
+                <div style="display: flex; flex-direction: column; align-items: ${isMe ? 'flex-end' : 'flex-start'}; margin-bottom: 25px;">
+                    <div style="background: ${isMe ? 'var(--sm-primary-color)' : '#fff'}; color: ${isMe ? '#fff' : '#1e293b'}; padding: 25px 18px; border-radius: 12px; border-bottom-${isMe ? 'left' : 'right'}-radius: 4px; box-shadow: 0 1px 2px rgba(0,0,0,0.05); max-width: 85%; border: ${isMe ? 'none' : '1px solid #e2e8f0'};">
+                        <div style="font-weight: 800; font-size: 10px; margin-bottom: 4px; opacity: 0.8;">${m.sender_name} • ${m.created_at}</div>
+                        <div style="font-size: 13px; line-height: 1.6; white-space: pre-wrap;">${m.message}</div>
                         ${fileHtml}
                     </div>
                 </div>
@@ -343,66 +460,194 @@ $priorities = array(
         return html;
     }
 
+    window.smBackToList = function() {
+        currentActiveTicketId = null;
+        $('#ticket-details-view').hide();
+        $('#tickets-list-view').show();
+        smLoadTickets();
+    };
+
     window.smCloseTicket = function(id) {
-        if (!confirm('هل أنت متأكد من إغلاق هذه التذكرة بشكل نهائي؟')) return;
+        if (!confirm('هل أنت متأكد من إغلاق هذه التذكرة؟')) return;
         const fd = new FormData();
         fd.append('action', 'sm_close_ticket');
         fd.append('id', id);
         fd.append('nonce', '<?php echo wp_create_nonce("sm_ticket_action"); ?>');
+        fetch(ajaxurl, { method: 'POST', body: fd }).then(r => r.json()).then(res => { if(res.success) smViewTicket(id); });
+    };
 
-        fetch(ajaxurl, { method: 'POST', body: fd })
+    // DIRECT COMMUNICATION LOGIC
+    window.smLoadCommTemplates = function() {
+        fetch(ajaxurl + '?action=sm_get_comm_templates')
         .then(r => r.json())
         .then(res => {
             if (res.success) {
-                smViewTicket(id);
-            } else alert('خطأ: ' + res.data);
+                commTemplates = res.data;
+                const select = $('#comm-template-select');
+                res.data.forEach(t => {
+                    select.append(`<option value="${t.template_type}">${t.subject}</option>`);
+                });
+            }
+        });
+    };
+
+    window.smSearchMembersForComm = function() {
+        const q = $('#member-search-comm').val();
+        if (q.length < 3) return;
+
+        fetch(ajaxurl + `?action=sm_search_members&member_search=${q}`)
+        .then(r => r.json())
+        .then(res => {
+            const results = $('#member-comm-results').empty();
+            if (res.success && res.data.length > 0) {
+                res.data.forEach(m => {
+                    results.append(`
+                        <div onclick='smSelectCommMember(${JSON.stringify(m)})' class="sm-comm-member-item" style="padding: 20px; background: #fff; border: 1px solid #eee; border-radius: 8px; cursor: pointer; display: flex; align-items: center; gap: 10px; transition: 0.2s;">
+                            <div style="width: 32px; height: 32px; border-radius: 50%; background: #f1f5f9; overflow: hidden; flex-shrink: 0;">
+                                <img src="${m.photo_url || ''}" style="width: 100%; height: 100%; object-fit: cover;">
+                            </div>
+                            <div style="flex: 1; min-width: 0;">
+                                <div style="font-size: 13px; font-weight: 800; color: var(--sm-dark-color); overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">${m.name}</div>
+                                <div style="font-size: 10px; color: #64748b;">${m.national_id} | ${m.governorate}</div>
+                            </div>
+                        </div>
+                    `);
+                });
+            } else {
+                results.html('<div style="text-align: center; padding: 20px; color: #94a3b8; font-size: 12px;">لم يتم العثور على نتائج.</div>');
+            }
+        });
+    };
+
+    window.smSelectCommMember = function(m) {
+        selectedMember = m;
+        $('.sm-comm-member-item').css('border-color', '#eee').css('background', '#fff');
+        // Simple visual select
+        $(`div[onclick*='${m.national_id}']`).css('border-color', 'var(--sm-primary-color)').css('background', 'var(--sm-pastel-red)');
+
+        $('#direct-comm-empty').hide();
+        $('#direct-comm-form-area').show();
+
+        $('#comm-member-id').val(m.id);
+        $('#comm-target-name').text(m.name);
+        $('#comm-target-meta').text(`${m.membership_number || 'بدون رقم قيد'} • ${m.professional_grade || '---'} • ${m.phone}`);
+        $('#comm-target-photo img').attr('src', m.photo_url || '');
+        $('#comm-call-btn').attr('href', `tel:${m.phone}`);
+
+        $('#direct-comm-form')[0].reset();
+        $('#comm-template-select').val('');
+    };
+
+    window.smApplyCommTemplate = function() {
+        const type = $('#comm-template-select').val();
+        if (!type || !selectedMember) return;
+
+        const t = commTemplates.find(x => x.template_type === type);
+        if (t) {
+            let body = t.body
+                .replace(/{member_name}/g, selectedMember.name)
+                .replace(/{membership_number}/g, selectedMember.membership_number || '---')
+                .replace(/{year}/g, new Date().getFullYear())
+                .replace(/{amount}/g, '0.00');
+
+            $('#comm-subject').val(t.subject);
+            $('#comm-message').val(body);
+        }
+    };
+
+    $('#direct-comm-form').on('submit', function(e) {
+        e.preventDefault();
+        const channels = $("input[name='channels[]']:checked").map(function(){return $(this).val();}).get();
+        if (channels.length === 0) {
+            alert('يرجى اختيار قناة إرسال واحدة على الأقل');
+            return;
+        }
+
+        const formData = new FormData(this);
+        formData.append('action', 'sm_send_direct_message');
+        formData.append('nonce', '<?php echo wp_create_nonce("sm_message_action"); ?>');
+        formData.append('template_type', $('#comm-template-select').val() || 'direct');
+
+        const btn = $(this).find('button[type="submit"]');
+        btn.prop('disabled', true).text('جاري المعالجة...');
+
+        fetch(ajaxurl, { method: 'POST', body: formData })
+        .then(r => r.json())
+        .then(res => {
+            btn.prop('disabled', false).html('<span class="dashicons dashicons-share-alt" style="margin-top: 4px;"></span> إرسال المراسلات الآن');
+            if (res.success) {
+                if (channels.includes('whatsapp')) {
+                    const msg = encodeURIComponent($('#comm-message').val());
+                    const waUrl = `https://api.whatsapp.com/send?phone=${selectedMember.phone.replace(/^0/, '+20')}&text=${msg}`;
+                    window.open(waUrl, '_blank');
+                }
+                alert('تمت العملية بنجاح. تم تسجيل المراسلات في السجل.');
+                smShowCommHistory();
+            } else {
+                alert('خطأ: ' + res.data);
+            }
+        });
+    });
+
+    window.smShowCommHistory = function() {
+        if (!selectedMember) return;
+        const body = $('#comm-history-body').html('<div style="text-align: center; padding: 50px;"><div class="sm-loader-mini"></div></div>');
+        $('#comm-history-modal').fadeIn().css('display', 'flex');
+
+        fetch(ajaxurl + `?action=sm_get_member_comms_log&member_id=${selectedMember.id}`)
+        .then(r => r.json())
+        .then(res => {
+            if (res.success && res.data.length > 0) {
+                body.empty();
+                res.data.forEach(l => {
+                    const channelIcons = { whatsapp: 'whatsapp', email: 'email', ticket: 'megaphone' };
+                    const channelColors = { whatsapp: '#25D366', email: '#3182ce', ticket: '#e53e3e' };
+
+                    body.append(`
+                        <div style="padding: 30px; border-bottom: 1px solid #eee; display: flex; gap: 15px;">
+                            <div style="color: ${channelColors[l.channel]};"><span class="dashicons dashicons-${channelIcons[l.channel]}"></span></div>
+                            <div style="flex: 1;">
+                                <div style="display: flex; justify-content: space-between; margin-bottom: 5px;">
+                                    <strong style="font-size: 13px;">${l.subject || 'بدون موضوع'}</strong>
+                                    <span style="font-size: 11px; color: #94a3b8;">${l.sent_at}</span>
+                                </div>
+                                <div style="font-size: 12px; color: #64748b; line-height: 1.6; white-space: pre-wrap;">${l.message_body}</div>
+                                <div style="font-size: 10px; color: #94a3b8; margin-top: 5px;">بواسطة: ${l.sender_name}</div>
+                            </div>
+                        </div>
+                    `);
+                });
+            } else {
+                body.html('<div style="text-align: center; padding: 50px; color: #94a3b8;">لا يوجد سجل مراسلات لهذا العضو.</div>');
+            }
         });
     };
 
     $('#create-ticket-form').on('submit', function(e) {
         e.preventDefault();
-        const btn = $(this).find('button[type="submit"]');
-        btn.prop('disabled', true).text('جاري الإرسال...');
-
         const fd = new FormData(this);
         fd.append('action', 'sm_create_ticket');
         fd.append('nonce', '<?php echo wp_create_nonce("sm_ticket_action"); ?>');
-
-        fetch(ajaxurl, { method: 'POST', body: fd })
-        .then(r => r.json())
-        .then(res => {
-            if (res.success) {
-                $('#create-ticket-modal').fadeOut();
-                smLoadTickets();
-                smViewTicket(res.data);
-            } else {
-                alert('خطأ: ' + res.data);
-                btn.prop('disabled', false).text('إرسال التذكرة');
-            }
+        fetch(ajaxurl, { method: 'POST', body: fd }).then(r=>r.json()).then(res => {
+            if(res.success) { $('#create-ticket-modal').fadeOut(); smLoadTickets(); smViewTicket(res.data); }
+            else alert(res.data);
         });
     });
 
+    // Initialize
     smLoadTickets();
 
-    // Auto-refresh logic
-    if (autoRefreshInterval) clearInterval(autoRefreshInterval);
     autoRefreshInterval = setInterval(() => {
-        if (currentActiveTicketId) {
-            smViewTicket(currentActiveTicketId, true);
-        } else if ($('#tickets-list-container').is(':visible')) {
-            smLoadTickets(false);
-        }
-    }, 5000);
+        if (currentActiveTicketId) smViewTicket(currentActiveTicketId, true);
+        else if ($('#tickets-list-view').is(':visible')) smLoadTickets(false);
+    }, 10000);
 
 })(jQuery);
 </script>
 
 <style>
-.sm-ticket-card:hover {
-    border-color: var(--sm-primary-color) !important;
-    box-shadow: 0 10px 20px rgba(0,0,0,0.05);
-    transform: translateY(-2px);
-}
+.sm-ticket-list-item:hover { background: #f8fafc !important; transform: translateX(-5px); }
+.sm-comm-member-item:hover { background: #f8fafc !important; }
 .sm-loader-mini { border: 3px solid #f3f3f3; border-top: 3px solid var(--sm-primary-color); border-radius: 50%; width: 24px; height: 24px; animation: sm-spin 1s linear infinite; display: inline-block; }
 @keyframes sm-spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
 </style>

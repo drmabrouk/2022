@@ -295,14 +295,19 @@ class SM_Activator {
         $sql .= "CREATE TABLE $table_name (
             id mediumint(9) NOT NULL AUTO_INCREMENT,
             member_id mediumint(9),
+            sender_id bigint(20) DEFAULT 0,
+            channel varchar(20) DEFAULT 'email',
             notification_type varchar(50),
             recipient_email varchar(100),
+            recipient_phone varchar(20),
             subject varchar(255),
+            message_body text,
             sent_at datetime DEFAULT CURRENT_TIMESTAMP,
             status varchar(20),
             PRIMARY KEY  (id),
             KEY member_id (member_id),
-            KEY sent_at (sent_at)
+            KEY sent_at (sent_at),
+            KEY channel (channel)
         ) $charset_collate;\n";
 
         // Documents Table
@@ -474,6 +479,7 @@ class SM_Activator {
         self::fix_surveys_schema();
         self::fix_alerts_schema();
         self::fix_membership_requests_schema();
+        self::fix_notification_logs_schema();
         self::setup_roles();
         self::seed_notification_templates();
         self::seed_publishing_templates();
@@ -576,6 +582,26 @@ class SM_Activator {
         }
     }
 
+    private static function fix_notification_logs_schema() {
+        global $wpdb;
+        $table_name = $wpdb->prefix . 'sm_notification_logs';
+        if ($wpdb->get_var("SHOW TABLES LIKE '$table_name'") != $table_name) return;
+
+        $cols = [
+            'sender_id' => 'bigint(20) DEFAULT 0',
+            'channel' => "varchar(20) DEFAULT 'email'",
+            'recipient_phone' => 'varchar(20)',
+            'message_body' => 'text'
+        ];
+
+        foreach ($cols as $col => $type) {
+            $exists = $wpdb->get_results($wpdb->prepare("SHOW COLUMNS FROM $table_name LIKE %s", $col));
+            if (empty($exists)) {
+                $wpdb->query("ALTER TABLE $table_name ADD $col $type AFTER member_id");
+            }
+        }
+    }
+
     private static function fix_service_requests_schema() {
         global $wpdb;
         $table_name = $wpdb->prefix . 'sm_service_requests';
@@ -637,6 +663,26 @@ class SM_Activator {
             'admin_alert' => [
                 'subject' => 'تنبيه إداري من النقابة',
                 'body' => "عزيزي العضو {member_name}،\n\n{alert_message}\n\nشكراً لكم.",
+                'days_before' => 0
+            ],
+            'fine_notification' => [
+                'subject' => 'إشعار بفرض غرامة تأخير',
+                'body' => "عزيزي العضو {member_name}،\n\nنحيطكم علماً بأنه قد تم تقييد غرامة تأخير على حسابكم بقيمة {amount} ج.م.\nيرجى مراجعة القسم المالي بالنقابة لتسوية الأوضاع.\n\nشكراً لتعاونكم.",
+                'days_before' => 0
+            ],
+            'financial_alert' => [
+                'subject' => 'تنبيه مالي هام وعاجل',
+                'body' => "عزيزي العضو {member_name}،\n\nيرجى العلم بوجود مديونية متراكمة على حسابكم منذ عام {year}.\nنرجو سرعة السداد لضمان استمرار التغطية التأمينية والخدمات النقابية.\n\nإدارة الشؤون المالية.",
+                'days_before' => 0
+            ],
+            'event_invitation' => [
+                'subject' => 'دعوة لحضور فعالية نقابية / دورة تدريبية',
+                'body' => "عزيزي العضو {member_name}،\n\nيسر النقابة العامة دعوتكم لحضور {event_name} المقرر عقده في {event_date}.\nيسعدنا تواجدكم ومشاركتكم الفعالة.\n\nللتسجيل يرجى الرد على هذه الرسالة.",
+                'days_before' => 0
+            ],
+            'general_announcement' => [
+                'subject' => 'إعلان عام للأعضاء',
+                'body' => "عزيزي العضو {member_name}،\n\nتعلن النقابة العامة عن {announcement_title}...\n\nلمزيد من التفاصيل يرجى مراجعة الموقع الرسمي أو التوجه لأقرب فرع.",
                 'days_before' => 0
             ]
         ];

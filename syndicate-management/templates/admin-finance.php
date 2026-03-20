@@ -15,7 +15,7 @@ foreach ($members as $m) {
 ?>
 
 <div class="sm-finance-registry" dir="rtl">
-    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px;">
+    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 30px;">
         <h3 style="margin:0;">إدارة الاستحقاقات المالية</h3>
         <div style="display:flex; gap:10px;">
              <div class="sm-actions-dropdown" style="position:relative; display:inline-block;">
@@ -37,7 +37,7 @@ foreach ($members as $m) {
     </div>
 
     <!-- Overall Metrics -->
-    <div class="sm-card-grid" style="margin-bottom: 10px;">
+    <div class="sm-card-grid" style="margin-bottom: 20px;">
         <div class="sm-stat-card" style="border-right: 5px solid #27ae60;">
             <div style="font-size: 0.85em; color: var(--sm-text-gray); margin-bottom: 5px; font-weight: 700;">إجمالي المبالغ المحصلة</div>
             <div style="font-size: 1.8em; font-weight: 900; color: #27ae60;"><?php echo number_format($stats['total_paid'], 2); ?> <span style="font-size: 0.5em;">ج.م</span></div>
@@ -57,7 +57,7 @@ foreach ($members as $m) {
     </div>
 
     <!-- Search & Filter -->
-    <div style="background: #f8fafc; padding: 15px; border-radius: 12px; border: 1px solid #e2e8f0; margin-bottom: 10px;">
+    <div style="background: #f8fafc; padding: 30px; border-radius: 12px; border: 1px solid #e2e8f0; margin-bottom: 20px;">
         <form method="get" style="display: flex; gap: 12px; align-items: flex-end;">
             <input type="hidden" name="sm_tab" value="finance">
             <div style="flex: 1;">
@@ -87,7 +87,7 @@ foreach ($members as $m) {
             </thead>
             <tbody>
                 <?php if (empty($members_with_balance)): ?>
-                    <tr><td colspan="7" style="text-align:center; padding: 15px; color: #718096;">لا توجد مديونيات قائمة بناءً على معايير البحث.</td></tr>
+                    <tr><td colspan="7" style="text-align:center; padding: 30px; color: #718096;">لا توجد مديونيات قائمة بناءً على معايير البحث.</td></tr>
                 <?php else: ?>
                     <?php foreach ($members_with_balance as $m): ?>
                         <tr>

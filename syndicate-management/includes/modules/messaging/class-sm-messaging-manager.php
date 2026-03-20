@@ -270,4 +270,92 @@ class SM_Messaging_Manager {
             wp_send_json_error('Failed to close ticket');
         }
     }
+
+    public static function ajax_get_communication_templates() {
+        if (!current_user_can('sm_manage_system')) {
+            wp_send_json_error('Unauthorized');
+        }
+        global $wpdb;
+        $templates = $wpdb->get_results("SELECT * FROM {$wpdb->prefix}sm_notification_templates WHERE is_enabled = 1");
+        wp_send_json_success($templates);
+    }
+
+    public static function ajax_send_direct_message() {
+        if (!current_user_can('sm_manage_system')) {
+            wp_send_json_error('Unauthorized');
+        }
+        check_ajax_referer('sm_message_action', 'nonce');
+
+        $mid = intval($_POST['member_id']);
+        $member = SM_DB::get_member_by_id($mid);
+        if (!$member) wp_send_json_error('Member not found');
+
+        $channels = $_POST['channels'] ?? [];
+        $subject = sanitize_text_field($_POST['subject'] ?? '');
+        $message = sanitize_textarea_field($_POST['message'] ?? '');
+        $template_type = sanitize_text_field($_POST['template_type'] ?? 'direct');
+
+        $results = [];
+
+        // 1. WhatsApp Logging
+        if (in_array('whatsapp', $channels)) {
+            SM_DB_Communications::log_notification([
+                'member_id' => $mid,
+                'channel' => 'whatsapp',
+                'type' => $template_type,
+                'phone' => $member->phone,
+                'message' => $message,
+                'subject' => $subject
+            ]);
+            $results['whatsapp'] = 'Logged for WhatsApp redirect';
+        }
+
+        // 2. Email Sending
+        if (in_array('email', $channels) && !empty($member->email)) {
+            $sent = wp_mail($member->email, $subject, $message);
+            if ($sent) {
+                SM_DB_Communications::log_notification([
+                    'member_id' => $mid,
+                    'channel' => 'email',
+                    'type' => $template_type,
+                    'email' => $member->email,
+                    'message' => $message,
+                    'subject' => $subject
+                ]);
+            }
+            $results['email'] = $sent ? 'Sent' : 'Failed';
+        }
+
+        // 3. Platform Ticket Creation
+        if (in_array('ticket', $channels)) {
+            $tid = SM_DB::create_ticket([
+                'member_id' => $mid,
+                'subject' => $subject,
+                'category' => 'other',
+                'priority' => 'medium',
+                'message' => $message,
+                'province' => $member->governorate
+            ]);
+            if ($tid) {
+                SM_DB_Communications::log_notification([
+                    'member_id' => $mid,
+                    'channel' => 'ticket',
+                    'type' => $template_type,
+                    'message' => "تم إنشاء تذكرة رقم #$tid: $message",
+                    'subject' => $subject
+                ]);
+            }
+            $results['ticket'] = $tid ? "Created Ticket #$tid" : 'Failed';
+        }
+
+        wp_send_json_success($results);
+    }
+
+    public static function ajax_get_member_comms_log() {
+        if (!current_user_can('sm_manage_system')) {
+            wp_send_json_error('Unauthorized');
+        }
+        $mid = intval($_GET['member_id'] ?? 0);
+        wp_send_json_success(SM_DB_Communications::get_member_notification_logs($mid));
+    }
 }

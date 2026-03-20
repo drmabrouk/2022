@@ -1,6 +1,6 @@
 <?php if (!defined('ABSPATH')) exit; ?>
 <div class="sm-document-vault" dir="rtl">
-    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px;">
+    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 30px;">
         <div style="display: flex; gap: 10px;">
             <div style="position: relative;">
                 <span class="dashicons dashicons-search" style="position: absolute; right: 12px; top: 50%; transform: translateY(-50%); color: #94a3b8;"></span>
@@ -27,7 +27,7 @@
 <div id="sm-upload-doc-modal" class="sm-modal-overlay">
     <div class="sm-modal-content" style="max-width: 500px;">
         <div class="sm-modal-header"><h3>رفع مستند للأرشيف الإلكتروني</h3><button class="sm-modal-close" onclick="smCloseUploadModal()">&times;</button></div>
-        <form id="sm-upload-doc-form" style="padding: 15px;">
+        <form id="sm-upload-doc-form" style="padding: 30px;">
             <input type="hidden" name="member_id" value="<?php echo $member_id; ?>">
             <div class="sm-form-group">
                 <label class="sm-label">عنوان المستند:</label>
@@ -46,7 +46,7 @@
                 <label class="sm-label">اختيار الملف (PDF أو صورة):</label>
                 <input type="file" name="document_file" class="sm-input" accept="image/*,application/pdf" required>
             </div>
-            <button type="submit" class="sm-btn" style="margin-top: 10px;">بدء الرفع والأرشفة</button>
+            <button type="submit" class="sm-btn" style="margin-top: 20px;">بدء الرفع والأرشفة</button>
         </form>
     </div>
 </div>
@@ -72,14 +72,14 @@
 <div id="sm-doc-logs-modal" class="sm-modal-overlay" style="z-index: 10001;">
     <div class="sm-modal-content" style="max-width: 500px;">
         <div class="sm-modal-header"><h3>سجل نشاط المستند</h3><button class="sm-modal-close" onclick="document.getElementById('sm-doc-logs-modal').style.display='none'">&times;</button></div>
-        <div id="sm-doc-logs-body" style="padding: 15px;"></div>
+        <div id="sm-doc-logs-body" style="padding: 30px;"></div>
     </div>
 </div>
 
 <style>
-.sm-doc-card { background: #fff; border: 1px solid #e2e8f0; border-radius: 12px; padding: 15px; text-align: center; transition: 0.3s; cursor: pointer; position: relative; }
+.sm-doc-card { background: #fff; border: 1px solid #e2e8f0; border-radius: 12px; padding: 30px; text-align: center; transition: 0.3s; cursor: pointer; position: relative; }
 .sm-doc-card:hover { transform: translateY(-5px); box-shadow: 0 10px 20px rgba(0,0,0,0.05); border-color: var(--sm-primary-color); }
-.sm-doc-icon { font-size: 40px; color: #cbd5e0; margin-bottom: 10px; display: block; }
+.sm-doc-icon { font-size: 40px; color: #cbd5e0; margin-bottom: 20px; display: block; }
 .sm-doc-title { font-weight: 700; font-size: 13px; color: var(--sm-dark-color); display: block; margin-bottom: 5px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .sm-doc-meta { font-size: 10px; color: #94a3b8; }
 .sm-doc-category-tag { position: absolute; top: 10px; right: 10px; font-size: 9px; padding: 2px 6px; border-radius: 4px; background: #f1f5f9; color: #64748b; }
@@ -139,7 +139,7 @@ function smViewDocument(url, title, id) {
     if (isPdf) {
         body.innerHTML = `<iframe src="${url}" style="width:100%; height:100%; border:none;"></iframe>`;
     } else {
-        body.innerHTML = `<div style="width:100%; height:100%; display:flex; align-items:center; justify-content:center; padding: 10px;"><img src="${url}" style="max-width:100%; max-height:100%; object-fit:contain; box-shadow:0 0 50px rgba(0,0,0,0.5);"></div>`;
+        body.innerHTML = `<div style="width:100%; height:100%; display:flex; align-items:center; justify-content:center; padding: 20px;"><img src="${url}" style="max-width:100%; max-height:100%; object-fit:contain; box-shadow:0 0 50px rgba(0,0,0,0.5);"></div>`;
     }
 
     document.getElementById('sm-doc-viewer-modal').style.display = 'flex';

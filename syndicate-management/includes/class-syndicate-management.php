@@ -93,6 +93,9 @@ class Syndicate_Management {
             'sm_send_message_ajax' => ['SM_Messaging_Manager', 'ajax_send_message'],
             'sm_get_conversation_ajax' => ['SM_Messaging_Manager', 'ajax_get_conversation'],
             'sm_submit_contact_form' => ['SM_Messaging_Manager', 'ajax_submit_contact_form'],
+            'sm_get_comm_templates' => ['SM_Messaging_Manager', 'ajax_get_communication_templates'],
+            'sm_send_direct_message' => ['SM_Messaging_Manager', 'ajax_send_direct_message'],
+            'sm_get_member_comms_log' => ['SM_Messaging_Manager', 'ajax_get_member_comms_log'],
 
             'sm_add_survey' => ['SM_Education_Manager', 'ajax_add_survey'],
             'sm_update_survey' => ['SM_Education_Manager', 'ajax_update_survey'],

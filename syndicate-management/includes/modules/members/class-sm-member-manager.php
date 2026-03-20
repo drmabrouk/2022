@@ -22,12 +22,20 @@ class SM_Member_Manager {
     }
 
     public static function ajax_search_members() {
-        if (!current_user_can('sm_manage_members')) {
+        if (!current_user_can('sm_manage_members') && !current_user_can('sm_manage_system')) {
             wp_send_json_error('Unauthorized');
         }
-        check_ajax_referer('sm_admin_action', 'nonce');
-        $query = sanitize_text_field($_POST['query']);
-        wp_send_json_success(SM_DB::get_members(['search' => $query]));
+        $query = sanitize_text_field($_REQUEST['member_search'] ?? ($_REQUEST['query'] ?? ''));
+        if (empty($query)) wp_send_json_success([]);
+
+        $members = SM_DB::get_members(['search' => $query, 'limit' => 15]);
+
+        // Enhance with labels for UI
+        foreach ($members as &$m) {
+            $m->branch_label = SM_Settings::get_branch_name($m->governorate);
+        }
+
+        wp_send_json_success($members);
     }
 
     public static function ajax_add_member() {

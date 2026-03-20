@@ -6,7 +6,7 @@ $history = SM_Finance::get_payment_history($member->id);
 
 <div class="sm-member-finance-tab" dir="rtl">
     <!-- Financial Overview Cards -->
-    <div class="sm-card-grid" style="margin-bottom: 10px;">
+    <div class="sm-card-grid" style="margin-bottom: 20px;">
         <div class="sm-stat-card" style="border-right: 5px solid #e53e3e;">
             <div style="font-size: 0.85em; color: var(--sm-text-gray); font-weight: 700;">إجمالي المستحق حالياً (Due)</div>
             <div style="font-size: 1.8em; font-weight: 900; color: #e53e3e;"><?php echo number_format($dues['balance'], 2); ?> <span style="font-size: 0.5em;">ج.م</span></div>
@@ -23,7 +23,7 @@ $history = SM_Finance::get_payment_history($member->id);
 
     <div style="display:grid; grid-template-columns: 1fr 1fr; gap: 30px;">
         <div>
-            <h4 style="border-bottom: 2px solid #eee; padding-bottom: 10px; margin-bottom: 15px; font-weight: 800;"><span class="dashicons dashicons-warning" style="color:#e53e3e;"></span> البنود المستحقة والمديونيات</h4>
+            <h4 style="border-bottom: 2px solid #eee; padding-bottom: 10px; margin-bottom: 30px; font-weight: 800;"><span class="dashicons dashicons-warning" style="color:#e53e3e;"></span> البنود المستحقة والمديونيات</h4>
 
             <?php
             $in_grace = false;
@@ -37,7 +37,7 @@ $history = SM_Finance::get_payment_history($member->id);
                 }
             }
             if ($in_grace): ?>
-                <div style="background: #ebf8ff; color: #2b6cb0; padding: 15px; border-radius: 8px; border: 1px solid #bee3f8; margin-bottom: 15px; font-size: 13px;">
+                <div style="background: #ebf8ff; color: #2b6cb0; padding: 30px; border-radius: 8px; border: 1px solid #bee3f8; margin-bottom: 30px; font-size: 13px;">
                     <span class="dashicons dashicons-info" style="font-size: 18px;"></span> أنت حالياً في <strong>فترة السماح</strong> لتجديد العضوية. يمكنك التجديد الآن بدون أي غرامات تأخير.
                 </div>
             <?php endif; ?>
@@ -57,7 +57,7 @@ $history = SM_Finance::get_payment_history($member->id);
                     </thead>
                     <tbody>
                         <?php if (empty($dues['breakdown'])): ?>
-                            <tr><td colspan="5" style="text-align:center; padding: 15px; color: #38a169; font-weight:700;">لا توجد مديونيات مستحقة. الحساب خالص.</td></tr>
+                            <tr><td colspan="5" style="text-align:center; padding: 30px; color: #38a169; font-weight:700;">لا توجد مديونيات مستحقة. الحساب خالص.</td></tr>
                         <?php else: ?>
                             <?php foreach ($dues['breakdown'] as $item):
                                 $is_late = $item['penalty'] > 0;
@@ -86,11 +86,11 @@ $history = SM_Finance::get_payment_history($member->id);
             </div>
 
             <?php if (current_user_can('sm_manage_finance')): ?>
-            <div id="sm-payment-section" style="margin-top: 12px; background: #fffaf0; border: 1px solid #feebc8; padding: 15px; border-radius: 12px;">
+            <div id="sm-payment-section" style="margin-top: 25px; background: #fffaf0; border: 1px solid #feebc8; padding: 30px; border-radius: 12px;">
                 <h5 style="margin: 0 0 15px 0; color: #744210; font-weight: 800;"><span class="dashicons dashicons-plus-alt" style="color:#27ae60;"></span> تسجيل تحصيل مبلغ</h5>
                 <form id="record-payment-form">
                     <input type="hidden" name="member_id" value="<?php echo $member->id; ?>">
-                    <div style="display:grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 15px;">
+                    <div style="display:grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 30px;">
                         <div>
                             <label class="sm-label" style="font-size:11px;">المبلغ المحصل:</label>
                             <input type="number" name="amount" class="sm-input" value="<?php echo $dues['balance']; ?>" step="0.01" required>
@@ -125,7 +125,7 @@ $history = SM_Finance::get_payment_history($member->id);
         </div>
 
         <div>
-            <h4 style="border-bottom: 2px solid #eee; padding-bottom: 10px; margin-bottom: 15px; font-weight: 800;"><span class="dashicons dashicons-media-spreadsheet" style="color:var(--sm-primary-color);"></span> سجل العمليات المالية السابقة</h4>
+            <h4 style="border-bottom: 2px solid #eee; padding-bottom: 10px; margin-bottom: 30px; font-weight: 800;"><span class="dashicons dashicons-media-spreadsheet" style="color:var(--sm-primary-color);"></span> سجل العمليات المالية السابقة</h4>
             <div style="max-height: 700px; overflow-y: auto; background: #fff; border: 1px solid #eee; border-radius: 12px;">
                 <?php if (empty($history)): ?>
                     <div style="text-align:center; padding: 35px; color: #94a3b8;">لا توجد عمليات سابقة مسجلة.</div>

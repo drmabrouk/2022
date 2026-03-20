@@ -37,12 +37,12 @@ $registry = $wpdb->get_results($wpdb->prepare(
 ?>
 
 <div class="sm-facility-licenses" dir="rtl">
-    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px;">
+    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 30px;">
         <h3 style="margin:0;">إدارة تراخيص المنشآت</h3>
         <button onclick="smOpenFacilityModal()" class="sm-btn" style="width:auto;">+ تسجيل / تجديد منشأة</button>
     </div>
 
-    <div class="sm-tabs-wrapper" style="display: flex; gap: 10px; margin-bottom: 15px; border-bottom: 2px solid #eee; padding-bottom: 10px;">
+    <div class="sm-tabs-wrapper" style="display: flex; gap: 10px; margin-bottom: 30px; border-bottom: 2px solid #eee; padding-bottom: 10px;">
         <button class="sm-tab-btn sm-active" onclick="smOpenInternalTab('facility-registry', this)">سجل المنشآت</button>
         <button class="sm-tab-btn" onclick="smOpenInternalTab('facility-requests', this)">طلبات تراخيص المنشآت</button>
     </div>
@@ -56,7 +56,7 @@ $registry = $wpdb->get_results($wpdb->prepare(
 
     <div id="facility-registry" class="sm-internal-tab">
 
-    <div class="sm-card-grid" style="margin-bottom: 10px;">
+    <div class="sm-card-grid" style="margin-bottom: 20px;">
         <div class="sm-stat-card" style="border-right: 5px solid var(--sm-dark-color);">
             <div style="font-size: 0.85em; color: var(--sm-text-gray);">إجمالي المنشآت</div>
             <div style="font-size: 2em; font-weight: 900;"><?php echo $stats['total']; ?></div>
@@ -75,7 +75,7 @@ $registry = $wpdb->get_results($wpdb->prepare(
         </div>
     </div>
 
-    <div style="background: #f8fafc; padding: 15px; border-radius: 12px; border: 1px solid #e2e8f0; margin-bottom: 10px;">
+    <div style="background: #f8fafc; padding: 30px; border-radius: 12px; border: 1px solid #e2e8f0; margin-bottom: 20px;">
         <form method="get" style="display: flex; gap: 12px; align-items: flex-end;">
             <input type="hidden" name="sm_tab" value="facility-licenses">
             <div style="flex: 1;">
@@ -137,7 +137,7 @@ $registry = $wpdb->get_results($wpdb->prepare(
             <h3>تسجيل / تجديد بيانات المنشأة</h3>
             <button class="sm-modal-close" onclick="document.getElementById('sm-facility-modal').style.display='none'">&times;</button>
         </div>
-        <form id="sm-facility-form" style="padding: 15px;">
+        <form id="sm-facility-form" style="padding: 30px;">
             <div class="sm-form-group">
                 <label class="sm-label">المالك (العضو):</label>
                 <select name="member_id" class="sm-select" id="facility_owner_select" required>
@@ -145,7 +145,7 @@ $registry = $wpdb->get_results($wpdb->prepare(
                     <?php foreach ($members as $m) echo "<option value='{$m->id}' data-fname='{$m->facility_name}' data-fnum='{$m->facility_number}' data-fcat='{$m->facility_category}' data-fissue='{$m->facility_license_issue_date}' data-fexpiry='{$m->facility_license_expiration_date}' data-faddr='{$m->facility_address}'>{$m->name} ({$m->national_id})</option>"; ?>
                 </select>
             </div>
-            <div style="display:grid; grid-template-columns: 1fr 1fr; gap: 20px; margin-top: 15px;">
+            <div style="display:grid; grid-template-columns: 1fr 1fr; gap: 20px; margin-top: 30px;">
                 <div class="sm-form-group">
                     <label class="sm-label">اسم المنشأة:</label>
                     <input type="text" name="facility_name" id="fac_name" class="sm-input" required>
@@ -171,11 +171,11 @@ $registry = $wpdb->get_results($wpdb->prepare(
                     <input type="date" name="facility_license_expiration_date" id="fac_expiry" class="sm-input" required>
                 </div>
             </div>
-            <div class="sm-form-group" style="margin-top: 15px;">
+            <div class="sm-form-group" style="margin-top: 30px;">
                 <label class="sm-label">العنوان التفصيلي:</label>
                 <textarea name="facility_address" id="fac_addr" class="sm-input" rows="2"></textarea>
             </div>
-            <button type="submit" class="sm-btn" style="margin-top: 12px;">حفظ بيانات المنشأة</button>
+            <button type="submit" class="sm-btn" style="margin-top: 25px;">حفظ بيانات المنشأة</button>
         </form>
     </div>
 </div>

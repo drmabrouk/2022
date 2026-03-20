@@ -22,12 +22,12 @@ foreach ($active_surveys as $survey):
     $best_score = SM_DB_Education::get_user_best_score($survey->id, get_current_user_id());
     $passed = ($best_score !== null && $best_score >= $survey->pass_score);
 ?>
-<div class="sm-survey-card" style="background: <?php echo $is_test ? '#f0f7ff' : '#fffdf2'; ?>; border: 2px solid <?php echo $is_test ? '#bee3f8' : '#fef3c7'; ?>; border-radius: 12px; padding: 15px; margin-bottom: 10px; position: relative; overflow: hidden;">
+<div class="sm-survey-card" style="background: <?php echo $is_test ? '#f0f7ff' : '#fffdf2'; ?>; border: 2px solid <?php echo $is_test ? '#bee3f8' : '#fef3c7'; ?>; border-radius: 12px; padding: 30px; margin-bottom: 20px; position: relative; overflow: hidden;">
     <div style="position: absolute; top: 0; right: 0; background: <?php echo $is_test ? '#3182ce' : '#fbbf24'; ?>; color: #fff; font-size: 10px; font-weight: 800; padding: 4px 15px; border-radius: 0 0 0 12px;">
         <?php echo $is_test ? 'اختبار مهني مقرر' : 'استطلاع رأي هام'; ?>
     </div>
     <h3 style="margin: 0 0 10px 0; color: <?php echo $is_test ? '#2c5282' : '#92400e'; ?>;"><?php echo esc_html($survey->title); ?></h3>
-    <div style="display:flex; gap:20px; margin-bottom: 10px; font-size:12px; color:#64748b;">
+    <div style="display:flex; gap:20px; margin-bottom: 20px; font-size:12px; color:#64748b;">
         <?php if($is_test): ?>
             <span>⏰ المدة: <?php echo $survey->time_limit; ?> دقيقة</span>
             <span>🎯 درجة النجاح: <?php echo $survey->pass_score; ?>%</span>
@@ -97,8 +97,8 @@ function smRenderTestQuestions() {
     let html = '';
     testQuestions.forEach((q, idx) => {
         html += `
-            <div class="test-q-block" style="background:#f8fafc; border:1px solid #e2e8f0; border-radius:15px; padding: 15px; margin-bottom: 15px;">
-                <div style="font-weight:900; font-size:1.2em; margin-bottom: 10px; color:var(--sm-dark-color); line-height:1.6;">
+            <div class="test-q-block" style="background:#f8fafc; border:1px solid #e2e8f0; border-radius:15px; padding: 30px; margin-bottom: 30px;">
+                <div style="font-weight:900; font-size:1.2em; margin-bottom: 20px; color:var(--sm-dark-color); line-height:1.6;">
                     ${idx+1}. ${q.question_text}
                 </div>
         `;
@@ -177,10 +177,10 @@ function smFinishTest() {
 
             document.getElementById('test-questions-area').innerHTML = `
                 <div style="text-align:center; padding:50px;">
-                    <div style="font-size:80px; margin-bottom: 10px;">${emoji}</div>
+                    <div style="font-size:80px; margin-bottom: 20px;">${emoji}</div>
                     <h2 style="font-weight:900; color:${color};">${title}</h2>
                     <div style="font-size:2.5em; font-weight:900; margin:20px 0;">${Math.round(data.score)}%</div>
-                    <p style="font-size:1.2em; color:#64748b; margin-bottom: 15px;">تم حفظ النتيجة وإخطار الإدارة بنجاح.</p>
+                    <p style="font-size:1.2em; color:#64748b; margin-bottom: 30px;">تم حفظ النتيجة وإخطار الإدارة بنجاح.</p>
                     <button class="sm-btn" onclick="location.reload()" style="width:auto; padding:0 50px;">العودة للوحة التحكم</button>
                 </div>
             `;
@@ -198,8 +198,8 @@ function smExitTest() {
 </script>
 
 <?php if ($is_officer): ?>
-<div class="sm-card-grid" style="margin-bottom: 10px; grid-template-columns: repeat(4, 1fr); gap: 20px;">
-    <div class="sm-stat-card" style="background: #fff; padding: 15px; border-radius: 20px; border: 1px solid var(--sm-border-color); text-align: center; box-shadow: 0 10px 15px -3px rgba(0,0,0,0.05); transition: 0.3s;">
+<div class="sm-card-grid" style="margin-bottom: 20px; grid-template-columns: repeat(4, 1fr); gap: 20px;">
+    <div class="sm-stat-card" style="background: #fff; padding: 30px; border-radius: 20px; border: 1px solid var(--sm-border-color); text-align: center; box-shadow: 0 10px 15px -3px rgba(0,0,0,0.05); transition: 0.3s;">
         <div style="width: 50px; height: 50px; background: linear-gradient(135deg, #3182ce, #4299e1); color: #fff; border-radius: 15px; display: flex; align-items: center; justify-content: center; margin: 0 auto 15px; box-shadow: 0 4px 12px rgba(49, 130, 206, 0.3);">
             <span class="dashicons dashicons-groups" style="font-size: 24px; width: 24px; height: 24px;"></span>
         </div>
@@ -207,7 +207,7 @@ function smExitTest() {
         <div style="font-size: 1.8em; font-weight: 900; color: var(--sm-dark-color);"><?php echo number_format($stats['total_members'] ?? 0); ?></div>
     </div>
 
-    <div class="sm-stat-card" style="background: #fff; padding: 15px; border-radius: 20px; border: 1px solid var(--sm-border-color); text-align: center; box-shadow: 0 10px 15px -3px rgba(0,0,0,0.05); transition: 0.3s;">
+    <div class="sm-stat-card" style="background: #fff; padding: 30px; border-radius: 20px; border: 1px solid var(--sm-border-color); text-align: center; box-shadow: 0 10px 15px -3px rgba(0,0,0,0.05); transition: 0.3s;">
         <div style="width: 50px; height: 50px; background: linear-gradient(135deg, #dd6b20, #ed8936); color: #fff; border-radius: 15px; display: flex; align-items: center; justify-content: center; margin: 0 auto 15px; box-shadow: 0 4px 12px rgba(221, 107, 32, 0.3);">
             <span class="dashicons dashicons-id-alt" style="font-size: 24px; width: 24px; height: 24px;"></span>
         </div>
@@ -215,7 +215,7 @@ function smExitTest() {
         <div style="font-size: 1.8em; font-weight: 900; color: var(--sm-dark-color);"><?php echo number_format($stats['total_practice_licenses'] ?? 0); ?></div>
     </div>
 
-    <div class="sm-stat-card" style="background: #fff; padding: 15px; border-radius: 20px; border: 1px solid var(--sm-border-color); text-align: center; box-shadow: 0 10px 15px -3px rgba(0,0,0,0.05); transition: 0.3s;">
+    <div class="sm-stat-card" style="background: #fff; padding: 30px; border-radius: 20px; border: 1px solid var(--sm-border-color); text-align: center; box-shadow: 0 10px 15px -3px rgba(0,0,0,0.05); transition: 0.3s;">
         <div style="width: 50px; height: 50px; background: linear-gradient(135deg, #805ad5, #9f7aea); color: #fff; border-radius: 15px; display: flex; align-items: center; justify-content: center; margin: 0 auto 15px; box-shadow: 0 4px 12px rgba(128, 90, 213, 0.3);">
             <span class="dashicons dashicons-building" style="font-size: 24px; width: 24px; height: 24px;"></span>
         </div>
@@ -223,7 +223,7 @@ function smExitTest() {
         <div style="font-size: 1.8em; font-weight: 900; color: var(--sm-dark-color);"><?php echo number_format($stats['total_facility_licenses'] ?? 0); ?></div>
     </div>
 
-    <div class="sm-stat-card" style="background: #fff; padding: 15px; border-radius: 20px; border: 1px solid var(--sm-border-color); text-align: center; box-shadow: 0 10px 15px -3px rgba(0,0,0,0.05); transition: 0.3s;">
+    <div class="sm-stat-card" style="background: #fff; padding: 30px; border-radius: 20px; border: 1px solid var(--sm-border-color); text-align: center; box-shadow: 0 10px 15px -3px rgba(0,0,0,0.05); transition: 0.3s;">
         <div style="width: 50px; height: 50px; background: linear-gradient(135deg, #38a169, #48bb78); color: #fff; border-radius: 15px; display: flex; align-items: center; justify-content: center; margin: 0 auto 15px; box-shadow: 0 4px 12px rgba(56, 161, 105, 0.3);">
             <span class="dashicons dashicons-money-alt" style="font-size: 24px; width: 24px; height: 24px;"></span>
         </div>
@@ -235,16 +235,16 @@ function smExitTest() {
 
 <div style="display: grid; grid-template-columns: 2fr 1fr; gap: 30px; margin-bottom: 40px;">
     <!-- Financial Collection Trends -->
-    <div style="background: #fff; padding: 15px; border: 1px solid var(--sm-border-color); border-radius: 12px; box-shadow: var(--sm-shadow);">
-        <h3 style="margin-top:0; font-size: 1.1em; border-bottom: 1px solid #eee; padding-bottom: 15px; margin-bottom: 10px;">تحصيل الإيرادات (آخر 30 يوم)</h3>
+    <div style="background: #fff; padding: 30px; border: 1px solid var(--sm-border-color); border-radius: 12px; box-shadow: var(--sm-shadow);">
+        <h3 style="margin-top:0; font-size: 1.1em; border-bottom: 1px solid #eee; padding-bottom: 15px; margin-bottom: 20px;">تحصيل الإيرادات (آخر 30 يوم)</h3>
         <div style="height: 300px; position: relative;">
             <canvas id="financialTrendsChart"></canvas>
         </div>
     </div>
 
     <!-- Specialization Distribution -->
-    <div style="background: #fff; padding: 15px; border: 1px solid var(--sm-border-color); border-radius: 12px; box-shadow: var(--sm-shadow);">
-        <h3 style="margin-top:0; font-size: 1.1em; border-bottom: 1px solid #eee; padding-bottom: 15px; margin-bottom: 10px;">توزيع التخصصات المهنية</h3>
+    <div style="background: #fff; padding: 30px; border: 1px solid var(--sm-border-color); border-radius: 12px; box-shadow: var(--sm-shadow);">
+        <h3 style="margin-top:0; font-size: 1.1em; border-bottom: 1px solid #eee; padding-bottom: 15px; margin-bottom: 20px;">توزيع التخصصات المهنية</h3>
         <div style="height: 300px; position: relative;">
             <canvas id="specializationDistChart"></canvas>
         </div>

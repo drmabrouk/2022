@@ -40,7 +40,7 @@ $templates = [
 
 <div class="sm-notifications-settings" dir="rtl">
 
-    <div class="sm-tabs-wrapper" style="display: flex; gap: 10px; margin-bottom: 15px; border-bottom: 2px solid #eee; padding-bottom: 10px;">
+    <div class="sm-tabs-wrapper" style="display: flex; gap: 10px; margin-bottom: 30px; border-bottom: 2px solid #eee; padding-bottom: 10px;">
         <button class="sm-tab-btn sm-active" onclick="smOpenSubTab('email-templates', this)">قوالب البريد</button>
         <button class="sm-tab-btn" onclick="smOpenSubTab('email-logs', this)">سجل الرسائل المرسلة</button>
     </div>
@@ -48,24 +48,24 @@ $templates = [
     <!-- SubTab: Templates -->
     <div id="email-templates" class="sm-sub-tab">
         <div style="display: grid; grid-template-columns: 300px 1fr; gap: 30px;">
-            <div style="background: #f8fafc; padding: 15px; border-radius: 12px; border: 1px solid #e2e8f0;">
+            <div style="background: #f8fafc; padding: 30px; border-radius: 12px; border: 1px solid #e2e8f0;">
                 <h4 style="margin-top:0;">اختر القالب للتعديل:</h4>
                 <ul style="list-style: none; padding: 0; margin: 0;">
                     <?php foreach ($templates as $type => $label): ?>
-                        <li style="margin-bottom: 10px;">
+                        <li style="margin-bottom: 20px;">
                             <button onclick="smLoadTemplate('<?php echo $type; ?>')" class="sm-btn sm-btn-outline" style="width: 100%; text-align: right; justify-content: flex-start;">
                                 <span class="dashicons dashicons-email-alt" style="margin-left: 10px;"></span> <?php echo $label; ?>
                             </button>
                         </li>
                     <?php endforeach; ?>
                 </ul>
-                <div style="margin-top: 10px; padding: 15px; background: #fff; border-radius: 8px; border: 1px solid #edf2f7; font-size: 11px; color: #718096;">
+                <div style="margin-top: 20px; padding: 30px; background: #fff; border-radius: 8px; border: 1px solid #edf2f7; font-size: 11px; color: #718096;">
                     <strong>ملاحظة:</strong> يتم إرسال التنبيهات تلقائياً عبر نظام الجدولة (Cron Job) بشكل يومي.
                 </div>
             </div>
 
-            <div id="template-editor-container" style="background: #fff; padding: 15px; border-radius: 12px; border: 1px solid #e2e8f0;">
-                <div id="template-empty-state" style="text-align: center; padding: 15px; color: #94a3b8;">
+            <div id="template-editor-container" style="background: #fff; padding: 30px; border-radius: 12px; border: 1px solid #e2e8f0;">
+                <div id="template-empty-state" style="text-align: center; padding: 30px; color: #94a3b8;">
                     <span class="dashicons dashicons-edit" style="font-size: 48px; width: 48px; height: 48px;"></span>
                     <p>يرجى اختيار قالب من القائمة الجانبية للبدء في تخصيص محتواه.</p>
                 </div>
@@ -74,7 +74,7 @@ $templates = [
                     <?php wp_nonce_field('sm_admin_action', 'sm_admin_nonce'); ?>
                     <input type="hidden" name="template_type" id="edit_template_type">
 
-                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px; border-bottom: 1px solid #eee; padding-bottom: 15px;">
+                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; border-bottom: 1px solid #eee; padding-bottom: 15px;">
                         <h4 id="edit_template_label" style="margin: 0; color: var(--sm-primary-color);"></h4>
                         <label class="sm-toggle" style="display: flex; align-items: center; gap: 10px; cursor: pointer;">
                             <input type="checkbox" name="is_enabled" id="edit_is_enabled" value="1">
@@ -90,7 +90,7 @@ $templates = [
                     <div class="sm-form-group">
                         <label class="sm-label">نص الرسالة (Body):</label>
                         <textarea name="body" id="edit_body" class="sm-textarea" rows="10" required></textarea>
-                        <div style="margin-top: 10px; display: flex; flex-wrap: wrap; gap: 5px;">
+                        <div style="margin-top: 20px; display: flex; flex-wrap: wrap; gap: 5px;">
                             <span style="font-size: 11px; color: #666;">الرموز المتاحة: </span>
                             <code style="font-size: 10px; background: #eee; padding: 2px 5px; border-radius: 3px;">{member_name}</code>
                             <code style="font-size: 10px; background: #eee; padding: 2px 5px; border-radius: 3px;">{national_id}</code>
@@ -106,8 +106,8 @@ $templates = [
                         <p style="font-size: 10px; color: #999;">ضع 0 للإرسال الفوري عند الحدث.</p>
                     </div>
 
-                    <div style="margin-top: 15px; border-top: 1px solid #eee; padding-top: 20px;">
-                        <button type="submit" name="sm_save_template" class="sm-btn" style="width: auto; padding: 12px 40px;">حفظ التغييرات</button>
+                    <div style="margin-top: 30px; border-top: 1px solid #eee; padding-top: 20px;">
+                        <button type="submit" name="sm_save_template" class="sm-btn" style="width: auto; padding: 25px 40px;">حفظ التغييرات</button>
                     </div>
                 </form>
             </div>
@@ -132,7 +132,7 @@ $templates = [
                     <?php
                     $logs = SM_Notifications::get_logs(50);
                     if (empty($logs)): ?>
-                        <tr><td colspan="6" style="text-align: center; padding: 15px;">لا توجد سجلات بريد مرسلة حالياً.</td></tr>
+                        <tr><td colspan="6" style="text-align: center; padding: 30px;">لا توجد سجلات بريد مرسلة حالياً.</td></tr>
                     <?php else:
                         foreach ($logs as $log): ?>
                             <tr>
