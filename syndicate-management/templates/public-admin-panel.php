@@ -513,6 +513,16 @@ $greeting = ($hour >= 5 && $hour < 12) ? 'صباح الخير' : 'مساء ال�
                     <span class="dashicons dashicons-email"></span>
                     <?php
                     $unread_msgs = $wpdb->get_var($wpdb->prepare("SELECT COUNT(*) FROM {$wpdb->prefix}sm_messages WHERE receiver_id = %d AND is_read = 0", $user->ID));
+
+                    // Also count unread tickets for members
+                    if ($is_restricted) {
+                        $member_id = $wpdb->get_var($wpdb->prepare("SELECT id FROM {$wpdb->prefix}sm_members WHERE wp_user_id = %d", $user->ID));
+                        if ($member_id) {
+                            $unread_tickets = $wpdb->get_var($wpdb->prepare("SELECT COUNT(*) FROM {$wpdb->prefix}sm_tickets WHERE member_id = %d AND status != 'closed' AND updated_at > created_at", $member_id));
+                            $unread_msgs += intval($unread_tickets);
+                        }
+                    }
+
                     if ($unread_msgs > 0): ?>
                         <span class="sm-icon-badge" style="background: #e53e3e;"><?php echo $unread_msgs; ?></span>
                     <?php endif; ?>
@@ -542,11 +552,11 @@ $greeting = ($hour >= 5 && $hour < 12) ? 'صباح الخير' : 'مساء ال�
                         // Integrated System Alerts
                         $sys_alerts = SM_DB::get_active_alerts_for_user($user->ID);
                         foreach($sys_alerts as $sa) {
-                            $notif_alerts[] = ['text' => $sa->title, 'type' => 'system', 'id' => $sa->id];
+                            $notif_alerts[] = ['text' => $sa->title, 'type' => 'system', 'id' => $sa->id, 'details' => $sa->message];
                         }
 
                         if (count($notif_alerts) > 0): ?>
-                            <span class="sm-icon-dot" style="background: #f6ad55;"></span>
+                            <span class="sm-icon-badge" style="background: #f6ad55;"><?php echo count($notif_alerts); ?></span>
                         <?php endif; ?>
                     </a>
                     <div id="sm-notifications-menu" style="display: none; position: absolute; top: 150%; left: 0; background: white; border: 1px solid var(--sm-border-color); border-radius: 8px; width: 300px; box-shadow: 0 10px 25px rgba(0,0,0,0.1); z-index: 1000; padding: 15px;">
@@ -558,9 +568,10 @@ $greeting = ($hour >= 5 && $hour < 12) ? 'صباح الخير' : 'مساء ال�
                                 <div style="font-size: 12px; padding: 8px; border-bottom: 1px solid #f9fafb; color: #4a5568; display: flex; gap: 8px; align-items: flex-start;">
                                     <span class="dashicons <?php echo $a['type'] == 'system' ? 'dashicons-megaphone' : 'dashicons-warning'; ?>" style="font-size: 16px; color: <?php echo $a['type'] == 'system' ? 'var(--sm-primary-color)' : '#d69e2e'; ?>;"></span>
                                     <span>
-                                        <?php echo $a['text']; ?>
+                                        <strong style="display:block; margin-bottom:2px;"><?php echo $a['text']; ?></strong>
                                         <?php if($a['type'] == 'system'): ?>
-                                            <br><a href="javascript:location.reload()" style="font-size:10px; color:var(--sm-primary-color); font-weight:700;">عرض التفاصيل</a>
+                                            <div style="font-size:10px; color:#718096; margin-bottom:5px;"><?php echo mb_strimwidth(strip_tags($a['details']), 0, 80, "..."); ?></div>
+                                            <a href="javascript:smAcknowledgeAlert(<?php echo $a['id']; ?>)" style="font-size:10px; color:var(--sm-primary-color); font-weight:700;">عرض التفاصيل / إغلاق</a>
                                         <?php endif; ?>
                                     </span>
                                 </div>
