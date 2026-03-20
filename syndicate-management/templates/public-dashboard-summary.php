@@ -198,37 +198,49 @@ function smExitTest() {
 </script>
 
 <?php if ($is_officer): ?>
-<div class="sm-card-grid" style="margin-bottom: 20px; grid-template-columns: repeat(4, 1fr); gap: 20px;">
-    <div class="sm-stat-card" style="background: #fff; padding: 30px; border-radius: 20px; border: 1px solid var(--sm-border-color); text-align: center; box-shadow: 0 10px 15px -3px rgba(0,0,0,0.05); transition: 0.3s;">
-        <div style="width: 50px; height: 50px; background: linear-gradient(135deg, #3182ce, #4299e1); color: #fff; border-radius: 15px; display: flex; align-items: center; justify-content: center; margin: 0 auto 15px; box-shadow: 0 4px 12px rgba(49, 130, 206, 0.3);">
+<div class="sm-card-grid" style="margin-bottom: 30px; grid-template-columns: repeat(4, 1fr); gap: 20px; direction: rtl;">
+    <!-- Stat Box 1: Members -->
+    <div onclick="window.location.href='<?php echo add_query_arg('sm_tab', 'members'); ?>'" style="cursor:pointer; background: #fff; padding: 25px 20px; border-radius: 12px; border: 1px solid var(--sm-border-color); display: flex; align-items: center; justify-content: flex-start; gap: 20px; box-shadow: 0 4px 12px rgba(0,0,0,0.05); transition: 0.3s;">
+        <div style="width: 48px; height: 48px; background: rgba(49, 130, 206, 0.1); color: #3182ce; border-radius: 12px; display: flex; align-items: center; justify-content: center; flex-shrink: 0;">
             <span class="dashicons dashicons-groups" style="font-size: 24px; width: 24px; height: 24px;"></span>
         </div>
-        <div style="font-size: 0.85em; color: #64748b; margin-bottom: 8px; font-weight: 700;">إجمالي الأعضاء</div>
-        <div style="font-size: 1.8em; font-weight: 900; color: var(--sm-dark-color);"><?php echo number_format($stats['total_members'] ?? 0); ?></div>
+        <div style="text-align: right; flex: 1;">
+            <div style="font-size: 0.85em; color: #64748b; font-weight: 700; margin-bottom: 2px;">إجمالي الأعضاء</div>
+            <div style="font-size: 1.6em; font-weight: 900; color: var(--sm-dark-color); line-height: 1.2;"><?php echo number_format($stats['total_members'] ?? 0); ?></div>
+        </div>
     </div>
 
-    <div class="sm-stat-card" style="background: #fff; padding: 30px; border-radius: 20px; border: 1px solid var(--sm-border-color); text-align: center; box-shadow: 0 10px 15px -3px rgba(0,0,0,0.05); transition: 0.3s;">
-        <div style="width: 50px; height: 50px; background: linear-gradient(135deg, #dd6b20, #ed8936); color: #fff; border-radius: 15px; display: flex; align-items: center; justify-content: center; margin: 0 auto 15px; box-shadow: 0 4px 12px rgba(221, 107, 32, 0.3);">
+    <!-- Stat Box 2: Practice Licenses -->
+    <div onclick="window.location.href='<?php echo add_query_arg('sm_tab', 'practice-licenses'); ?>'" style="cursor:pointer; background: #fff; padding: 25px 20px; border-radius: 12px; border: 1px solid var(--sm-border-color); display: flex; align-items: center; justify-content: flex-start; gap: 20px; box-shadow: 0 4px 12px rgba(0,0,0,0.05); transition: 0.3s;">
+        <div style="width: 48px; height: 48px; background: rgba(221, 107, 32, 0.1); color: #dd6b20; border-radius: 12px; display: flex; align-items: center; justify-content: center; flex-shrink: 0;">
             <span class="dashicons dashicons-id-alt" style="font-size: 24px; width: 24px; height: 24px;"></span>
         </div>
-        <div style="font-size: 0.85em; color: #64748b; margin-bottom: 8px; font-weight: 700;">تصاريح المزاولة</div>
-        <div style="font-size: 1.8em; font-weight: 900; color: var(--sm-dark-color);"><?php echo number_format($stats['total_practice_licenses'] ?? 0); ?></div>
+        <div style="text-align: right; flex: 1;">
+            <div style="font-size: 0.85em; color: #64748b; font-weight: 700; margin-bottom: 2px;">تصاريح المزاولة</div>
+            <div style="font-size: 1.6em; font-weight: 900; color: var(--sm-dark-color); line-height: 1.2;"><?php echo number_format($stats['total_practice_licenses'] ?? 0); ?></div>
+        </div>
     </div>
 
-    <div class="sm-stat-card" style="background: #fff; padding: 30px; border-radius: 20px; border: 1px solid var(--sm-border-color); text-align: center; box-shadow: 0 10px 15px -3px rgba(0,0,0,0.05); transition: 0.3s;">
-        <div style="width: 50px; height: 50px; background: linear-gradient(135deg, #805ad5, #9f7aea); color: #fff; border-radius: 15px; display: flex; align-items: center; justify-content: center; margin: 0 auto 15px; box-shadow: 0 4px 12px rgba(128, 90, 213, 0.3);">
+    <!-- Stat Box 3: Facility Licenses -->
+    <div onclick="window.location.href='<?php echo add_query_arg('sm_tab', 'facility-licenses'); ?>'" style="cursor:pointer; background: #fff; padding: 25px 20px; border-radius: 12px; border: 1px solid var(--sm-border-color); display: flex; align-items: center; justify-content: flex-start; gap: 20px; box-shadow: 0 4px 12px rgba(0,0,0,0.05); transition: 0.3s;">
+        <div style="width: 48px; height: 48px; background: rgba(128, 90, 213, 0.1); color: #805ad5; border-radius: 12px; display: flex; align-items: center; justify-content: center; flex-shrink: 0;">
             <span class="dashicons dashicons-building" style="font-size: 24px; width: 24px; height: 24px;"></span>
         </div>
-        <div style="font-size: 0.85em; color: #64748b; margin-bottom: 8px; font-weight: 700;">تراخيص المنشآت</div>
-        <div style="font-size: 1.8em; font-weight: 900; color: var(--sm-dark-color);"><?php echo number_format($stats['total_facility_licenses'] ?? 0); ?></div>
+        <div style="text-align: right; flex: 1;">
+            <div style="font-size: 0.85em; color: #64748b; font-weight: 700; margin-bottom: 2px;">تراخيص المنشآت</div>
+            <div style="font-size: 1.6em; font-weight: 900; color: var(--sm-dark-color); line-height: 1.2;"><?php echo number_format($stats['total_facility_licenses'] ?? 0); ?></div>
+        </div>
     </div>
 
-    <div class="sm-stat-card" style="background: #fff; padding: 30px; border-radius: 20px; border: 1px solid var(--sm-border-color); text-align: center; box-shadow: 0 10px 15px -3px rgba(0,0,0,0.05); transition: 0.3s;">
-        <div style="width: 50px; height: 50px; background: linear-gradient(135deg, #38a169, #48bb78); color: #fff; border-radius: 15px; display: flex; align-items: center; justify-content: center; margin: 0 auto 15px; box-shadow: 0 4px 12px rgba(56, 161, 105, 0.3);">
+    <!-- Stat Box 4: Revenue -->
+    <div onclick="window.location.href='<?php echo add_query_arg('sm_tab', 'finance'); ?>'" style="cursor:pointer; background: #fff; padding: 25px 20px; border-radius: 12px; border: 1px solid var(--sm-border-color); display: flex; align-items: center; justify-content: flex-start; gap: 20px; box-shadow: 0 4px 12px rgba(0,0,0,0.05); transition: 0.3s;">
+        <div style="width: 48px; height: 48px; background: rgba(56, 161, 105, 0.1); color: #38a169; border-radius: 12px; display: flex; align-items: center; justify-content: center; flex-shrink: 0;">
             <span class="dashicons dashicons-money-alt" style="font-size: 24px; width: 24px; height: 24px;"></span>
         </div>
-        <div style="font-size: 0.85em; color: #64748b; margin-bottom: 8px; font-weight: 700;">إجمالي الإيرادات</div>
-        <div style="font-size: 1.8em; font-weight: 900; color: #38a169;"><?php echo number_format($stats['total_revenue'] ?? 0, 2); ?> <span style="font-size: 0.4em;">ج.م</span></div>
+        <div style="text-align: right; flex: 1;">
+            <div style="font-size: 0.85em; color: #64748b; font-weight: 700; margin-bottom: 2px;">إجمالي الإيرادات</div>
+            <div style="font-size: 1.6em; font-weight: 900; color: #38a169; line-height: 1.2;"><?php echo number_format($stats['total_revenue'] ?? 0, 2); ?> <span style="font-size: 0.5em;">ج.م</span></div>
+        </div>
     </div>
 </div>
 

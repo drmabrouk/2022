@@ -9,8 +9,14 @@ class SM_System_Manager {
             wp_send_json_error('Unauthorized');
         }
         check_ajax_referer('sm_admin_action', 'nonce');
-        if (SM_DB::save_branch($_POST) !== false) {
-            SM_Logger::log('حفظ بيانات فرع', "تم حفظ بيانات الفرع: " . sanitize_text_field($_POST['name'] ?? ''));
+
+        $data = $_POST;
+        if (isset($data['is_active'])) {
+            $data['is_active'] = (int)$data['is_active'];
+        }
+
+        if (SM_DB::save_branch($data) !== false) {
+            SM_Logger::log('حفظ بيانات فرع', "تم حفظ بيانات الفرع: " . sanitize_text_field($data['name'] ?? ''));
             wp_send_json_success();
         } else {
             wp_send_json_error('Failed to save branch');

@@ -461,6 +461,7 @@ class SM_Activator {
             digital_wallet varchar(20),
             instapay_id varchar(100),
             postal_code varchar(20),
+            is_active tinyint(1) DEFAULT 1,
             created_at datetime DEFAULT CURRENT_TIMESTAMP,
             PRIMARY KEY  (id),
             UNIQUE KEY slug (slug)
@@ -923,7 +924,8 @@ class SM_Activator {
             'bank_local' => 'text',
             'digital_wallet' => 'varchar(20)',
             'instapay_id' => 'varchar(100)',
-            'postal_code' => 'varchar(20)'
+            'postal_code' => 'varchar(20)',
+            'is_active' => 'tinyint(1) DEFAULT 1'
         ];
 
         foreach ($cols as $col => $type) {

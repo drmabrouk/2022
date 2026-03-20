@@ -6,8 +6,8 @@
         <div style="width: 50px; height: 50px; background: #fff; border: 2px solid var(--sm-primary-color); border-radius: 50%; display: inline-flex; align-items: center; justify-content: center; margin-bottom: 8px; box-shadow: 0 4px 10px rgba(246, 48, 73, 0.15);">
             <span class="dashicons dashicons-shield-check" style="font-size: 24px; width: 24px; height: 24px; color: var(--sm-primary-color);"></span>
         </div>
-        <h2 style="margin: 0; font-weight: 900; font-size: 1.4em; color: var(--sm-dark-color); border: none; padding: 0;">بوابة التحقق المهني الموحدة</h2>
-        <p style="color: var(--sm-text-gray); font-size: 12px; margin-top: 2px; font-weight: 500;">استعلام فوري ومعتمد من السجلات الرسمية للنقابة</p>
+        <h2 style="margin: 0; font-weight: 900; font-size: 1.4em; color: var(--sm-dark-color); border: none; padding: 0;"><?php echo esc_html(get_option('sm_verify_title', 'بوابة التحقق المهني الموحدة')); ?></h2>
+        <p style="color: var(--sm-text-gray); font-size: 12px; margin-top: 2px; font-weight: 500;"><?php echo esc_html(get_option('sm_verify_desc', 'استعلام فوري ومعتمد من السجلات الرسمية للنقابة')); ?></p>
     </div>
 
     <!-- Compact Search Interface -->
@@ -27,7 +27,7 @@
             </div>
             <div style="margin-top: 6px; display: flex; align-items: center; gap: 4px; color: var(--sm-text-gray); font-size: 10px; font-weight: 500;">
                 <span class="dashicons dashicons-info" style="font-size: 12px; width: 12px; height: 12px;"></span>
-                <span>النظام يتعرف تلقائياً على نوع الرقم المدخل.</span>
+                <span><?php echo esc_html(get_option('sm_verify_help', 'النظام يتعرف تلقائياً على نوع الرقم المدخل.')); ?></span>
             </div>
         </form>
     </div>
