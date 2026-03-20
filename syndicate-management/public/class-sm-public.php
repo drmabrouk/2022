@@ -25,9 +25,47 @@ class SM_Public {
             }
         }
         if (is_admin() && !defined('DOING_AJAX') && !current_user_can('manage_options')) {
-            wp_redirect(home_url('/sm-admin'));
+            $user = wp_get_current_user();
+            $roles = (array)$user->roles;
+            $is_member = in_array('sm_syndicate_member', $roles) || in_array('sm_member', $roles);
+            wp_redirect(home_url($is_member ? '/my-account' : '/dashboard'));
             exit;
         }
+    }
+
+    public function handle_frontend_redirection() {
+        if (!is_user_logged_in() || is_admin()) return;
+
+        $user = wp_get_current_user();
+        $roles = (array)$user->roles;
+        $is_admin_or_manager = in_array('sm_system_admin', $roles) || in_array('sm_syndicate_admin', $roles) || in_array('administrator', $roles);
+        $is_member = in_array('sm_syndicate_member', $roles) || in_array('sm_member', $roles);
+
+        global $wp;
+        $current_path = trim($wp->request, '/');
+
+        if ($is_admin_or_manager) {
+            if ($current_path === 'my-account' || $current_path === 'sm-admin') {
+                wp_redirect(add_query_arg($_GET, home_url('/dashboard')));
+                exit;
+            }
+        } elseif ($is_member) {
+            if ($current_path === 'dashboard' || $current_path === 'sm-admin') {
+                wp_redirect(add_query_arg($_GET, home_url('/my-account')));
+                exit;
+            }
+        }
+    }
+
+    public function custom_login_redirect($redirect_to, $request, $user) {
+        if (isset($user->roles) && is_array($user->roles)) {
+            if (in_array('administrator', $user->roles) || in_array('sm_system_admin', $user->roles) || in_array('sm_syndicate_admin', $user->roles)) {
+                return home_url('/dashboard');
+            } else {
+                return home_url('/my-account');
+            }
+        }
+        return $redirect_to;
     }
 
     public function enqueue_styles() {

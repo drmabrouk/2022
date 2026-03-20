@@ -15,7 +15,10 @@ class SM_Auth {
 
     public static function shortcode_login() {
         if (is_user_logged_in()) {
-            wp_redirect(home_url('/sm-admin'));
+            $user = wp_get_current_user();
+            $roles = (array)$user->roles;
+            $is_member = in_array('sm_syndicate_member', $roles) || in_array('sm_member', $roles);
+            wp_redirect(home_url($is_member ? '/my-account' : '/dashboard'));
             exit;
         }
         $syndicate = SM_Settings::get_syndicate_info();
@@ -59,7 +62,7 @@ class SM_Auth {
                     <?php
                     $args = array(
                         'echo' => false,
-                        'redirect' => home_url('/sm-admin'),
+                        'redirect' => home_url('/dashboard'),
                         'form_id' => 'sm_login_form',
                         'label_remember' => 'تذكرني',
                         'label_log_in' => 'دخول النظام',
@@ -121,7 +124,7 @@ class SM_Auth {
                             <a href="javascript:smEditProfile()" class="sm-dropdown-item"><span class="dashicons dashicons-lock"></span> تغيير كلمة المرور</a>
                         <?php endif; ?>
                         <?php if (current_user_can('manage_options')): ?>
-                            <a href="<?php echo add_query_arg('sm_tab', 'global-settings', home_url('/sm-admin')); ?>" class="sm-dropdown-item"><span class="dashicons dashicons-admin-generic"></span> إعدادات النظام</a>
+                            <a href="<?php echo add_query_arg('sm_tab', 'global-settings', home_url('/dashboard')); ?>" class="sm-dropdown-item"><span class="dashicons dashicons-admin-generic"></span> إعدادات النظام</a>
                         <?php endif; ?>
                         <a href="javascript:location.reload()" class="sm-dropdown-item"><span class="dashicons dashicons-update"></span> تحديث الصفحة</a>
                     </div>
