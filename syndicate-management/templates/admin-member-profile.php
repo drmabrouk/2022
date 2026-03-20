@@ -88,13 +88,17 @@ $acc_status = SM_Finance::get_member_status($member->id);
         </div>
     </div>
 
-    <!-- Profile Tabs -->
-    <div class="sm-tabs-wrapper" style="display: flex; gap: 10px; margin-bottom: 30px; border-bottom: 2px solid #eee; padding-bottom: 10px;">
+    <!-- Profile Tabs (9-Tab Layout) -->
+    <div class="sm-tabs-wrapper" style="display: flex; gap: 5px; margin-bottom: 30px; border-bottom: 2px solid #eee; padding-bottom: 10px; overflow-x: auto; white-space: nowrap;">
         <button class="sm-tab-btn sm-active" onclick="smOpenInternalTab('profile-info', this)"><span class="dashicons dashicons-admin-users"></span> بيانات العضوية</button>
-        <button class="sm-tab-btn" onclick="smOpenInternalTab('professional-requests-tab', this)"><span class="dashicons dashicons-awards"></span> طلبات المهنة</button>
-        <button class="sm-tab-btn" onclick="smOpenInternalTab('finance-management', this)"><span class="dashicons dashicons-money-alt"></span> الإدارة المالية</button>
-        <button class="sm-tab-btn" onclick="smOpenInternalTab('document-vault', this); smLoadDocuments();"><span class="dashicons dashicons-portfolio"></span> الأرشيف والمستندات</button>
-        <button class="sm-tab-btn" onclick="smOpenInternalTab('member-chat', this); setTimeout(() => selectConversation(<?php echo $member->id; ?>, '<?php echo esc_js($member->name); ?>', <?php echo $member->wp_user_id ?: 0; ?>), 100);"><span class="dashicons dashicons-email"></span> المراسلات والشكاوى</button>
+        <button class="sm-tab-btn" onclick="smOpenInternalTab('professional-requests-tab', this)"><span class="dashicons dashicons-awards"></span> الطلبات المهنية</button>
+        <button class="sm-tab-btn" onclick="smOpenInternalTab('license-status-tab', this)"><span class="dashicons dashicons-id-alt"></span> حالة التراخيص</button>
+        <button class="sm-tab-btn" onclick="smOpenInternalTab('finance-management', this)"><span class="dashicons dashicons-money-alt"></span> المالية والاستحقاقات</button>
+        <button class="sm-tab-btn" onclick="smOpenInternalTab('document-vault', this); smLoadDocuments();"><span class="dashicons dashicons-portfolio"></span> الأرشيف الرقمي</button>
+        <button class="sm-tab-btn" onclick="smOpenInternalTab('member-correspondence', this); setTimeout(() => smSwitchMessagingTab('direct-comm', $('.sm-messaging-center .sm-tab-btn')[1]), 100);"><span class="dashicons dashicons-email"></span> المراسلات</button>
+        <button class="sm-tab-btn" onclick="smOpenInternalTab('member-complaints', this); setTimeout(() => smSwitchMessagingTab('tickets', $('.sm-messaging-center .sm-tab-btn')[0]), 100);"><span class="dashicons dashicons-megaphone"></span> الشكاوى والدعم</button>
+        <button class="sm-tab-btn" onclick="smOpenInternalTab('digital-services-tab', this)"><span class="dashicons dashicons-cloud"></span> الخدمات الرقمية</button>
+        <button class="sm-tab-btn" onclick="smOpenInternalTab('exams-tab', this)"><span class="dashicons dashicons-welcome-learn-more"></span> الاختبارات المهنية</button>
     </div>
 
     <div id="profile-info" class="sm-internal-tab">
@@ -102,7 +106,7 @@ $acc_status = SM_Finance::get_member_status($member->id);
             <div style="display: flex; flex-direction: column; gap: 30px;">
                 <!-- Basic Info -->
                 <div style="background: #fff; padding: 30px; border-radius: 12px; border: 1px solid var(--sm-border-color); box-shadow: var(--sm-shadow);">
-                <h3 style="margin-top:0; border-bottom: 1px solid #eee; padding-bottom: 10px; margin-bottom: 20px;">البيانات الأساسية</h3>
+                <h3 style="margin-top:0; border-bottom: 1px solid #eee; padding-bottom: 10px; margin-bottom: 20px;">البيانات الأساسية والأكاديمية</h3>
                 <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px;">
                     <div><label class="sm-label">الرقم القومي:</label> <div class="sm-value"><?php echo esc_html($member->national_id); ?></div></div>
                     <div><label class="sm-label">كود العضوية:</label> <div class="sm-value"><?php echo esc_html($member->membership_number); ?></div></div>
@@ -116,7 +120,7 @@ $acc_status = SM_Finance::get_member_status($member->id);
                 $depts = SM_Settings::get_departments();
                 $degrees = SM_Settings::get_academic_degrees();
                 ?>
-                <h4 style="margin: 20px 0 10px 0; color: var(--sm-primary-color);">البيانات الأكاديمية</h4>
+                <h4 style="margin: 20px 0 10px 0; color: var(--sm-primary-color);">المؤهلات العلمية</h4>
                 <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px;">
                     <div><label class="sm-label">الجامعة:</label> <div class="sm-value"><?php echo esc_html($univs[$member->university] ?? $member->university); ?></div></div>
                     <div><label class="sm-label">الكلية:</label> <div class="sm-value"><?php echo esc_html($facs[$member->faculty] ?? $member->faculty); ?></div></div>
@@ -132,123 +136,7 @@ $acc_status = SM_Finance::get_member_status($member->id);
                     <div><label class="sm-label">فرع السكن:</label> <div class="sm-value"><?php echo esc_html($govs[$member->residence_governorate] ?? $member->residence_governorate); ?></div></div>
                     <div><label class="sm-label">المدينة / المركز:</label> <div class="sm-value"><?php echo esc_html($member->residence_city); ?></div></div>
                     <div style="grid-column: span 2;"><label class="sm-label">العنوان (الشارع / القرية):</label> <div class="sm-value"><?php echo esc_html($member->residence_street); ?></div></div>
-                    <div><label class="sm-label">فرع الفرع (النقابة):</label> <div class="sm-value"><?php echo esc_html(SM_Settings::get_branch_name($member->governorate)); ?></div></div>
-                </div>
-            </div>
-
-            <!-- Professional Permits Section -->
-            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px;">
-                <!-- Practice Permit Card -->
-                <div class="sm-license-card" style="background: #fff; border-radius: 12px; border: 1px solid var(--sm-border-color); overflow: hidden; box-shadow: var(--sm-shadow); display: flex; flex-direction: column;">
-                    <div style="background: var(--sm-primary-color); padding: 30px 20px; display: flex; justify-content: space-between; align-items: center; color: #fff;">
-                        <h4 style="margin: 0; font-weight: 800;"><span class="dashicons dashicons-id-alt" style="vertical-align: middle;"></span> تصريح مزاولة المهنة</h4>
-                        <?php
-                        $lic_valid = ($member->license_expiration_date && $member->license_expiration_date >= date('Y-m-d'));
-                        $lic_badge_bg = $lic_valid ? '#38a169' : '#e53e3e';
-                        if (empty($member->license_number)) $lic_badge_bg = '#718096';
-                        ?>
-                        <span class="sm-badge" style="background: <?php echo $lic_badge_bg; ?>; color: #fff; border: 1px solid rgba(255,255,255,0.3);">
-                            <?php echo empty($member->license_number) ? 'غير مسجل' : ($lic_valid ? 'ساري' : 'منتهي'); ?>
-                        </span>
-                    </div>
-                    <div style="padding: 30px; flex: 1;">
-                        <?php if (empty($member->license_number)): ?>
-                            <div style="text-align: center; color: #94a3b8; padding: 30px;">
-                                <span class="dashicons dashicons-warning" style="font-size: 32px; width: 32px; height: 28px;"></span>
-                                <p style="margin-top: 20px; font-weight: 700;">غير مقيد / ليس في سجلات التصاريح</p>
-                            </div>
-                        <?php else: ?>
-                            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px;">
-                                <div><label class="sm-label" style="font-size: 11px;">رقم التصريح</label><div style="font-weight: 800; color: var(--sm-dark-color);"><?php echo esc_html($member->license_number); ?></div></div>
-                                <div><label class="sm-label" style="font-size: 11px;">تاريخ الإصدار</label><div style="font-weight: 700;"><?php echo esc_html($member->license_issue_date ?: '---'); ?></div></div>
-                                <div style="grid-column: span 2;">
-                                    <label class="sm-label" style="font-size: 11px;">تاريخ الانتهاء</label>
-                                    <div style="font-weight: 800; color: <?php echo $lic_valid ? '#38a169' : '#e53e3e'; ?>; font-size: 1.1em;">
-                                        <?php echo esc_html($member->license_expiration_date ?: '---'); ?>
-                                        <?php if ($lic_valid): ?>
-                                            <span style="font-size: 11px; font-weight: 400; margin-right: 5px;">(ينتهي خلال <?php
-                                                $d1 = new DateTime(); $d2 = new DateTime($member->license_expiration_date);
-                                                echo $d1->diff($d2)->days;
-                                            ?> يوم)</span>
-                                        <?php endif; ?>
-                                    </div>
-                                </div>
-                            </div>
-                            <div style="margin-top: 30px; padding-top: 15px; border-top: 1px solid #f1f5f9; display: flex; gap: 10px;">
-                                <?php if (current_user_can('sm_print_reports')): ?>
-                                    <a href="<?php echo admin_url('admin-ajax.php?action=sm_print_license&member_id='.$member->id); ?>" target="_blank" class="sm-btn sm-btn-outline" style="height: 28px; font-size: 11px; width: auto;"><span class="dashicons dashicons-printer"></span> طباعة التصريح</a>
-                                <?php endif; ?>
-                            </div>
-                        <?php endif; ?>
-                    </div>
-                    <div style="padding: 30px 20px; background: #f8fafc; border-top: 1px solid #eee;">
-                        <div class="sm-dropdown" style="position:relative; width: 100%;">
-                            <button onclick="smToggleCardOptions('permit-options')" class="sm-btn sm-btn-outline" style="width: 100%; font-size: 12px; justify-content: space-between;">
-                                خيارات الطلبات <span class="dashicons dashicons-arrow-down-alt2"></span>
-                            </button>
-                            <div id="permit-options" class="sm-dropdown-menu" style="display:none; position:absolute; bottom:100%; right:0; width:100%; background:white; border:1px solid #eee; border-radius:8px; box-shadow:0 -10px 25px rgba(0,0,0,0.1); z-index:10;">
-                                <a href="javascript:smRequestPermitTest(<?php echo $member->id; ?>)" class="sm-dropdown-item"><span class="dashicons dashicons-welcome-learn-more"></span> طلب اختبار تصريح مزاولة</a>
-                                <a href="javascript:smRequestPermitRenewal(<?php echo $member->id; ?>)" class="sm-dropdown-item"><span class="dashicons dashicons-update"></span> طلب تجديد تصريح</a>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-
-                <!-- Establishment License Card -->
-                <div class="sm-license-card" style="background: #fff; border-radius: 12px; border: 1px solid var(--sm-border-color); overflow: hidden; box-shadow: var(--sm-shadow); display: flex; flex-direction: column;">
-                    <div style="background: #2c3e50; padding: 30px 20px; display: flex; justify-content: space-between; align-items: center; color: #fff;">
-                        <h4 style="margin: 0; font-weight: 800;"><span class="dashicons dashicons-building" style="vertical-align: middle;"></span> ترخيص المنشأة</h4>
-                        <?php
-                        $fac_valid = ($member->facility_license_expiration_date && $member->facility_license_expiration_date >= date('Y-m-d'));
-                        $fac_badge_bg = $fac_valid ? '#27ae60' : '#e53e3e';
-                        if (empty($member->facility_number)) $fac_badge_bg = '#718096';
-                        ?>
-                        <span class="sm-badge" style="background: <?php echo $fac_badge_bg; ?>; color: #fff; border: 1px solid rgba(255,255,255,0.3);">
-                            <?php echo empty($member->facility_number) ? 'غير مسجل' : ($fac_valid ? 'ساري' : 'منتهي'); ?>
-                        </span>
-                    </div>
-                    <div style="padding: 30px; flex: 1;">
-                        <?php if (empty($member->facility_number)): ?>
-                            <div style="text-align: center; color: #94a3b8; padding: 30px;">
-                                <span class="dashicons dashicons-building" style="font-size: 32px; width: 32px; height: 28px;"></span>
-                                <p style="margin-top: 20px; font-weight: 700;">لا توجد منشأة مسجلة</p>
-                            </div>
-                        <?php else: ?>
-                            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px;">
-                                <div style="grid-column: span 2;"><label class="sm-label" style="font-size: 11px;">اسم المنشأة</label><div style="font-weight: 800; color: var(--sm-dark-color);"><?php echo esc_html($member->facility_name); ?></div></div>
-                                <div><label class="sm-label" style="font-size: 11px;">رقم الترخيص</label><div style="font-weight: 700;"><?php echo esc_html($member->facility_number); ?></div></div>
-                                <div><label class="sm-label" style="font-size: 11px;">الفئة</label><div><span class="sm-badge sm-badge-low" style="background: #edf2f7; color: #2d3748;"><?php echo esc_html($member->facility_category); ?></span></div></div>
-                                <div style="grid-column: span 2;">
-                                    <label class="sm-label" style="font-size: 11px;">تاريخ انتهاء الترخيص</label>
-                                    <div style="font-weight: 800; color: <?php echo $fac_valid ? '#38a169' : '#e53e3e'; ?>;">
-                                        <?php echo esc_html($member->facility_license_expiration_date ?: '---'); ?>
-                                    </div>
-                                </div>
-                            </div>
-                            <div style="margin-top: 30px; padding-top: 15px; border-top: 1px solid #f1f5f9; display: flex; gap: 10px;">
-                                <?php if (current_user_can('sm_print_reports')): ?>
-                                    <a href="<?php echo admin_url('admin-ajax.php?action=sm_print_facility&member_id='.$member->id); ?>" target="_blank" class="sm-btn sm-btn-outline" style="height: 28px; font-size: 11px; width: auto;"><span class="dashicons dashicons-printer"></span> طباعة الترخيص</a>
-                                <?php endif; ?>
-                            </div>
-                        <?php endif; ?>
-                    </div>
-                    <div style="padding: 30px 20px; background: #f8fafc; border-top: 1px solid #eee;">
-                        <?php if (!empty($member->license_number) && $lic_valid): ?>
-                            <div class="sm-dropdown" style="position:relative; width: 100%;">
-                                <button onclick="smToggleCardOptions('fac-options')" class="sm-btn sm-btn-outline" style="width: 100%; font-size: 12px; justify-content: space-between;">
-                                    خيارات الطلبات <span class="dashicons dashicons-arrow-down-alt2"></span>
-                                </button>
-                                <div id="fac-options" class="sm-dropdown-menu" style="display:none; position:absolute; bottom:100%; right:0; width:100%; background:white; border:1px solid #eee; border-radius:8px; box-shadow:0 -10px 25px rgba(0,0,0,0.1); z-index:10;">
-                                    <a href="javascript:smRequestFacilityLicense(<?php echo $member->id; ?>)" class="sm-dropdown-item"><span class="dashicons dashicons-plus"></span> طلب ترخيص منشأة جديدة</a>
-                                    <a href="javascript:smRequestFacilityRenewal(<?php echo $member->id; ?>)" class="sm-dropdown-item"><span class="dashicons dashicons-update"></span> طلب تجديد ترخيص منشأة</a>
-                                </div>
-                            </div>
-                        <?php else: ?>
-                            <div style="font-size: 11px; color: #718096; text-align: center; font-style: italic;">
-                                يتطلب تصريح مزاولة ساري لطلب ترخيص منشأة
-                            </div>
-                        <?php endif; ?>
-                    </div>
+                    <div><label class="sm-label">الفرع النقابي التابع له:</label> <div class="sm-value"><?php echo esc_html(SM_Settings::get_branch_name($member->governorate)); ?></div></div>
                 </div>
             </div>
         </div>
@@ -298,6 +186,11 @@ $acc_status = SM_Finance::get_member_status($member->id);
         ?>
     </div>
 
+    <!-- License Status Tab (Merged View) -->
+    <div id="license-status-tab" class="sm-internal-tab" style="display: none;">
+        <?php include SM_PLUGIN_DIR . 'templates/public-member-licenses.php'; ?>
+    </div>
+
     <!-- Finance Management Tab -->
     <div id="finance-management" class="sm-internal-tab" style="display: none;">
         <?php include SM_PLUGIN_DIR . 'templates/member-finance-tab.php'; ?>
@@ -308,13 +201,32 @@ $acc_status = SM_Finance::get_member_status($member->id);
         <?php include SM_PLUGIN_DIR . 'templates/member-document-vault.php'; ?>
     </div>
 
-    <!-- Communication Tab -->
-    <div id="member-chat" class="sm-internal-tab" style="display: none;">
-        <div style="height: 600px; border: 1px solid #eee; border-radius: 12px; overflow: hidden; background: #fff;">
-            <?php
-            // Reuse messaging-center but in a compact way
-            include SM_PLUGIN_DIR . 'templates/messaging-center.php';
-            ?>
+    <!-- Correspondence Tab -->
+    <div id="member-correspondence" class="sm-internal-tab" style="display: none;">
+        <div style="min-height: 600px; border: 1px solid #eee; border-radius: 12px; overflow: hidden; background: #fff;">
+            <?php include SM_PLUGIN_DIR . 'templates/messaging-center.php'; ?>
+        </div>
+    </div>
+
+    <!-- Complaints Tab -->
+    <div id="member-complaints" class="sm-internal-tab" style="display: none;">
+        <div style="min-height: 600px; border: 1px solid #eee; border-radius: 12px; overflow: hidden; background: #fff;">
+            <?php /* Messaging center is already included above, but we reuse the component logic */ ?>
+            <p style="padding: 20px; text-align: center; color: #64748b;">يتم عرض نظام التذاكر والشكاوى في هذا التبويب.</p>
+        </div>
+    </div>
+
+    <!-- Digital Services Tab -->
+    <div id="digital-services-tab" class="sm-internal-tab" style="display: none;">
+        <?php include SM_PLUGIN_DIR . 'templates/admin-services.php'; ?>
+    </div>
+
+    <!-- Exams Tab -->
+    <div id="exams-tab" class="sm-internal-tab" style="display: none;">
+        <div style="background:#fff; padding: 30px; border-radius:12px; border:1px solid #e2e8f0; min-height:400px;">
+            <h3 style="margin:0 0 10px 0; font-weight:800; color:var(--sm-dark-color);">اختبارات الممارسة المهنية</h3>
+            <p style="color:#64748b; margin-bottom: 25px; font-size:14px;">يرجى التقدم للاختبارات المقررة للحصول على أو تجديد تراخيص مزاولة المهنة.</p>
+            <?php include SM_PLUGIN_DIR . 'templates/public-dashboard-summary.php'; ?>
         </div>
     </div>
 
@@ -427,6 +339,28 @@ function smToggleCardOptions(id) {
     el.style.display = el.style.display === 'none' ? 'block' : 'none';
 }
 
+window.addEventListener('load', function() {
+    const params = new URLSearchParams(window.location.search);
+    const tab = params.get('profile_tab');
+    if (tab) {
+        const tabMap = {
+            'info': 'profile-info',
+            'requests': 'professional-requests-tab',
+            'licenses': 'license-status-tab',
+            'finance': 'finance-management',
+            'archive': 'document-vault',
+            'correspondence': 'member-correspondence',
+            'complaints': 'member-complaints',
+            'services': 'digital-services-tab',
+            'exams': 'exams-tab'
+        };
+        const targetId = tabMap[tab];
+        if (targetId) {
+            const btn = document.querySelector(`[onclick*="'${targetId}'"]`);
+            if (btn) btn.click();
+        }
+    }
+});
 
 function smRequestPermitTest(mid) { smSubmitProfRequest('permit_test', mid); }
 function smRequestPermitRenewal(mid) { smSubmitProfRequest('permit_renewal', mid); }
