@@ -273,4 +273,32 @@ class SM_DB_Communications {
         global $wpdb;
         return $wpdb->update("{$wpdb->prefix}sm_tickets", array('status' => $status), array('id' => $id));
     }
+
+    public static function log_notification($data) {
+        global $wpdb;
+        return $wpdb->insert($wpdb->prefix . 'sm_notification_logs', array(
+            'member_id' => intval($data['member_id']),
+            'sender_id' => intval($data['sender_id'] ?? get_current_user_id()),
+            'channel' => sanitize_text_field($data['channel'] ?? 'email'),
+            'notification_type' => sanitize_text_field($data['type'] ?? 'direct'),
+            'recipient_email' => sanitize_email($data['email'] ?? ''),
+            'recipient_phone' => sanitize_text_field($data['phone'] ?? ''),
+            'subject' => sanitize_text_field($data['subject'] ?? ''),
+            'message_body' => sanitize_textarea_field($data['message'] ?? ''),
+            'sent_at' => current_time('mysql'),
+            'status' => 'sent'
+        ));
+    }
+
+    public static function get_member_notification_logs($member_id) {
+        global $wpdb;
+        return $wpdb->get_results($wpdb->prepare(
+            "SELECT l.*, u.display_name as sender_name
+             FROM {$wpdb->prefix}sm_notification_logs l
+             LEFT JOIN {$wpdb->base_prefix}users u ON l.sender_id = u.ID
+             WHERE l.member_id = %d
+             ORDER BY l.sent_at DESC",
+            $member_id
+        ));
+    }
 }
