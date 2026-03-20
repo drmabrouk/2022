@@ -65,22 +65,44 @@ class SM_License_Manager {
         }
 
         $results = [];
+        $grades = SM_Settings::get_professional_grades();
+        $specs = SM_Settings::get_specializations();
 
         // 1. Intelligent Input Detection: National ID (14 digits) -> Full Profile
         if (preg_match('/^[0-9]{14}$/', $val)) {
             $member = SM_DB::get_member_by_national_id($val);
             if ($member) {
-                $results['profile'] = [
-                    'label' => 'ملف بيانات العضو الكامل',
+                $results['type'] = 'profile';
+                $results['owner'] = [
                     'name' => $member->name,
                     'national_id' => $member->national_id,
-                    'membership_number' => $member->membership_number ?: 'غير متوفر',
-                    'professional_grade' => SM_Settings::get_professional_grades()[$member->professional_grade] ?? $member->professional_grade,
-                    'specialization' => SM_Settings::get_specializations()[$member->specialization] ?? $member->specialization,
-                    'governorate' => SM_Settings::get_branch_name($member->governorate),
+                    'email' => $member->email,
+                    'phone' => $member->phone,
+                    'branch' => SM_Settings::get_branch_name($member->governorate),
+                    'grade' => $grades[$member->professional_grade] ?? $member->professional_grade,
+                    'specialization' => $specs[$member->specialization] ?? $member->specialization,
+                ];
+                $results['membership'] = [
+                    'number' => $member->membership_number,
                     'status' => $member->membership_status ?: 'Active',
                     'expiry' => $member->membership_expiration_date
                 ];
+                if ($member->license_number) {
+                    $results['practice'] = [
+                        'number' => $member->license_number,
+                        'issue_date' => $member->license_issue_date,
+                        'expiry' => $member->license_expiration_date
+                    ];
+                }
+                if ($member->facility_number) {
+                    $results['facility'] = [
+                        'name' => $member->facility_name,
+                        'number' => $member->facility_number,
+                        'category' => $member->facility_category,
+                        'address' => $member->facility_address,
+                        'expiry' => $member->facility_license_expiration_date
+                    ];
+                }
                 wp_send_json_success($results);
             }
         }
@@ -88,13 +110,19 @@ class SM_License_Manager {
         // 2. Check for Membership Number Match
         $member = SM_DB::get_member_by_membership_number($val);
         if ($member) {
+            $results['type'] = 'membership';
+            $results['owner'] = [
+                'name' => $member->name,
+                'email' => $member->email,
+                'phone' => $member->phone,
+                'branch' => SM_Settings::get_branch_name($member->governorate),
+            ];
             $results['membership'] = [
                 'label' => 'بيانات العضوية والتسجيل النقابي',
-                'name' => $member->name,
                 'number' => $member->membership_number,
                 'status' => $member->membership_status ?: 'Active',
-                'specialization' => SM_Settings::get_specializations()[$member->specialization] ?? ($member->specialization ?: 'غير محدد'),
-                'grade' => SM_Settings::get_professional_grades()[$member->professional_grade] ?? ($member->professional_grade ?: 'غير محدد'),
+                'grade' => $grades[$member->professional_grade] ?? $member->professional_grade,
+                'specialization' => $specs[$member->specialization] ?? $member->specialization,
                 'expiry' => $member->membership_expiration_date
             ];
             wp_send_json_success($results);
@@ -103,12 +131,20 @@ class SM_License_Manager {
         // 3. Check for Practice Permit Number Match
         $member = SM_DB::get_member_by_license_number($val);
         if ($member) {
+            $results['type'] = 'practice';
+            $results['owner'] = [
+                'name' => $member->name,
+                'email' => $member->email,
+                'phone' => $member->phone,
+                'branch' => SM_Settings::get_branch_name($member->governorate),
+            ];
             $results['practice'] = [
                 'label' => 'بيانات تصريح مزاولة المهنة المعتمد',
-                'name' => $member->name,
                 'number' => $member->license_number,
                 'issue_date' => $member->license_issue_date ?: 'غير محدد',
-                'expiry' => $member->license_expiration_date
+                'expiry' => $member->license_expiration_date,
+                'grade' => $grades[$member->professional_grade] ?? $member->professional_grade,
+                'specialization' => $specs[$member->specialization] ?? $member->specialization,
             ];
             wp_send_json_success($results);
         }
@@ -116,9 +152,16 @@ class SM_License_Manager {
         // 4. Check for Facility License Number Match
         $member = SM_DB::get_member_by_facility_number($val);
         if ($member) {
-            $results['license'] = [
+            $results['type'] = 'facility';
+            $results['owner'] = [
+                'name' => $member->name,
+                'email' => $member->email,
+                'phone' => $member->phone,
+                'branch' => SM_Settings::get_branch_name($member->governorate),
+            ];
+            $results['facility'] = [
                 'label' => 'رخصة تشغيل المنشأة / الأكاديمية',
-                'facility_name' => $member->facility_name,
+                'name' => $member->facility_name,
                 'number' => $member->facility_number,
                 'category' => $member->facility_category,
                 'address' => $member->facility_address ?: 'غير محدد',
@@ -134,13 +177,19 @@ class SM_License_Manager {
                 '%' . $wpdb->esc_like($val) . '%'
             ));
             if ($member) {
-                $results['profile'] = [
-                    'label' => 'نتيجة البحث بالاسم',
+                $results['type'] = 'search';
+                $results['owner'] = [
                     'name' => $member->name,
-                    'national_id' => '************' . substr($member->national_id, -2),
-                    'membership_number' => $member->membership_number ?: '---',
-                    'governorate' => SM_Settings::get_branch_name($member->governorate),
-                    'status' => $member->membership_status ?: 'Active'
+                    'email' => $member->email,
+                    'phone' => $member->phone,
+                    'branch' => SM_Settings::get_branch_name($member->governorate),
+                    'grade' => $grades[$member->professional_grade] ?? $member->professional_grade,
+                    'specialization' => $specs[$member->specialization] ?? $member->specialization,
+                ];
+                $results['membership'] = [
+                    'number' => $member->membership_number ?: '---',
+                    'status' => $member->membership_status ?: 'Active',
+                    'expiry' => $member->membership_expiration_date
                 ];
                 wp_send_json_success($results);
             }
