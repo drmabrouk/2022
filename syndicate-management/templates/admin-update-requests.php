@@ -22,7 +22,7 @@ $degrees = SM_Settings::get_academic_degrees();
         </div>
     </div>
 
-    <div class="sm-filters-bar" style="margin-bottom: 10px;">
+    <div class="sm-filters-bar" style="margin-bottom: 20px;">
         <a href="?sm_tab=update_requests&status=pending" class="sm-btn <?php echo $status_filter === 'pending' ? '' : 'sm-btn-outline'; ?>" style="text-decoration:none;">قيد الانتظار</a>
         <a href="?sm_tab=update_requests&status=approved" class="sm-btn <?php echo $status_filter === 'approved' ? '' : 'sm-btn-outline'; ?>" style="margin-right: 10px; text-decoration:none;">تم الاعتماد</a>
         <a href="?sm_tab=update_requests&status=rejected" class="sm-btn <?php echo $status_filter === 'rejected' ? '' : 'sm-btn-outline'; ?>" style="margin-right: 10px; text-decoration:none;">مرفوضة</a>
@@ -45,7 +45,7 @@ $degrees = SM_Settings::get_academic_degrees();
             </thead>
             <tbody>
                 <?php if (empty($requests)): ?>
-                    <tr><td colspan="5" style="text-align: center; padding: 15px; color: #64748b;">لا توجد طلبات حالياً</td></tr>
+                    <tr><td colspan="5" style="text-align: center; padding: 30px; color: #64748b;">لا توجد طلبات حالياً</td></tr>
                 <?php else: foreach ($requests as $req):
                     $data = json_decode($req->requested_data, true);
                     $member = SM_DB::get_member_by_id($req->member_id);

@@ -23,19 +23,19 @@ $appearance = SM_Settings::get_appearance();
         body { font-family: 'Rubik', sans-serif; margin: 0; padding: 0; background: #f0f2f5; color: #333; }
         .invoice-box { width: 210mm; min-height: 297mm; padding: 20mm; margin: 0 auto; background: #fff; box-sizing: border-box; position: relative; box-shadow: 0 0 20px rgba(0,0,0,0.1); }
         .header { display: flex; justify-content: space-between; align-items: flex-start; border-bottom: 4px solid <?php echo $appearance['primary_color']; ?>; padding-bottom: 20px; margin-bottom: 40px; }
-        .logo { max-height: 80px; margin-bottom: 10px; }
+        .logo { max-height: 80px; margin-bottom: 20px; }
         .syndicate-info h1 { margin: 0; font-size: 24px; color: <?php echo $appearance['dark_color']; ?>; }
         .invoice-title { text-align: left; }
         .invoice-title h2 { margin: 0; color: <?php echo $appearance['primary_color']; ?>; font-size: 32px; text-transform: uppercase; }
         .details-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 40px; margin-bottom: 35px; }
-        .info-block h3 { font-size: 14px; text-transform: uppercase; color: #777; border-bottom: 1px solid #eee; padding-bottom: 5px; margin-bottom: 15px; }
+        .info-block h3 { font-size: 14px; text-transform: uppercase; color: #777; border-bottom: 1px solid #eee; padding-bottom: 5px; margin-bottom: 30px; }
         .info-block p { margin: 5px 0; font-weight: 700; }
         .invoice-table { width: 100%; border-collapse: collapse; margin-bottom: 35px; }
-        .invoice-table th { background: #f8f9fa; padding: 15px; text-align: right; border-bottom: 2px solid #dee2e6; color: #555; }
-        .invoice-table td { padding: 15px; border-bottom: 1px solid #eee; }
+        .invoice-table th { background: #f8f9fa; padding: 30px; text-align: right; border-bottom: 2px solid #dee2e6; color: #555; }
+        .invoice-table td { padding: 30px; border-bottom: 1px solid #eee; }
         .total-section { display: flex; justify-content: flex-end; }
         .total-box { width: 250px; }
-        .total-row { display: flex; justify-content: space-between; padding: 10px 0; border-bottom: 1px solid #eee; }
+        .total-row { display: flex; justify-content: space-between; padding: 20px 0; border-bottom: 1px solid #eee; }
         .total-row.grand-total { border-bottom: none; color: <?php echo $appearance['primary_color']; ?>; font-size: 20px; font-weight: 900; }
         .footer { position: absolute; bottom: 20mm; left: 20mm; right: 20mm; text-align: center; border-top: 1px solid #eee; padding-top: 20px; font-size: 12px; color: #777; }
         @media print {
@@ -47,7 +47,7 @@ $appearance = SM_Settings::get_appearance();
 </head>
 <body>
     <div class="no-print" style="position: fixed; top: 20px; right: 20px; z-index: 1000;">
-        <button onclick="window.print()" style="padding: 12px 25px; background: <?php echo $appearance['primary_color']; ?>; color: #fff; border: none; border-radius: 8px; cursor: pointer; font-weight: 700; box-shadow: 0 4px 6px rgba(0,0,0,0.1);">طباعة الفاتورة</button>
+        <button onclick="window.print()" style="padding: 25px 25px; background: <?php echo $appearance['primary_color']; ?>; color: #fff; border: none; border-radius: 8px; cursor: pointer; font-weight: 700; box-shadow: 0 4px 6px rgba(0,0,0,0.1);">طباعة الفاتورة</button>
     </div>
 
     <div class="invoice-box">
@@ -62,7 +62,7 @@ $appearance = SM_Settings::get_appearance();
             </div>
             <div class="invoice-title">
                 <h2>فاتورة سداد رسمية</h2>
-                <div style="background: #f8fafc; padding: 10px 20px; border-radius: 8px; border: 1px solid #e2e8f0; margin-top: 10px;">
+                <div style="background: #f8fafc; padding: 20px 20px; border-radius: 8px; border: 1px solid #e2e8f0; margin-top: 20px;">
                     <p style="margin: 0; font-weight: 900; color: #111F35; font-size: 18px;">رقم الفاتورة: <?php echo esc_html($payment->digital_invoice_code); ?></p>
                     <p style="margin: 5px 0 0 0; color: #718096; font-size: 12px;">تاريخ الإصدار: <?php echo date('Y-m-d', strtotime($payment->payment_date)); ?></p>
                 </div>

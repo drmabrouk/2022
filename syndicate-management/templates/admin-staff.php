@@ -1,6 +1,6 @@
 <?php if (!defined('ABSPATH')) exit; ?>
 <div class="sm-content-wrapper" dir="rtl">
-    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px;">
+    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 30px;">
         <h3 style="margin:0; border:none; padding:0;">إدارة مستخدمي النظام</h3>
         <?php if (current_user_can('sm_manage_users') || current_user_can('manage_options')): ?>
             <div style="display:flex; gap:10px;">
@@ -11,10 +11,10 @@
         <?php endif; ?>
     </div>
 
-    <div id="staff-csv-import-form" style="display:none; background: #f8fafc; padding: 15px; border: 2px dashed #cbd5e0; border-radius: 12px; margin-bottom: 10px;">
+    <div id="staff-csv-import-form" style="display:none; background: #f8fafc; padding: 30px; border: 2px dashed #cbd5e0; border-radius: 12px; margin-bottom: 20px;">
         <h3 style="margin-top:0; color:var(--sm-secondary-color);">دليل استيراد مستخدمي النظام (CSV)</h3>
         
-        <div style="background:#fff; padding:15px; border-radius:8px; border:1px solid #e2e8f0; margin-bottom: 10px;">
+        <div style="background:#fff; padding:15px; border-radius:8px; border:1px solid #e2e8f0; margin-bottom: 20px;">
             <p style="font-size:13px; font-weight:700; margin-bottom:10px;">هيكل ملف المستخدمين الصحيح:</p>
             <table style="width:100%; border-collapse:collapse; text-align:center;">
                 <thead>
@@ -48,7 +48,7 @@
                 <label class="sm-label">اختر ملف CSV للمستخدمين:</label>
                 <input type="file" name="csv_file" accept=".csv" required>
             </div>
-            <div style="display:flex; gap:10px; margin-top: 10px;">
+            <div style="display:flex; gap:10px; margin-top: 20px;">
                 <button type="submit" name="sm_import_staffs_csv" class="sm-btn" style="width:auto; background:#27ae60;">استيراد القائمة الآن</button>
                 <button type="button" onclick="this.parentElement.parentElement.parentElement.style.display='none'" class="sm-btn" style="width:auto; background:var(--sm-text-gray);">إلغاء</button>
             </div>
@@ -63,7 +63,7 @@
     ?>
 
     <?php if ($is_sys_manager): ?>
-    <div class="sm-tabs-wrapper" style="display: flex; gap: 10px; margin-bottom: 10px; border-bottom: 2px solid #eee;">
+    <div class="sm-tabs-wrapper" style="display: flex; gap: 10px; margin-bottom: 20px; border-bottom: 2px solid #eee;">
         <a href="<?php echo remove_query_arg('role_filter'); ?>" class="sm-tab-btn <?php echo empty($_GET['role_filter']) ? 'sm-active' : ''; ?>" style="text-decoration:none;">الكل</a>
         <a href="<?php echo add_query_arg('role_filter', 'sm_system_admin'); ?>" class="sm-tab-btn <?php echo ($_GET['role_filter'] ?? '') == 'sm_system_admin' ? 'sm-active' : ''; ?>" style="text-decoration:none;">مدير النظام</a>
         <a href="<?php echo add_query_arg('role_filter', 'sm_syndicate_admin'); ?>" class="sm-tab-btn <?php echo ($_GET['role_filter'] ?? '') == 'sm_syndicate_admin' ? 'sm-active' : ''; ?>" style="text-decoration:none;">مسؤول نقابة</a>
@@ -71,7 +71,7 @@
     </div>
     <?php endif; ?>
 
-    <div style="background: white; padding: 15px; border: 1px solid var(--sm-border-color); border-radius: var(--sm-radius); margin-bottom: 10px; box-shadow: var(--sm-shadow);">
+    <div style="background: white; padding: 30px; border: 1px solid var(--sm-border-color); border-radius: var(--sm-radius); margin-bottom: 20px; box-shadow: var(--sm-shadow);">
         <form method="get" style="display: grid; grid-template-columns: 1fr 1fr auto; gap: 20px; align-items: end;">
             <input type="hidden" name="page" value="sm-dashboard">
             <input type="hidden" name="sm_tab" value="staff">
@@ -141,7 +141,7 @@
 
                 $users = SM_DB::get_staff($args);
                 if (empty($users)): ?>
-                    <tr><td colspan="6" style="padding: 15px; text-align: center;">لا يوجد مستخدمون يطابقون البحث.</td></tr>
+                    <tr><td colspan="6" style="padding: 30px; text-align: center;">لا يوجد مستخدمون يطابقون البحث.</td></tr>
                 <?php else: ?>
                     <?php foreach ($users as $u):
                         $role = (array)$u->roles;
@@ -183,7 +183,7 @@
                             </td>
                         </tr>
                         <tr id="edit-panel-<?php echo $u->ID; ?>" class="edit-panel-row" style="display:none; background: #f8fafc; border-right: 4px solid var(--sm-primary-color);">
-                            <td colspan="8" style="padding: 15px;">
+                            <td colspan="8" style="padding: 30px;">
                                 <form onsubmit="saveInlineEdit(event, <?php echo $u->ID; ?>)" class="inline-edit-form">
                                     <?php wp_nonce_field('sm_syndicateMemberAction', 'sm_nonce'); ?>
                                     <input type="hidden" name="edit_officer_id" value="<?php echo $u->ID; ?>">
@@ -244,7 +244,7 @@
                                             <input type="password" name="user_pass" class="sm-input" placeholder="********">
                                         </div>
                                     </div>
-                                    <div style="margin-top: 15px; display: flex; gap: 10px; justify-content: flex-end;">
+                                    <div style="margin-top: 30px; display: flex; gap: 10px; justify-content: flex-end;">
                                         <button type="submit" class="sm-btn" style="width: auto; padding: 0 30px;">حفظ التعديلات</button>
                                         <button type="button" onclick="document.getElementById('edit-panel-<?php echo $u->ID; ?>').style.display='none'" class="sm-btn sm-btn-outline" style="width: auto; padding: 0 30px;">إلغاء</button>
                                     </div>
@@ -263,7 +263,7 @@
     $total_pages = ceil($total_users / $limit);
     if ($total_pages > 1):
     ?>
-    <div class="sm-pagination" style="margin-top: 10px; display: flex; gap: 5px; justify-content: center;">
+    <div class="sm-pagination" style="margin-top: 20px; display: flex; gap: 5px; justify-content: center;">
         <?php for ($i = 1; $i <= $total_pages; $i++): ?>
             <a href="<?php echo add_query_arg('paged', $i); ?>" class="sm-btn <?php echo $i == $current_page ? '' : 'sm-btn-outline'; ?>" style="padding: 5px 12px; min-width: 40px; text-align: center;"><?php echo $i; ?></a>
         <?php endfor; ?>
@@ -346,7 +346,7 @@
                         <input type="password" name="user_pass" class="sm-input" placeholder="********">
                     </div>
                 </div>
-                <button type="submit" class="sm-btn" style="margin-top: 10px;">إنشاء الحساب الآن</button>
+                <button type="submit" class="sm-btn" style="margin-top: 20px;">إنشاء الحساب الآن</button>
             </form>
         </div>
     </div>

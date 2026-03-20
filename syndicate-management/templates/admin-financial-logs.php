@@ -38,7 +38,7 @@ $total_period_amount = array_reduce($payments, function($carry, $item) { return 
 ?>
 
 <div class="sm-financial-logs" dir="rtl">
-    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px;">
+    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 30px;">
         <div>
             <h3 style="margin:0;">سجل العمليات المالية الشامل</h3>
             <div style="font-size: 14px; color: #38a169; font-weight: 700; margin-top: 5px;">إجمالي المبالغ في هذه الفترة: <?php echo number_format($total_period_amount, 2); ?> ج.م</div>
@@ -47,7 +47,7 @@ $total_period_amount = array_reduce($payments, function($carry, $item) { return 
     </div>
 
     <!-- Filtering Bar -->
-    <div style="background: #f1f5f9; padding: 15px; border-radius: 10px; margin-bottom: 15px; border: 1px solid #e2e8f0;">
+    <div style="background: #f1f5f9; padding: 30px; border-radius: 10px; margin-bottom: 30px; border: 1px solid #e2e8f0;">
         <form method="get" style="display: flex; gap: 15px; align-items: flex-end; flex-wrap: wrap;">
             <input type="hidden" name="sm_tab" value="financial-logs">
             <div style="flex: 1; min-width: 200px;">
@@ -100,7 +100,7 @@ $total_period_amount = array_reduce($payments, function($carry, $item) { return 
             </thead>
             <tbody>
                 <?php if (empty($payments)): ?>
-                    <tr><td colspan="9" style="text-align:center; padding: 15px; color: #718096;">لا توجد عمليات مالية مسجلة بعد.</td></tr>
+                    <tr><td colspan="9" style="text-align:center; padding: 30px; color: #718096;">لا توجد عمليات مالية مسجلة بعد.</td></tr>
                 <?php else: ?>
                     <?php foreach ($payments as $p):
                         $member = SM_DB::get_member_by_id($p->member_id);

@@ -37,12 +37,12 @@ $field_labels['cust_branch'] = 'فرع العميل';
     <title>مستند رقمي - <?php echo esc_html($req->service_name); ?></title>
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Amiri:wght@400;700&display=swap');
-        body { font-family: 'Amiri', serif; padding: 15px; color: #1a202c; line-height: 1.8; background: #fff; }
-        .page-border { border: 10px double #111F35; padding: 15px; min-height: 1000px; position: relative; }
+        body { font-family: 'Amiri', serif; padding: 30px; color: #1a202c; line-height: 1.8; background: #fff; }
+        .page-border { border: 10px double #111F35; padding: 30px; min-height: 1000px; position: relative; }
         .header { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 35px; }
         .syndicate-info { text-align: right; }
         .logo-box { text-align: center; }
-        .logo { max-height: 110px; margin-bottom: 10px; }
+        .logo { max-height: 110px; margin-bottom: 20px; }
         .authority-info { text-align: left; }
 
         .doc-title { text-align: center; margin: 40px 0; }
@@ -67,7 +67,7 @@ $field_labels['cust_branch'] = 'فرع العميل';
 
         .content-area { font-size: 20px; margin-bottom: 35px; text-align: justify; }
         .content-table { width: 100%; border-collapse: collapse; margin: 30px 0; }
-        .content-table td { padding: 15px; border: 1px solid #cbd5e0; font-size: 18px; }
+        .content-table td { padding: 30px; border: 1px solid #cbd5e0; font-size: 18px; }
         .content-table td:first-child { background: #f7fafc; font-weight: bold; width: 35%; color: #2d3748; }
 
         .footer-sigs { margin-top: 80px; display: grid; grid-template-columns: 1fr 1fr 1fr; text-align: center; font-weight: bold; }
@@ -117,7 +117,7 @@ $field_labels['cust_branch'] = 'فرع العميل';
             <p>تشهد إدارة النقابة بأن السيد الزميل/ <strong><?php echo esc_html($req->member_name); ?></strong></p>
             <p>المقيد بسجلات النقابة برقم عضوية: <strong><?php echo esc_html($req->membership_number ?: '---'); ?></strong></p>
             <p>والحاصل على الرقم القومي المصري: <strong><?php echo esc_html($req->national_id); ?></strong></p>
-            <p style="margin-top: 15px;">قد تقدم بطلب رسمي للحصول على المستند الموضح أعلاه، وبعد المراجعة والتدقيق الفني اللازم من قبل الإدارة المختصة، تم اعتماد البيانات التالية:</p>
+            <p style="margin-top: 30px;">قد تقدم بطلب رسمي للحصول على المستند الموضح أعلاه، وبعد المراجعة والتدقيق الفني اللازم من قبل الإدارة المختصة، تم اعتماد البيانات التالية:</p>
         </div>
 
     <table class="content-table">
@@ -150,7 +150,7 @@ $field_labels['cust_branch'] = 'فرع العميل';
         <?php endforeach; ?>
     </table>
 
-    <div style="background: #f1f5f9; padding: 15px; border-radius: 8px; font-size: 13px;">
+    <div style="background: #f1f5f9; padding: 30px; border-radius: 8px; font-size: 13px;">
         يعتبر هذا المستند رسمياً وصادراً من المنصة الرقمية للنقابة.
     </div>
 

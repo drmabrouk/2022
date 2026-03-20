@@ -16,7 +16,7 @@ $is_syndicate_staff = in_array('sm_syndicate_member', (array)$user->roles);
 // IDOR CHECK: Restricted users can only see their own profile
 if ($is_syndicate_staff && !current_user_can('sm_manage_members')) {
     if ($member->wp_user_id != $user->ID) {
-        echo '<div class="error" style="padding: 10px; background:#fff5f5; color:#c53030; border-radius:8px; border:1px solid #feb2b2;"><h4>⚠️ عذراً، لا تملك صلاحية الوصول لهذا الملف.</h4><p>لا يمكنك استعراض بيانات الأعضاء الآخرين.</p></div>';
+        echo '<div class="error" style="padding: 20px; background:#fff5f5; color:#c53030; border-radius:8px; border:1px solid #feb2b2;"><h4>⚠️ عذراً، لا تملك صلاحية الوصول لهذا الملف.</h4><p>لا يمكنك استعراض بيانات الأعضاء الآخرين.</p></div>';
         return;
     }
 }
@@ -25,7 +25,7 @@ if ($is_syndicate_staff && !current_user_can('sm_manage_members')) {
 if ($is_syndicate_admin) {
     $my_gov = get_user_meta($user->ID, 'sm_governorate', true);
     if ($my_gov && $member->governorate !== $my_gov) {
-        echo '<div class="error" style="padding: 10px; background:#fff5f5; color:#c53030; border-radius:8px; border:1px solid #feb2b2;"><h4>⚠️ عذراً، لا تملك صلاحية الوصول لهذا الملف.</h4><p>هذا العضو يتبع لفرع أخرى غير المسجلة في حسابك.</p></div>';
+        echo '<div class="error" style="padding: 20px; background:#fff5f5; color:#c53030; border-radius:8px; border:1px solid #feb2b2;"><h4>⚠️ عذراً، لا تملك صلاحية الوصول لهذا الملف.</h4><p>هذا العضو يتبع لفرع أخرى غير المسجلة في حسابك.</p></div>';
         return;
     }
 }
@@ -39,7 +39,7 @@ $acc_status = SM_Finance::get_member_status($member->id);
 ?>
 
 <div class="sm-member-profile-view" dir="rtl">
-    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px; background: #fff; padding: 15px; border-radius: 12px; border: 1px solid var(--sm-border-color); box-shadow: var(--sm-shadow);">
+    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; background: #fff; padding: 30px; border-radius: 12px; border: 1px solid var(--sm-border-color); box-shadow: var(--sm-shadow);">
         <div style="display: flex; align-items: center; gap: 20px;">
             <div style="position: relative;">
                 <div id="member-photo-container" style="width: 80px; height: 80px; background: #f0f4f8; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 40px; border: 3px solid var(--sm-primary-color); overflow: hidden;">
@@ -89,7 +89,7 @@ $acc_status = SM_Finance::get_member_status($member->id);
     </div>
 
     <!-- Profile Tabs -->
-    <div class="sm-tabs-wrapper" style="display: flex; gap: 10px; margin-bottom: 15px; border-bottom: 2px solid #eee; padding-bottom: 10px;">
+    <div class="sm-tabs-wrapper" style="display: flex; gap: 10px; margin-bottom: 30px; border-bottom: 2px solid #eee; padding-bottom: 10px;">
         <button class="sm-tab-btn sm-active" onclick="smOpenInternalTab('profile-info', this)"><span class="dashicons dashicons-admin-users"></span> بيانات العضوية</button>
         <button class="sm-tab-btn" onclick="smOpenInternalTab('professional-requests-tab', this)"><span class="dashicons dashicons-awards"></span> طلبات المهنة</button>
         <button class="sm-tab-btn" onclick="smOpenInternalTab('finance-management', this)"><span class="dashicons dashicons-money-alt"></span> الإدارة المالية</button>
@@ -101,8 +101,8 @@ $acc_status = SM_Finance::get_member_status($member->id);
         <div style="display: grid; grid-template-columns: 2fr 1fr; gap: 30px;">
             <div style="display: flex; flex-direction: column; gap: 30px;">
                 <!-- Basic Info -->
-                <div style="background: #fff; padding: 15px; border-radius: 12px; border: 1px solid var(--sm-border-color); box-shadow: var(--sm-shadow);">
-                <h3 style="margin-top:0; border-bottom: 1px solid #eee; padding-bottom: 10px; margin-bottom: 10px;">البيانات الأساسية</h3>
+                <div style="background: #fff; padding: 30px; border-radius: 12px; border: 1px solid var(--sm-border-color); box-shadow: var(--sm-shadow);">
+                <h3 style="margin-top:0; border-bottom: 1px solid #eee; padding-bottom: 10px; margin-bottom: 20px;">البيانات الأساسية</h3>
                 <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px;">
                     <div><label class="sm-label">الرقم القومي:</label> <div class="sm-value"><?php echo esc_html($member->national_id); ?></div></div>
                     <div><label class="sm-label">كود العضوية:</label> <div class="sm-value"><?php echo esc_html($member->membership_number); ?></div></div>
@@ -140,7 +140,7 @@ $acc_status = SM_Finance::get_member_status($member->id);
             <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px;">
                 <!-- Practice Permit Card -->
                 <div class="sm-license-card" style="background: #fff; border-radius: 12px; border: 1px solid var(--sm-border-color); overflow: hidden; box-shadow: var(--sm-shadow); display: flex; flex-direction: column;">
-                    <div style="background: var(--sm-primary-color); padding: 15px 20px; display: flex; justify-content: space-between; align-items: center; color: #fff;">
+                    <div style="background: var(--sm-primary-color); padding: 30px 20px; display: flex; justify-content: space-between; align-items: center; color: #fff;">
                         <h4 style="margin: 0; font-weight: 800;"><span class="dashicons dashicons-id-alt" style="vertical-align: middle;"></span> تصريح مزاولة المهنة</h4>
                         <?php
                         $lic_valid = ($member->license_expiration_date && $member->license_expiration_date >= date('Y-m-d'));
@@ -151,11 +151,11 @@ $acc_status = SM_Finance::get_member_status($member->id);
                             <?php echo empty($member->license_number) ? 'غير مسجل' : ($lic_valid ? 'ساري' : 'منتهي'); ?>
                         </span>
                     </div>
-                    <div style="padding: 15px; flex: 1;">
+                    <div style="padding: 30px; flex: 1;">
                         <?php if (empty($member->license_number)): ?>
-                            <div style="text-align: center; color: #94a3b8; padding: 15px;">
+                            <div style="text-align: center; color: #94a3b8; padding: 30px;">
                                 <span class="dashicons dashicons-warning" style="font-size: 32px; width: 32px; height: 28px;"></span>
-                                <p style="margin-top: 10px; font-weight: 700;">غير مقيد / ليس في سجلات التصاريح</p>
+                                <p style="margin-top: 20px; font-weight: 700;">غير مقيد / ليس في سجلات التصاريح</p>
                             </div>
                         <?php else: ?>
                             <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px;">
@@ -174,14 +174,14 @@ $acc_status = SM_Finance::get_member_status($member->id);
                                     </div>
                                 </div>
                             </div>
-                            <div style="margin-top: 15px; padding-top: 15px; border-top: 1px solid #f1f5f9; display: flex; gap: 10px;">
+                            <div style="margin-top: 30px; padding-top: 15px; border-top: 1px solid #f1f5f9; display: flex; gap: 10px;">
                                 <?php if (current_user_can('sm_print_reports')): ?>
                                     <a href="<?php echo admin_url('admin-ajax.php?action=sm_print_license&member_id='.$member->id); ?>" target="_blank" class="sm-btn sm-btn-outline" style="height: 28px; font-size: 11px; width: auto;"><span class="dashicons dashicons-printer"></span> طباعة التصريح</a>
                                 <?php endif; ?>
                             </div>
                         <?php endif; ?>
                     </div>
-                    <div style="padding: 15px 20px; background: #f8fafc; border-top: 1px solid #eee;">
+                    <div style="padding: 30px 20px; background: #f8fafc; border-top: 1px solid #eee;">
                         <div class="sm-dropdown" style="position:relative; width: 100%;">
                             <button onclick="smToggleCardOptions('permit-options')" class="sm-btn sm-btn-outline" style="width: 100%; font-size: 12px; justify-content: space-between;">
                                 خيارات الطلبات <span class="dashicons dashicons-arrow-down-alt2"></span>
@@ -196,7 +196,7 @@ $acc_status = SM_Finance::get_member_status($member->id);
 
                 <!-- Establishment License Card -->
                 <div class="sm-license-card" style="background: #fff; border-radius: 12px; border: 1px solid var(--sm-border-color); overflow: hidden; box-shadow: var(--sm-shadow); display: flex; flex-direction: column;">
-                    <div style="background: #2c3e50; padding: 15px 20px; display: flex; justify-content: space-between; align-items: center; color: #fff;">
+                    <div style="background: #2c3e50; padding: 30px 20px; display: flex; justify-content: space-between; align-items: center; color: #fff;">
                         <h4 style="margin: 0; font-weight: 800;"><span class="dashicons dashicons-building" style="vertical-align: middle;"></span> ترخيص المنشأة</h4>
                         <?php
                         $fac_valid = ($member->facility_license_expiration_date && $member->facility_license_expiration_date >= date('Y-m-d'));
@@ -207,11 +207,11 @@ $acc_status = SM_Finance::get_member_status($member->id);
                             <?php echo empty($member->facility_number) ? 'غير مسجل' : ($fac_valid ? 'ساري' : 'منتهي'); ?>
                         </span>
                     </div>
-                    <div style="padding: 15px; flex: 1;">
+                    <div style="padding: 30px; flex: 1;">
                         <?php if (empty($member->facility_number)): ?>
-                            <div style="text-align: center; color: #94a3b8; padding: 15px;">
+                            <div style="text-align: center; color: #94a3b8; padding: 30px;">
                                 <span class="dashicons dashicons-building" style="font-size: 32px; width: 32px; height: 28px;"></span>
-                                <p style="margin-top: 10px; font-weight: 700;">لا توجد منشأة مسجلة</p>
+                                <p style="margin-top: 20px; font-weight: 700;">لا توجد منشأة مسجلة</p>
                             </div>
                         <?php else: ?>
                             <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px;">
@@ -225,14 +225,14 @@ $acc_status = SM_Finance::get_member_status($member->id);
                                     </div>
                                 </div>
                             </div>
-                            <div style="margin-top: 15px; padding-top: 15px; border-top: 1px solid #f1f5f9; display: flex; gap: 10px;">
+                            <div style="margin-top: 30px; padding-top: 15px; border-top: 1px solid #f1f5f9; display: flex; gap: 10px;">
                                 <?php if (current_user_can('sm_print_reports')): ?>
                                     <a href="<?php echo admin_url('admin-ajax.php?action=sm_print_facility&member_id='.$member->id); ?>" target="_blank" class="sm-btn sm-btn-outline" style="height: 28px; font-size: 11px; width: auto;"><span class="dashicons dashicons-printer"></span> طباعة الترخيص</a>
                                 <?php endif; ?>
                             </div>
                         <?php endif; ?>
                     </div>
-                    <div style="padding: 15px 20px; background: #f8fafc; border-top: 1px solid #eee;">
+                    <div style="padding: 30px 20px; background: #f8fafc; border-top: 1px solid #eee;">
                         <?php if (!empty($member->license_number) && $lic_valid): ?>
                             <div class="sm-dropdown" style="position:relative; width: 100%;">
                                 <button onclick="smToggleCardOptions('fac-options')" class="sm-btn sm-btn-outline" style="width: 100%; font-size: 12px; justify-content: space-between;">
@@ -255,9 +255,9 @@ $acc_status = SM_Finance::get_member_status($member->id);
 
         <div style="display: flex; flex-direction: column; gap: 30px;">
             <!-- Account Status -->
-            <div style="background: #fff; padding: 15px; border-radius: 12px; border: 1px solid var(--sm-border-color); box-shadow: var(--sm-shadow);">
-                <h3 style="margin-top:0; border-bottom: 1px solid #eee; padding-bottom: 10px; margin-bottom: 10px;">حالة الحساب</h3>
-                <div style="text-align: center; padding: 10px 0;">
+            <div style="background: #fff; padding: 30px; border-radius: 12px; border: 1px solid var(--sm-border-color); box-shadow: var(--sm-shadow);">
+                <h3 style="margin-top:0; border-bottom: 1px solid #eee; padding-bottom: 10px; margin-bottom: 20px;">حالة الحساب</h3>
+                <div style="text-align: center; padding: 20px 0;">
                     <?php
                         $u = new WP_User($member->wp_user_id);
                         $has_pass = !empty($u->user_pass);
@@ -270,19 +270,19 @@ $acc_status = SM_Finance::get_member_status($member->id);
             </div>
 
             <!-- Financial Status -->
-            <div style="background: #fff; padding: 15px; border-radius: 12px; border: 1px solid var(--sm-border-color); box-shadow: var(--sm-shadow);">
-                <h3 style="margin-top:0; border-bottom: 1px solid #eee; padding-bottom: 10px; margin-bottom: 10px;">الوضع المالي</h3>
-                <div style="text-align: center; padding: 10px 0;">
+            <div style="background: #fff; padding: 30px; border-radius: 12px; border: 1px solid var(--sm-border-color); box-shadow: var(--sm-shadow);">
+                <h3 style="margin-top:0; border-bottom: 1px solid #eee; padding-bottom: 10px; margin-bottom: 20px;">الوضع المالي</h3>
+                <div style="text-align: center; padding: 20px 0;">
                     <div style="font-size: 0.9em; color: #718096;">إجمالي المستحق</div>
                     <div style="font-size: 2.2em; font-weight: 900; color: <?php echo $finance['balance'] > 0 ? '#e53e3e' : '#38a169'; ?>;">
                         <?php echo number_format($finance['balance'], 2); ?> ج.م
                     </div>
                 </div>
-                <div style="margin-top: 10px; display: flex; flex-direction: column; gap: 10px;">
+                <div style="margin-top: 20px; display: flex; flex-direction: column; gap: 10px;">
                     <div style="display: flex; justify-content: space-between;"><span>المبلغ المطلوب سداده:</span> <strong><?php echo number_format($finance['total_owed'], 2); ?></strong></div>
                     <div style="display: flex; justify-content: space-between;"><span>إجمالي ما تم سداده:</span> <strong style="color:#38a169;"><?php echo number_format($finance['total_paid'], 2); ?></strong></div>
                 </div>
-                    <button onclick="smOpenFinanceModal(<?php echo $member->id; ?>)" class="sm-btn" style="margin-top: 10px; background: var(--sm-dark-color);">
+                    <button onclick="smOpenFinanceModal(<?php echo $member->id; ?>)" class="sm-btn" style="margin-top: 20px; background: var(--sm-dark-color);">
                         <?php echo ($is_syndicate_staff && !current_user_can('sm_manage_finance')) ? 'عرض كشف الحساب' : 'إدارة المدفوعات والفواتير'; ?>
                     </button>
                 </div>
@@ -325,7 +325,7 @@ $acc_status = SM_Finance::get_member_status($member->id);
             <form id="edit-member-form">
                 <?php wp_nonce_field('sm_add_member', 'sm_nonce'); ?>
                 <input type="hidden" name="member_id" id="edit_member_id_hidden">
-                <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 15px; padding: 10px;">
+                <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 15px; padding: 20px;">
                     <div class="sm-form-group"><label class="sm-label">الاسم الكامل:</label><input name="name" id="edit_name" type="text" class="sm-input" required></div>
                     <div class="sm-form-group"><label class="sm-label">الرقم القومي:</label><input name="national_id" id="edit_national_id" type="text" class="sm-input" required maxlength="14"></div>
                     <div class="sm-form-group"><label class="sm-label">الدرجة الوظيفية:</label><select name="professional_grade" id="edit_grade" class="sm-select"><?php foreach (SM_Settings::get_professional_grades() as $k => $v) echo "<option value='$k'>$v</option>"; ?></select></div>
@@ -369,12 +369,12 @@ $acc_status = SM_Finance::get_member_status($member->id);
                 <h3>طلب تحديث بيانات العضوية</h3>
                 <button class="sm-modal-close" onclick="document.getElementById('member-update-request-modal').style.display='none'">&times;</button>
             </div>
-            <div style="padding: 15px; background: #fffaf0; border-bottom: 1px solid #feebc8; font-size: 13px; color: #744210;">
+            <div style="padding: 30px; background: #fffaf0; border-bottom: 1px solid #feebc8; font-size: 13px; color: #744210;">
                 <span class="dashicons dashicons-info" style="font-size: 16px;"></span> سيتم إرسال طلبك للمراجعة من قبل إدارة النقابة قبل اعتماده رسمياً في النظام.
             </div>
             <form id="member-update-request-form">
                 <input type="hidden" name="member_id" value="<?php echo $member->id; ?>">
-                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px; padding: 15px;">
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px; padding: 30px;">
                     <div class="sm-form-group"><label class="sm-label">الاسم الكامل:</label><input type="text" name="name" class="sm-input" value="<?php echo esc_attr($member->name); ?>" required></div>
                     <div class="sm-form-group"><label class="sm-label">الرقم القومي:</label><input type="text" name="national_id" class="sm-input" value="<?php echo esc_attr($member->national_id); ?>" required maxlength="14"></div>
 

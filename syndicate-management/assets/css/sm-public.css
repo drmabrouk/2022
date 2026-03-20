@@ -60,21 +60,22 @@
     width: 100%;
     border-collapse: collapse;
     text-align: right;
-    font-size: 11px;
+    font-size: 10.5px;
 }
 
 .sm-table th {
     background: var(--sm-bg-light);
-    padding: 6px 10px;
+    padding: 4px 6px !important;
     font-weight: 700;
     color: var(--sm-dark-color);
     border-bottom: 2px solid var(--sm-border-color);
 }
 
 .sm-table td {
-    padding: 6px 10px;
+    padding: 4px 6px !important;
     border-bottom: 1px solid var(--sm-border-color);
     vertical-align: middle;
+    line-height: 1.15;
 }
 
 .sm-table tr:last-child td {
@@ -83,6 +84,20 @@
 
 .sm-table tr:hover {
     background-color: var(--sm-pastel-red);
+}
+
+.sm-table .sm-btn {
+    height: 22px !important;
+    padding: 0 6px !important;
+    font-size: 10px !important;
+    border-radius: 4px;
+    line-height: 22px !important;
+}
+
+.sm-table .dashicons {
+    font-size: 14px !important;
+    width: 14px !important;
+    height: 14px !important;
 }
 
 /* Unified Button Design */
