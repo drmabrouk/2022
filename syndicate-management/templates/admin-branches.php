@@ -1,6 +1,6 @@
 <?php if (!defined('ABSPATH')) exit; ?>
 <div class="sm-content-wrapper">
-    <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:30px;">
+    <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom: 15px;">
         <h2 style="margin:0; font-weight:800; color:var(--sm-dark-color);">إدارة فروع ولجان النقابة</h2>
         <?php if (!in_array('sm_syndicate_admin', (array)wp_get_current_user()->roles)): ?>
             <button onclick="smOpenBranchModal()" class="sm-btn" style="width:auto; padding:10px 25px;">+ إضافة فرع جديد</button>
@@ -15,7 +15,7 @@
                 <p style="color:#718096;">لا توجد فروع مسجلة حالياً. قم بإضافة أول فرع للبدء.</p>
             </div>
         <?php else: foreach($branches as $b): ?>
-            <div class="sm-branch-card" style="background:#fff; border:1px solid #e2e8f0; border-radius:20px; padding:25px; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.05); transition:0.3s; position:relative;">
+            <div class="sm-branch-card" style="background:#fff; border:1px solid #e2e8f0; border-radius:20px; padding: 12px; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.05); transition:0.3s; position:relative;">
                 <div style="display:flex; justify-content:space-between; align-items:flex-start; margin-bottom:15px;">
                     <div style="width:45px; height:45px; background:var(--sm-primary-color); border-radius:12px; display:flex; align-items:center; justify-content:center; color:#fff;">
                         <span class="dashicons dashicons-location"></span>
@@ -55,7 +55,7 @@
             <h3><span id="sm-branch-modal-title">إضافة فرع جديد</span></h3>
             <button class="sm-modal-close" onclick="document.getElementById('sm-branch-modal').style.display='none'">&times;</button>
         </div>
-        <form id="sm-branch-form" style="padding: 25px;">
+        <form id="sm-branch-form" style="padding: 15px;">
             <input type="hidden" name="id" id="sm_branch_id">
             <div style="display:grid; grid-template-columns: 1fr 1fr; gap:15px;">
                 <div class="sm-form-group"><label class="sm-label">اسم الفرع:</label><input type="text" name="name" class="sm-input" required></div>
@@ -67,7 +67,7 @@
                 <div class="sm-form-group" style="grid-column: span 2;"><label class="sm-label">وصف إضافي:</label><textarea name="description" class="sm-textarea" rows="2"></textarea></div>
             </div>
 
-            <div style="margin-top:20px; border-top:1px solid #edf2f7; padding-top:20px;">
+            <div style="margin-top: 10px; border-top:1px solid #edf2f7; padding-top:20px;">
                 <h4 style="margin:0 0 15px 0; color:var(--sm-primary-color); font-weight:800; font-size:14px;">بيانات التحصيل المالي للفروع</h4>
                 <div style="display:grid; grid-template-columns: 1fr 1fr; gap:15px;">
                     <div class="sm-form-group"><label class="sm-label">اسم البنك:</label><input type="text" name="bank_name" class="sm-input"></div>
@@ -80,9 +80,9 @@
                 </div>
             </div>
             <?php if (!in_array('sm_syndicate_admin', (array)wp_get_current_user()->roles)): ?>
-                <button type="submit" class="sm-btn" style="width:100%; margin-top:20px;">حفظ بيانات الفرع</button>
+                <button type="submit" class="sm-btn" style="width:100%; margin-top: 10px;">حفظ بيانات الفرع</button>
             <?php else: ?>
-                <div style="margin-top:20px; padding:15px; background:#f8fafc; border:1px solid #e2e8f0; border-radius:10px; text-align:center; color:#64748b; font-size:13px;">
+                <div style="margin-top: 10px; padding:15px; background:#f8fafc; border:1px solid #e2e8f0; border-radius:10px; text-align:center; color:#64748b; font-size:13px;">
                     العرض فقط: لا تملك صلاحية تعديل بيانات الفروع.
                 </div>
             <?php endif; ?>

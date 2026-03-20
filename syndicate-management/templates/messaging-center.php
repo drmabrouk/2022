@@ -42,7 +42,7 @@ $priorities = array(
 <div class="sm-tickets-wrapper" dir="rtl" style="min-height: 700px; font-family: 'Rubik', sans-serif;">
 
     <!-- Top Filter Bar -->
-    <div class="sm-tickets-top-bar" style="background: #fff; border-radius: 15px; border: 1px solid var(--sm-border-color); padding: 20px 25px; box-shadow: var(--sm-shadow); margin-bottom: 25px;">
+    <div class="sm-tickets-top-bar" style="background: #fff; border-radius: 15px; border: 1px solid var(--sm-border-color); padding: 15px 25px; box-shadow: var(--sm-shadow); margin-bottom: 15px;">
         <div style="display: flex; flex-wrap: wrap; gap: 15px; align-items: center;">
             <h2 style="margin: 0; font-weight: 800; color: var(--sm-dark-color); font-size: 1.2em; flex: 1; min-width: 200px;">نظام التذاكر والدعم</h2>
 
@@ -102,7 +102,7 @@ $priorities = array(
             <h3>فتح تذكرة دعم جديدة</h3>
             <button class="sm-modal-close" onclick="document.getElementById('create-ticket-modal').style.display='none'">&times;</button>
         </div>
-        <form id="create-ticket-form" style="padding: 20px;">
+        <form id="create-ticket-form" style="padding: 15px;">
             <div class="sm-form-group">
                 <label class="sm-label">موضوع التذكرة:</label>
                 <input type="text" name="subject" class="sm-input" required placeholder="مثال: مشكلة في تحديث البيانات">
@@ -175,7 +175,7 @@ $priorities = array(
                     const priorityLabel = priorities[t.priority];
 
                     const card = $(`
-                        <div class="sm-ticket-card" onclick="smViewTicket(${t.id})" style="background: #fff; border: 1px solid var(--sm-border-color); border-radius: 12px; padding: 20px; cursor: pointer; transition: 0.3s; display: flex; align-items: center; gap: 20px;">
+                        <div class="sm-ticket-card" onclick="smViewTicket(${t.id})" style="background: #fff; border: 1px solid var(--sm-border-color); border-radius: 12px; padding: 15px; cursor: pointer; transition: 0.3s; display: flex; align-items: center; gap: 20px;">
                             <div style="width: 50px; height: 50px; border-radius: 50%; background: #f1f5f9; display: flex; align-items: center; justify-content: center; flex-shrink: 0; overflow: hidden; border: 1px solid #e2e8f0;">
                                 ${t.member_photo ? `<img src="${t.member_photo}" style="width: 100%; height: 100%; object-fit: cover;">` : `<span class="dashicons dashicons-admin-users" style="color: #94a3b8;"></span>`}
                             </div>
@@ -200,7 +200,7 @@ $priorities = array(
                     grid.append(card);
                 });
             } else {
-                grid.html('<div style="text-align: center; padding: 50px; background: #fff; border-radius: 12px; border: 1px dashed #cbd5e0; color: #94a3b8;">لا توجد تذاكر حالياً تتطابق مع البحث.</div>');
+                grid.html('<div style="text-align: center; padding: 35px; background: #fff; border-radius: 12px; border: 1px dashed #cbd5e0; color: #94a3b8;">لا توجد تذاكر حالياً تتطابق مع البحث.</div>');
             }
         });
     };
@@ -238,7 +238,7 @@ $priorities = array(
                 const container = $('#ticket-details-container');
                 container.html(`
                     <div style="background: #fff; border-radius: 15px; border: 1px solid var(--sm-border-color); overflow: hidden; box-shadow: var(--sm-shadow);">
-                        <div style="padding: 20px 30px; border-bottom: 1px solid #f1f5f9; display: flex; justify-content: space-between; align-items: center; background: #fafafa;">
+                        <div style="padding: 15px 30px; border-bottom: 1px solid #f1f5f9; display: flex; justify-content: space-between; align-items: center; background: #fafafa;">
                             <div style="display: flex; align-items: center; gap: 15px;">
                                 <button onclick="smBackToList()" class="sm-btn sm-btn-outline" style="width: auto; padding: 5px 10px;"><span class="dashicons dashicons-arrow-right-alt2"></span> العودة</button>
                                 <div>
@@ -256,12 +256,12 @@ $priorities = array(
                             </div>
                         </div>
 
-                        <div style="padding: 30px; background: #f8fafc; max-height: 500px; overflow-y: auto;" id="ticket-thread-body">
+                        <div style="padding: 15px; background: #f8fafc; max-height: 500px; overflow-y: auto;" id="ticket-thread-body">
                             ${threadHtml}
                         </div>
 
                         ${t.status !== 'closed' ? `
-                            <div style="padding: 25px 30px; border-top: 1px solid #f1f5f9;">
+                            <div style="padding: 15px 30px; border-top: 1px solid #f1f5f9;">
                                 <form id="ticket-reply-form" style="display: flex; flex-direction: column; gap: 15px;">
                                     <input type="hidden" name="ticket_id" value="${t.id}">
                                     <textarea name="message" class="sm-textarea" rows="3" required placeholder="اكتب ردك هنا..."></textarea>
@@ -272,11 +272,11 @@ $priorities = array(
                                 </form>
                             </div>
                         ` : `
-                            <div style="padding: 20px; text-align: center; background: #fff5f5; color: #c53030; font-weight: 700; font-size: 14px;">هذه التذكرة مغلقة. لا يمكنك إضافة ردود جديدة.</div>
+                            <div style="padding: 15px; text-align: center; background: #fff5f5; color: #c53030; font-weight: 700; font-size: 14px;">هذه التذكرة مغلقة. لا يمكنك إضافة ردود جديدة.</div>
                         `}
                     </div>
 
-                    <div style="margin-top: 20px; background: #fff; border-radius: 15px; border: 1px solid var(--sm-border-color); padding: 20px; box-shadow: var(--sm-shadow);">
+                    <div style="margin-top: 10px; background: #fff; border-radius: 15px; border: 1px solid var(--sm-border-color); padding: 15px; box-shadow: var(--sm-shadow);">
                         <h4 style="margin: 0 0 15px 0; border-bottom: 1px solid #eee; padding-bottom: 10px;">بيانات مقدم الطلب</h4>
                         <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 20px; font-size: 13px;">
                             <div><label style="color: #94a3b8; display: block;">الاسم:</label><strong>${t.member_name}</strong></div>
@@ -331,7 +331,7 @@ $priorities = array(
             }
 
             html += `
-                <div style="display: flex; flex-direction: column; align-items: ${isMe ? 'flex-end' : 'flex-start'}; margin-bottom: 20px;">
+                <div style="display: flex; flex-direction: column; align-items: ${isMe ? 'flex-end' : 'flex-start'}; margin-bottom: 10px;">
                     <div style="background: ${isMe ? 'var(--sm-primary-color)' : '#fff'}; color: ${isMe ? '#fff' : 'inherit'}; padding: 15px 20px; border-radius: 15px; border-bottom-${isMe ? 'left' : 'right'}-radius: 4px; box-shadow: 0 2px 4px rgba(0,0,0,0.05); border: ${isMe ? 'none' : '1px solid #e2e8f0'}; max-width: 80%;">
                         <div style="font-weight: 800; font-size: 11px; margin-bottom: 5px; opacity: 0.8;">${m.sender_name} • ${m.created_at}</div>
                         <div style="font-size: 14px; line-height: 1.6; white-space: pre-wrap;">${m.message}</div>

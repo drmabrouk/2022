@@ -36,12 +36,12 @@ $registry = $wpdb->get_results($wpdb->prepare(
 ?>
 
 <div class="sm-practice-licenses" dir="rtl">
-    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 25px;">
+    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px;">
         <h3 style="margin:0;">إدارة تصاريح مزاولة المهنة</h3>
         <button onclick="smOpenLicenseIssuanceModal()" class="sm-btn" style="width:auto;">+ إصدار / تجديد تصريح</button>
     </div>
 
-    <div class="sm-tabs-wrapper" style="display: flex; gap: 10px; margin-bottom: 25px; border-bottom: 2px solid #eee; padding-bottom: 10px;">
+    <div class="sm-tabs-wrapper" style="display: flex; gap: 10px; margin-bottom: 15px; border-bottom: 2px solid #eee; padding-bottom: 10px;">
         <button class="sm-tab-btn sm-active" onclick="smOpenInternalTab('license-registry', this)">سجل التراخيص</button>
         <button class="sm-tab-btn" onclick="smOpenInternalTab('permit-requests', this)">طلبات التصاريح والامتحانات</button>
     </div>
@@ -55,7 +55,7 @@ $registry = $wpdb->get_results($wpdb->prepare(
 
     <div id="license-registry" class="sm-internal-tab">
 
-    <div class="sm-card-grid" style="margin-bottom: 30px;">
+    <div class="sm-card-grid" style="margin-bottom: 10px;">
         <div class="sm-stat-card">
             <div style="font-size: 0.85em; color: var(--sm-text-gray);">إجمالي التراخيص</div>
             <div style="font-size: 2em; font-weight: 900; color: var(--sm-dark-color);"><?php echo $stats['total']; ?></div>
@@ -74,8 +74,8 @@ $registry = $wpdb->get_results($wpdb->prepare(
         </div>
     </div>
 
-    <div style="background: #f8fafc; padding: 20px; border-radius: 12px; border: 1px solid #e2e8f0; margin-bottom: 25px;">
-        <form method="get" style="display: flex; gap: 15px; align-items: flex-end;">
+    <div style="background: #f8fafc; padding: 15px; border-radius: 12px; border: 1px solid #e2e8f0; margin-bottom: 10px;">
+        <form method="get" style="display: flex; gap: 12px; align-items: flex-end;">
             <input type="hidden" name="sm_tab" value="practice-licenses">
             <div style="flex: 1;">
                 <label class="sm-label">بحث في سجل التراخيص:</label>
@@ -139,7 +139,7 @@ $registry = $wpdb->get_results($wpdb->prepare(
             <h3>إصدار / تجديد تصريح مزاولة المهنة</h3>
             <button class="sm-modal-close" onclick="document.getElementById('sm-license-modal').style.display='none'">&times;</button>
         </div>
-        <form id="sm-license-form" style="padding: 20px;">
+        <form id="sm-license-form" style="padding: 15px;">
             <div class="sm-form-group">
                 <label class="sm-label">اختر العضو:</label>
                 <select name="member_id" class="sm-select" id="license_member_select" required>
@@ -161,7 +161,7 @@ $registry = $wpdb->get_results($wpdb->prepare(
                     <input type="date" name="license_expiration_date" id="lic_expiry" class="sm-input" value="<?php echo date('Y-m-d', strtotime('+1 year')); ?>" required>
                 </div>
             </div>
-            <button type="submit" class="sm-btn" style="margin-top: 25px;">حفظ بيانات الترخيص</button>
+            <button type="submit" class="sm-btn" style="margin-top: 12px;">حفظ بيانات الترخيص</button>
         </form>
     </div>
 </div>

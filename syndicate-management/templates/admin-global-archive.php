@@ -10,7 +10,7 @@ $active_sub_tab = $_GET['sub_tab'] ?? 'documents';
 ?>
 
 <div class="sm-global-archive" dir="rtl">
-    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 25px;">
+    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px;">
         <h2 style="margin:0; font-weight: 800; color: var(--sm-dark-color);">الأرشيف الرقمي الشامل</h2>
         <div style="display: flex; gap: 10px;">
             <button onclick="location.reload()" class="sm-btn sm-btn-outline" style="width:auto;"><span class="dashicons dashicons-update"></span> تحديث الأرشيف</button>
@@ -18,7 +18,7 @@ $active_sub_tab = $_GET['sub_tab'] ?? 'documents';
     </div>
 
     <!-- Sub Tabs -->
-    <div class="sm-tabs-wrapper" style="display: flex; gap: 10px; margin-bottom: 30px; border-bottom: 2px solid #edf2f7; padding-bottom: 0;">
+    <div class="sm-tabs-wrapper" style="display: flex; gap: 10px; margin-bottom: 10px; border-bottom: 2px solid #edf2f7; padding-bottom: 0;">
         <a href="<?php echo add_query_arg('sub_tab', 'documents'); ?>" class="sm-tab-btn <?php echo $active_sub_tab == 'documents' ? 'sm-active' : ''; ?>" style="text-decoration:none;">
             <span class="dashicons dashicons-portfolio" style="vertical-align: middle; margin-left: 5px;"></span> مستندات الأعضاء
         </a>
@@ -53,7 +53,7 @@ $active_sub_tab = $_GET['sub_tab'] ?? 'documents';
         $query = "SELECT d.*, m.name as member_name, m.national_id as member_nid FROM {$wpdb->prefix}sm_documents d JOIN {$wpdb->prefix}sm_members m ON d.member_id = m.id WHERE $where ORDER BY d.created_at DESC";
         $documents = !empty($params) ? $wpdb->get_results($wpdb->prepare($query, $params)) : $wpdb->get_results($query);
         ?>
-        <div style="background: #f8fafc; padding: 20px; border-radius: 12px; border: 1px solid #e2e8f0; margin-bottom: 25px;">
+        <div style="background: #f8fafc; padding: 15px; border-radius: 12px; border: 1px solid #e2e8f0; margin-bottom: 15px;">
             <form method="get" style="display: flex; gap: 15px; align-items: flex-end; flex-wrap: wrap;">
                 <input type="hidden" name="sm_tab" value="global-archive">
                 <input type="hidden" name="sub_tab" value="documents">
@@ -89,7 +89,7 @@ $active_sub_tab = $_GET['sub_tab'] ?? 'documents';
                 </thead>
                 <tbody>
                     <?php if (empty($documents)): ?>
-                        <tr><td colspan="6" style="text-align:center; padding: 40px; color: #718096;">لا توجد مستندات تطابق معايير البحث.</td></tr>
+                        <tr><td colspan="6" style="text-align:center; padding: 15px; color: #718096;">لا توجد مستندات تطابق معايير البحث.</td></tr>
                     <?php else: ?>
                         <?php
                         $catNames = ['licenses' => 'ترخيص', 'certificates' => 'شهادة', 'receipts' => 'إيصال', 'other' => 'أخرى'];
@@ -121,8 +121,8 @@ $active_sub_tab = $_GET['sub_tab'] ?? 'documents';
         <?php
         $generated = SM_DB::get_pub_documents();
         ?>
-        <div style="background: #fff; padding: 30px; border-radius: 20px; border: 1px solid #e2e8f0;">
-            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 25px;">
+        <div style="background: #fff; padding: 15px; border-radius: 20px; border: 1px solid #e2e8f0;">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px;">
                 <h3 style="margin: 0; color: #111F35;">سجل كافة المستندات الصادرة من النظام</h3>
                 <div style="position: relative;">
                     <input type="text" id="pub_log_search" placeholder="بحث بالرقم المسلسل أو العنوان..." class="sm-input" style="width: 350px; padding-left: 40px;" oninput="smFilterLogs()">
@@ -143,7 +143,7 @@ $active_sub_tab = $_GET['sub_tab'] ?? 'documents';
                     </thead>
                     <tbody>
                         <?php if (empty($generated)): ?>
-                            <tr><td colspan="6" style="text-align: center; padding: 50px; color: #94a3b8;">لا توجد مستندات صادرة بعد.</td></tr>
+                            <tr><td colspan="6" style="text-align: center; padding: 35px; color: #94a3b8;">لا توجد مستندات صادرة بعد.</td></tr>
                         <?php else: foreach($generated as $d):
                             $options = json_decode($d->options, true);
                             $type_label = array('report'=>'تقرير', 'statement'=>'إفادة', 'certificate'=>'شهادة')[$options['doc_type'] ?? 'report'] ?? 'أخرى';
@@ -191,7 +191,7 @@ $active_sub_tab = $_GET['sub_tab'] ?? 'documents';
         }
         $payments = $wpdb->get_results("SELECT p.*, u.display_name as staff_name FROM {$wpdb->prefix}sm_payments p LEFT JOIN {$wpdb->base_prefix}users u ON p.created_by = u.ID WHERE $where ORDER BY p.created_at DESC LIMIT 500");
         ?>
-        <div style="background: #f8fafc; padding: 20px; border-radius: 12px; border: 1px solid #e2e8f0; margin-bottom: 25px;">
+        <div style="background: #f8fafc; padding: 15px; border-radius: 12px; border: 1px solid #e2e8f0; margin-bottom: 15px;">
             <form method="get" style="display: flex; gap: 15px; align-items: flex-end; flex-wrap: wrap;">
                 <input type="hidden" name="sm_tab" value="global-archive">
                 <input type="hidden" name="sub_tab" value="finance">
@@ -217,7 +217,7 @@ $active_sub_tab = $_GET['sub_tab'] ?? 'documents';
                 </thead>
                 <tbody>
                     <?php if (empty($payments)): ?>
-                        <tr><td colspan="6" style="text-align:center; padding: 40px; color: #718096;">لا توجد عمليات مالية مسجلة.</td></tr>
+                        <tr><td colspan="6" style="text-align:center; padding: 15px; color: #718096;">لا توجد عمليات مالية مسجلة.</td></tr>
                     <?php else: ?>
                         <?php foreach ($payments as $p):
                              $m = SM_DB::get_member_by_id($p->member_id);
@@ -270,7 +270,7 @@ function smGlobalViewDoc(url, title, id) {
     if (isPdf) {
         body.innerHTML = `<iframe src="${url}" style="width:100%; height:100%; border:none;"></iframe>`;
     } else {
-        body.innerHTML = `<div style="width:100%; height:100%; display:flex; align-items:center; justify-content:center; padding:20px;"><img src="${url}" style="max-width:100%; max-height:100%; object-fit:contain; box-shadow:0 0 50px rgba(0,0,0,0.5);"></div>`;
+        body.innerHTML = `<div style="width:100%; height:100%; display:flex; align-items:center; justify-content:center; padding: 10px;"><img src="${url}" style="max-width:100%; max-height:100%; object-fit:contain; box-shadow:0 0 50px rgba(0,0,0,0.5);"></div>`;
     }
     document.getElementById('sm-global-viewer-modal').style.display = 'flex';
 }

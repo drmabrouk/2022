@@ -20,7 +20,7 @@
         <?php endif; ?>
 
         <div style="background: #fff; border: 1px solid #eee; border-radius: 8px; overflow: hidden;">
-            <table class="sm-table" style="font-size: 13px;">
+            <table class="sm-table">
                 <thead>
                     <tr style="background:#f8fafc;">
                         <th>البند (سبب الاستحقاق)</th>
@@ -68,14 +68,14 @@
         </div>
 
         <?php if (current_user_can('sm_manage_finance')): ?>
-        <div style="margin-top: 25px; background: #ffffff; border: 2px solid #e2e8f0; padding: 25px; border-radius: 15px; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.1);">
+        <div style="margin-top: 12px; background: #ffffff; border: 2px solid #e2e8f0; padding: 15px; border-radius: 15px; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.1);">
             <h5 style="margin: 0 0 20px 0; color: #111F35; font-size: 1.1em; font-weight: 800; border-bottom: 1px solid #eee; padding-bottom: 10px;">
                 <span class="dashicons dashicons-money-alt" style="vertical-align: middle;"></span> تحصيل مبلغ مالي جديد
             </h5>
             <form id="record-payment-form">
                 <?php wp_nonce_field('sm_finance_action', 'nonce'); ?>
                 <input type="hidden" name="member_id" value="<?php echo $member_id; ?>">
-                <div style="display:grid; grid-template-columns: 1fr 1fr; gap: 15px; margin-bottom: 20px;">
+                <div style="display:grid; grid-template-columns: 1fr 1fr; gap: 15px; margin-bottom: 10px;">
                     <div style="grid-column: span 2;">
                         <label class="sm-label" style="font-size:12px; font-weight: 700;">نوع التحصيل (الخدمة):</label>
                         <select name="payment_type" class="sm-select" style="border-width: 2px; font-weight: 600; background: #f8fafc;">
@@ -123,9 +123,9 @@
         <h4 style="border-bottom: 2px solid #eee; padding-bottom: 10px; margin-bottom: 15px;">سجل المدفوعات السابقة</h4>
         <div style="max-height: 500px; overflow-y: auto;">
             <?php if (empty($history)): ?>
-                <div style="text-align:center; padding: 30px; color: #718096; background: #f8fafc; border-radius: 8px;">لا يوجد سجل مدفوعات لهذا العضو.</div>
+                <div style="text-align:center; padding: 15px; color: #718096; background: #f8fafc; border-radius: 8px;">لا يوجد سجل مدفوعات لهذا العضو.</div>
             <?php else: ?>
-                <table class="sm-table" style="font-size: 12px;">
+                <table class="sm-table">
                     <thead>
                         <tr>
                             <th>التاريخ</th>

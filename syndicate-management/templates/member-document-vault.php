@@ -1,6 +1,6 @@
 <?php if (!defined('ABSPATH')) exit; ?>
 <div class="sm-document-vault" dir="rtl">
-    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 25px;">
+    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px;">
         <div style="display: flex; gap: 10px;">
             <div style="position: relative;">
                 <span class="dashicons dashicons-search" style="position: absolute; right: 12px; top: 50%; transform: translateY(-50%); color: #94a3b8;"></span>
@@ -19,7 +19,7 @@
 
     <div id="sm-documents-grid" style="display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 20px;">
         <!-- Loaded via AJAX -->
-        <div style="grid-column: 1/-1; text-align: center; padding: 50px; color: #94a3b8;">جاري تحميل الأرشيف...</div>
+        <div style="grid-column: 1/-1; text-align: center; padding: 35px; color: #94a3b8;">جاري تحميل الأرشيف...</div>
     </div>
 </div>
 
@@ -27,7 +27,7 @@
 <div id="sm-upload-doc-modal" class="sm-modal-overlay">
     <div class="sm-modal-content" style="max-width: 500px;">
         <div class="sm-modal-header"><h3>رفع مستند للأرشيف الإلكتروني</h3><button class="sm-modal-close" onclick="smCloseUploadModal()">&times;</button></div>
-        <form id="sm-upload-doc-form" style="padding: 20px;">
+        <form id="sm-upload-doc-form" style="padding: 15px;">
             <input type="hidden" name="member_id" value="<?php echo $member_id; ?>">
             <div class="sm-form-group">
                 <label class="sm-label">عنوان المستند:</label>
@@ -72,7 +72,7 @@
 <div id="sm-doc-logs-modal" class="sm-modal-overlay" style="z-index: 10001;">
     <div class="sm-modal-content" style="max-width: 500px;">
         <div class="sm-modal-header"><h3>سجل نشاط المستند</h3><button class="sm-modal-close" onclick="document.getElementById('sm-doc-logs-modal').style.display='none'">&times;</button></div>
-        <div id="sm-doc-logs-body" style="padding: 20px;"></div>
+        <div id="sm-doc-logs-body" style="padding: 15px;"></div>
     </div>
 </div>
 
@@ -103,7 +103,7 @@ function smLoadDocuments() {
     .then(res => {
         if (res.success) {
             if (res.data.length === 0) {
-                grid.innerHTML = '<div style="grid-column: 1/-1; text-align: center; padding: 50px; color: #94a3b8;">لا توجد مستندات في هذا القسم حالياً.</div>';
+                grid.innerHTML = '<div style="grid-column: 1/-1; text-align: center; padding: 35px; color: #94a3b8;">لا توجد مستندات في هذا القسم حالياً.</div>';
                 return;
             }
             let html = '';
@@ -139,7 +139,7 @@ function smViewDocument(url, title, id) {
     if (isPdf) {
         body.innerHTML = `<iframe src="${url}" style="width:100%; height:100%; border:none;"></iframe>`;
     } else {
-        body.innerHTML = `<div style="width:100%; height:100%; display:flex; align-items:center; justify-content:center; padding:20px;"><img src="${url}" style="max-width:100%; max-height:100%; object-fit:contain; box-shadow:0 0 50px rgba(0,0,0,0.5);"></div>`;
+        body.innerHTML = `<div style="width:100%; height:100%; display:flex; align-items:center; justify-content:center; padding: 10px;"><img src="${url}" style="max-width:100%; max-height:100%; object-fit:contain; box-shadow:0 0 50px rgba(0,0,0,0.5);"></div>`;
     }
 
     document.getElementById('sm-doc-viewer-modal').style.display = 'flex';

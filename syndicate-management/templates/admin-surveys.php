@@ -1,6 +1,6 @@
 <?php if (!defined('ABSPATH')) exit; global $wpdb; ?>
 <div class="sm-surveys-container">
-    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 30px;">
+    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;">
         <h3 style="margin:0;">إدارة اختبارات الممارسة المهنية</h3>
         <button class="sm-btn" onclick="smOpenNewSurveyModal()" style="width: auto;">+ إنشاء اختبار جديد</button>
     </div>
@@ -15,7 +15,7 @@
     ?>
 
     <!-- Advanced Filter & Search Engine -->
-    <div style="background: #f8fafc; padding: 25px; border-radius: 15px; margin-bottom: 25px; border: 1px solid #e2e8f0; display: grid; grid-template-columns: 2fr 1fr 1fr 1fr; gap: 15px; align-items: flex-end;">
+    <div style="background: #f8fafc; padding: 15px; border-radius: 15px; margin-bottom: 15px; border: 1px solid #e2e8f0; display: grid; grid-template-columns: 2fr 1fr 1fr 1fr; gap: 15px; align-items: flex-end;">
         <div>
             <label class="sm-label" style="font-size: 12px; margin-bottom: 8px; display: block; color: #64748b;">ابحث باسم الاختبار:</label>
             <div style="position: relative;">
@@ -132,14 +132,14 @@
             <h3 id="survey-modal-title">إعداد اختبار ممارسة مهنية جديد</h3>
             <button class="sm-modal-close" onclick="this.closest('.sm-modal-overlay').style.display='none'">&times;</button>
         </div>
-        <div class="sm-modal-body" style="padding: 25px;">
+        <div class="sm-modal-body" style="padding: 15px;">
             <input type="hidden" id="survey_id">
             <div class="sm-form-group">
                 <label class="sm-label">عنوان الاختبار / المسابقة:</label>
                 <input type="text" id="survey_title" class="sm-input" placeholder="مثال: اختبار الحصول على درجة أخصائي" required>
             </div>
 
-            <div style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 20px; background: #f8fafc; padding: 20px; border-radius: 12px; margin-bottom: 25px; border: 1px solid #e2e8f0;">
+            <div style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 20px; background: #f8fafc; padding: 15px; border-radius: 12px; margin-bottom: 15px; border: 1px solid #e2e8f0;">
                 <div class="sm-form-group" style="margin-bottom:0;">
                     <label class="sm-label" style="font-size:12px;">مدة الاختبار (دقيقة):</label>
                     <input type="number" id="survey_time_limit" class="sm-input" value="30">
@@ -191,7 +191,7 @@
                 </div>
             </div>
 
-            <div style="margin-top:30px; display:flex; gap:10px;">
+            <div style="margin-top: 15px; display:flex; gap:10px;">
                 <button class="sm-btn" id="survey_submit_btn" onclick="smSaveSurvey()" style="flex:2; height:50px; font-weight:800;">حفظ ونشر الاختبار</button>
                 <button class="sm-btn sm-btn-outline" onclick="this.closest('.sm-modal-overlay').style.display='none'" style="flex:1;">إلغاء</button>
             </div>
@@ -209,7 +209,7 @@
         <div class="sm-modal-body" style="padding: 0;">
             <div style="display: grid; grid-template-columns: 350px 1fr; height: 650px;">
                 <!-- Add Question Form -->
-                <div style="background: #f8fafc; border-left: 1px solid #e2e8f0; padding: 25px; overflow-y: auto;">
+                <div style="background: #f8fafc; border-left: 1px solid #e2e8f0; padding: 15px; overflow-y: auto;">
                     <h4 style="margin-top:0;">إضافة سؤال جديد</h4>
                     <form id="add-question-form">
                         <input type="hidden" id="q_test_id">
@@ -259,7 +259,7 @@
                     </form>
                 </div>
                 <!-- Questions List -->
-                <div style="padding: 25px; overflow-y: auto;">
+                <div style="padding: 15px; overflow-y: auto;">
                     <div id="bank-questions-list">
                         <!-- Questions load here via JS -->
                     </div>
@@ -289,7 +289,7 @@
                     ?>
                 </select>
             </div>
-            <button class="sm-btn" onclick="smSubmitAssignment()" style="width: 100%; margin-top: 20px;">تأكيد التعيين</button>
+            <button class="sm-btn" onclick="smSubmitAssignment()" style="width: 100%; margin-top: 10px;">تأكيد التعيين</button>
         </div>
     </div>
 </div>
@@ -301,7 +301,7 @@
             <h3 id="res-modal-title">نتائج الاستطلاع</h3>
             <button class="sm-modal-close" onclick="this.closest('.sm-modal-overlay').style.display='none'">&times;</button>
         </div>
-        <div id="survey-results-body" style="max-height: 500px; overflow-y: auto; padding: 20px;">
+        <div id="survey-results-body" style="max-height: 500px; overflow-y: auto; padding: 15px;">
             <!-- Results will be loaded here -->
         </div>
     </div>
@@ -386,7 +386,7 @@ function smLoadBankQuestions(testId) {
         let html = '<div style="display:grid; gap:15px;">';
         res.data.forEach((q, idx) => {
             html += `
-                <div style="background:#fff; border:1px solid #e2e8f0; border-radius:12px; padding:20px; position:relative; box-shadow:0 2px 4px rgba(0,0,0,0.02);">
+                <div style="background:#fff; border:1px solid #e2e8f0; border-radius:12px; padding: 10px; position:relative; box-shadow:0 2px 4px rgba(0,0,0,0.02);">
                     <div style="position:absolute; left:20px; top:20px; display:flex; gap:10px;">
                         <span class="sm-badge sm-badge-low" style="font-size:10px;">${q.difficulty}</span>
                         <button onclick="smDeleteQuestion(${q.id}, ${testId})" style="border:none; background:none; color:#e53e3e; cursor:pointer;"><span class="dashicons dashicons-trash"></span></button>
@@ -538,7 +538,7 @@ function smViewSurveyResults(id, title) {
         if (res.success) {
             const d = res.data;
             let html = `
-                <div style="display:grid; grid-template-columns:repeat(3, 1fr); gap:15px; margin-bottom:30px;">
+                <div style="display:grid; grid-template-columns:repeat(3, 1fr); gap:15px; margin-bottom: 15px;">
                     <div style="background:#fff; padding:15px; border-radius:10px; border:1px solid #e2e8f0; text-align:center;">
                         <div style="font-size:11px; color:#64748b;">إجمالي المشاركات</div>
                         <div style="font-size:24px; font-weight:900;">${d.stats.total_responses}</div>
@@ -555,7 +555,7 @@ function smViewSurveyResults(id, title) {
             `;
 
             d.questions.forEach(item => {
-                html += `<div style="margin-bottom: 25px; padding: 15px; background: #f8fafc; border-radius: 8px; border: 1px solid #e2e8f0;">
+                html += `<div style="margin-bottom: 15px; padding: 15px; background: #f8fafc; border-radius: 8px; border: 1px solid #e2e8f0;">
                     <div style="font-weight: 800; margin-bottom: 15px; color: var(--sm-dark-color);">${item.question}</div>
                     <div style="display: grid; gap: 10px;">`;
 

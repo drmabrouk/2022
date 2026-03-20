@@ -2,7 +2,7 @@
 <div class="sm-verify-portal" dir="rtl" style="max-width: 900px; margin: 0 auto; padding: 15px 0; font-family: 'Rubik', sans-serif;">
 
     <!-- Professional Portal Header -->
-    <div style="text-align: center; margin-bottom: 20px;">
+    <div style="text-align: center; margin-bottom: 10px;">
         <div style="width: 50px; height: 50px; background: #fff; border: 2px solid var(--sm-primary-color); border-radius: 50%; display: inline-flex; align-items: center; justify-content: center; margin-bottom: 8px; box-shadow: 0 4px 10px rgba(246, 48, 73, 0.15);">
             <span class="dashicons dashicons-shield-check" style="font-size: 24px; width: 24px; height: 24px; color: var(--sm-primary-color);"></span>
         </div>
@@ -32,7 +32,7 @@
         </form>
     </div>
 
-    <div id="sm-verify-loading" style="display: none; text-align: center; padding: 25px;">
+    <div id="sm-verify-loading" style="display: none; text-align: center; padding: 15px;">
         <div class="sm-spinner-minimal" style="margin: 0 auto 8px;"></div>
         <p style="color: var(--sm-text-gray); font-size: 11px; font-weight: 600;">جاري مراجعة السجلات...</p>
     </div>
@@ -196,7 +196,7 @@
                 renderResults(res.data, resultsArea);
             } else {
                 resultsArea.append(`
-                    <div style="background: #fff; padding: 25px; border-radius: 10px; text-align: center; border: 1px dashed #feb2b2;">
+                    <div style="background: #fff; padding: 15px; border-radius: 10px; text-align: center; border: 1px dashed #feb2b2;">
                         <div style="font-size: 30px; margin-bottom: 8px;">🔍</div>
                         <h3 style="color: #c53030; font-weight: 800; font-size: 1.05em; margin-bottom: 4px;">عذراً، لا توجد بيانات مطابقة</h3>
                         <p style="color: var(--sm-text-gray); font-size: 11px;">يرجى التأكد من الرقم المدخل وإعادة المحاولة.</p>

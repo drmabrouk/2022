@@ -97,7 +97,7 @@ if ($doc_type === 'certificate') {
 
         /* Certificate specific styling */
         <?php if ($doc_type === 'certificate'): ?>
-        .doc-title h1 { font-family: 'Amiri', serif; font-size: 55px; text-shadow: 2px 2px 4px rgba(0,0,0,0.1); margin-top: 20px; }
+        .doc-title h1 { font-family: 'Amiri', serif; font-size: 55px; text-shadow: 2px 2px 4px rgba(0,0,0,0.1); margin-top: 10px; }
         .main-content { font-family: 'Amiri', serif; font-size: 24px; text-align: center; line-height: 2.2; margin-top: 50px; }
         .doc-container { background: #fffcf5; border: none; }
         .page::before {
@@ -116,7 +116,7 @@ if ($doc_type === 'certificate') {
         <?php if ($doc_type === 'statement'): ?>
         .doc-title { text-align: right; border-bottom: 2px solid <?php echo $primary_color; ?>; padding-bottom: 10px; }
         .doc-title h1 { font-size: 24px; }
-        .main-content { margin-top: 30px; }
+        .main-content { margin-top: 15px; }
         <?php endif; ?>
 
         /* Border frame styling */
@@ -142,7 +142,7 @@ if ($doc_type === 'certificate') {
         <?php endif; ?>
         <?php endif; ?>
 
-        .content-body { padding: 20px 40px; }
+        .content-body { padding: 15px 40px; }
         .doc-title { text-align: center; margin-bottom: 40px; color: <?php echo $primary_color; ?>; }
         .doc-title h1 { margin: 0; font-size: 32px; font-weight: 900; }
 
@@ -171,12 +171,12 @@ if ($doc_type === 'certificate') {
         /* Screen Preview */
         .preview-header {
             display: flex; justify-content: space-between; align-items: center;
-            padding: 20px 40px; border-bottom: 2px solid <?php echo $primary_color; ?>;
-            margin-bottom: 20px;
+            padding: 15px 40px; border-bottom: 2px solid <?php echo $primary_color; ?>;
+            margin-bottom: 10px;
         }
         .preview-footer {
             display: flex; justify-content: space-between; align-items: center;
-            padding: 10px 40px; border-top: 1px solid #eee; margin-top: 20px;
+            padding: 10px 40px; border-top: 1px solid #eee; margin-top: 10px;
         }
     </style>
 </head>
@@ -264,7 +264,7 @@ if ($doc_type === 'certificate') {
                         </div>
 
                         <?php if (!empty($options['fees']) && floatval($options['fees']) > 0): ?>
-                            <div style="margin-top: 30px; padding: 15px; border: 1px dashed #ccc; border-radius: 8px; width: fit-content;">
+                            <div style="margin-top: 15px; padding: 15px; border: 1px dashed #ccc; border-radius: 8px; width: fit-content;">
                                 <strong>الرسوم المسددة: </strong> <?php echo number_format($options['fees'], 2); ?> ج.م
                             </div>
                         <?php endif; ?>
