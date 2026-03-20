@@ -23,7 +23,7 @@ $appearance = SM_Settings::get_appearance();
         .header { text-align: center; margin-bottom: 40px; border-bottom: 1px solid #eee; padding-bottom: 20px; }
         .logo { max-height: 110px; margin-bottom: 15px; }
         .syndicate-name { font-size: 26px; font-weight: 900; color: <?php echo $appearance['dark_color']; ?>; }
-        .title { font-size: 38px; font-weight: 900; color: <?php echo $appearance['primary_color']; ?>; margin-top: 25px; }
+        .title { font-size: 38px; font-weight: 900; color: <?php echo $appearance['primary_color']; ?>; margin-top: 12px; }
         .content { margin-top: 50px; line-height: 2.3; font-size: 22px; text-align: center; }
         .field { font-weight: 900; color: #000; border-bottom: 1px solid #ccc; padding: 0 10px; }
         .footer { margin-top: 80px; display: flex; justify-content: space-between; align-items: flex-end; }
@@ -70,7 +70,7 @@ $appearance = SM_Settings::get_appearance();
 
             <div class="signature-box">
                 <p>يعتمد،،،</p>
-                <p style="font-weight: 900; margin-top: 20px;"><?php echo esc_html($syndicate['syndicate_officer_name']); ?></p>
+                <p style="font-weight: 900; margin-top: 10px;"><?php echo esc_html($syndicate['syndicate_officer_name']); ?></p>
                 <p style="font-size: 14px;">مسؤول النقابة العام</p>
                 <div style="height: 80px;"></div>
             </div>

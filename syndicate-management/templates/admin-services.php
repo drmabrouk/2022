@@ -17,14 +17,14 @@ $all_requests = $is_official ? SM_DB::get_service_requests() : [];
 ?>
 
 <div class="sm-services-container" dir="rtl">
-    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 30px;">
+    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;">
         <h2 style="margin:0; font-weight: 800; color: var(--sm-dark-color);">الخدمات الرقمية</h2>
         <?php if ($is_official): ?>
             <button onclick="smOpenAddServiceModal()" class="sm-btn" style="width:auto;">+ إضافة خدمة جديدة</button>
         <?php endif; ?>
     </div>
 
-    <div class="sm-tabs-wrapper" style="display: flex; gap: 10px; margin-bottom: 25px; border-bottom: 2px solid #eee; padding-bottom: 10px;">
+    <div class="sm-tabs-wrapper" style="display: flex; gap: 10px; margin-bottom: 15px; border-bottom: 2px solid #eee; padding-bottom: 10px;">
         <button class="sm-tab-btn sm-active" onclick="smOpenInternalTab('available-services', this)">الخدمات المتاحة</button>
         <button class="sm-tab-btn" onclick="smOpenInternalTab('requests-history', this)"><?php echo $is_official ? 'طلبات الخدمة' : 'طلباتي السابقة'; ?></button>
         <?php if ($is_official): ?>
@@ -36,13 +36,13 @@ $all_requests = $is_official ? SM_DB::get_service_requests() : [];
     <div id="available-services" class="sm-internal-tab">
         <div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 20px;">
             <?php if (empty($services)): ?>
-                <div style="grid-column: 1/-1; text-align: center; padding: 50px; color: #94a3b8;">لا توجد خدمات متاحة حالياً.</div>
+                <div style="grid-column: 1/-1; text-align: center; padding: 35px; color: #94a3b8;">لا توجد خدمات متاحة حالياً.</div>
             <?php else: ?>
                 <?php foreach ($services as $s):
                     $is_active = $s->status === 'active';
                 ?>
-                    <div class="sm-service-card" style="background: #fff; border: 1px solid var(--sm-border-color); border-radius: 15px; padding: 25px; display: flex; flex-direction: column; transition: 0.3s; box-shadow: 0 4px 6px rgba(0,0,0,0.02); opacity: <?php echo $is_active ? '1' : '0.7'; ?>;">
-                        <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 20px;">
+                    <div class="sm-service-card" style="background: #fff; border: 1px solid var(--sm-border-color); border-radius: 15px; padding: 15px; display: flex; flex-direction: column; transition: 0.3s; box-shadow: 0 4px 6px rgba(0,0,0,0.02); opacity: <?php echo $is_active ? '1' : '0.7'; ?>;">
+                        <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 10px;">
                             <div style="width: 50px; height: 50px; background: <?php echo $is_active ? 'var(--sm-primary-color)' : '#94a3b8'; ?>; border-radius: 12px; display: flex; align-items: center; justify-content: center; color: #fff;">
                                 <span class="dashicons <?php echo esc_attr($s->icon ?: 'dashicons-cloud'); ?>" style="font-size: 24px; width: 24px; height: 24px;"></span>
                             </div>
@@ -54,7 +54,7 @@ $all_requests = $is_official ? SM_DB::get_service_requests() : [];
                         </div>
 
                         <h3 style="margin: 0 0 10px 0; font-weight: 800; color: var(--sm-dark-color);"><?php echo esc_html($s->name); ?></h3>
-                        <p style="font-size: 13px; color: #64748b; line-height: 1.6; margin-bottom: 20px; flex: 1;"><?php echo esc_html($s->description); ?></p>
+                        <p style="font-size: 13px; color: #64748b; line-height: 1.6; margin-bottom: 10px; flex: 1;"><?php echo esc_html($s->description); ?></p>
 
                         <div style="display: flex; justify-content: space-between; align-items: center; margin-top: auto; padding-top: 15px; border-top: 1px solid #f1f5f9;">
                             <div style="font-weight: 700; color: var(--sm-primary-color);"><?php echo $s->fees > 0 ? number_format($s->fees, 2) . ' ج.م' : 'خدمة مجانية'; ?></div>
@@ -97,7 +97,7 @@ $all_requests = $is_official ? SM_DB::get_service_requests() : [];
                 </thead>
                 <tbody>
                     <?php if (empty($deleted_services)): ?>
-                        <tr><td colspan="4" style="text-align: center; padding: 40px;">لا توجد خدمات محذوفة حالياً.</td></tr>
+                        <tr><td colspan="4" style="text-align: center; padding: 15px;">لا توجد خدمات محذوفة حالياً.</td></tr>
                     <?php else: foreach ($deleted_services as $ds): ?>
                         <tr>
                             <td><strong><?php echo esc_html($ds->name); ?></strong></td>
@@ -120,7 +120,7 @@ $all_requests = $is_official ? SM_DB::get_service_requests() : [];
     <!-- TAB: Requests History -->
     <div id="requests-history" class="sm-internal-tab" style="display: none;">
         <?php if ($is_official): ?>
-            <div class="sm-filters-box" style="background: #f8fafc; padding: 20px; border-radius: 15px; margin-bottom: 20px; border: 1px solid #e2e8f0; display: flex; gap: 15px; align-items: flex-end; flex-wrap: wrap;">
+            <div class="sm-filters-box" style="background: #f8fafc; padding: 15px; border-radius: 15px; margin-bottom: 10px; border: 1px solid #e2e8f0; display: flex; gap: 15px; align-items: flex-end; flex-wrap: wrap;">
                 <div style="flex: 1; min-width: 200px;">
                     <label class="sm-label" style="font-size: 12px;">بحث سريع (اسم/رقم قومي):</label>
                     <input type="text" id="req_search_filter" class="sm-input" placeholder="اكتب للبحث..." oninput="smApplyAdminRequestFilters()">
@@ -166,7 +166,7 @@ $all_requests = $is_official ? SM_DB::get_service_requests() : [];
                     <?php
                     $target_requests = $is_official ? $all_requests : $my_requests;
                     if (empty($target_requests)): ?>
-                        <tr><td colspan="7" style="text-align: center; padding: 40px; color: #94a3b8;">لا توجد طلبات سابقة مسجلة في النظام.</td></tr>
+                        <tr><td colspan="7" style="text-align: center; padding: 15px; color: #94a3b8;">لا توجد طلبات سابقة مسجلة في النظام.</td></tr>
                     <?php else:
                         $union_statuses = [
                             'pending' => 'قيد الانتظار',
@@ -245,7 +245,7 @@ $all_requests = $is_official ? SM_DB::get_service_requests() : [];
 <div id="add-service-modal" class="sm-modal-overlay">
     <div class="sm-modal-content" style="max-width: 600px;">
         <div class="sm-modal-header"><h3>إضافة خدمة رقمية جديدة</h3><button class="sm-modal-close" onclick="document.getElementById('add-service-modal').style.display='none'">&times;</button></div>
-        <form id="add-service-form" style="padding: 20px;">
+        <form id="add-service-form" style="padding: 15px;">
             <div class="sm-form-group"><label class="sm-label">اسم الخدمة:</label><input name="name" type="text" class="sm-input" required></div>
             <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px;">
                 <div class="sm-form-group"><label class="sm-label">تصنيف الخدمة:</label><input name="category" type="text" class="sm-input" placeholder="مثال: تراخيص، شهادات، إلخ"></div>
@@ -324,7 +324,7 @@ $all_requests = $is_official ? SM_DB::get_service_requests() : [];
 <div id="request-service-modal" class="sm-modal-overlay">
     <div class="sm-modal-content" style="max-width: 600px;">
         <div class="sm-modal-header"><h3>طلب خدمة: <span id="req-service-name"></span></h3><button class="sm-modal-close" onclick="document.getElementById('request-service-modal').style.display='none'">&times;</button></div>
-        <form id="submit-request-form" style="padding: 20px;">
+        <form id="submit-request-form" style="padding: 15px;">
             <input type="hidden" name="service_id" id="req-service-id">
             <input type="hidden" name="member_id" value="<?php echo $member_id; ?>">
             <div id="dynamic-fields-container"></div>
@@ -332,7 +332,7 @@ $all_requests = $is_official ? SM_DB::get_service_requests() : [];
                 <strong>الرسوم المستحقة: </strong> <span id="req-service-fees"></span>
                 <p style="margin: 5px 0 0 0; color: #744210;">* سيتم إضافة الرسوم إلى حسابك المالي عند اعتماد الطلب.</p>
             </div>
-            <button type="submit" class="sm-btn" style="margin-top: 20px;">تأكيد وتقديم الطلب</button>
+            <button type="submit" class="sm-btn" style="margin-top: 10px;">تأكيد وتقديم الطلب</button>
         </form>
     </div>
 </div>
@@ -340,14 +340,14 @@ $all_requests = $is_official ? SM_DB::get_service_requests() : [];
 <div id="view-request-modal" class="sm-modal-overlay">
     <div class="sm-modal-content" style="max-width: 600px;">
         <div class="sm-modal-header"><h3>تفاصيل الطلب</h3><button class="sm-modal-close" onclick="document.getElementById('view-request-modal').style.display='none'">&times;</button></div>
-        <div id="request-details-body" style="padding: 20px;"></div>
+        <div id="request-details-body" style="padding: 15px;"></div>
     </div>
 </div>
 
 <div id="process-request-modal" class="sm-modal-overlay">
     <div class="sm-modal-content" style="max-width: 500px;">
         <div class="sm-modal-header"><h3>تحديث حالة الطلب</h3><button class="sm-modal-close" onclick="document.getElementById('process-request-modal').style.display='none'">&times;</button></div>
-        <form id="process-request-form" style="padding: 20px;">
+        <form id="process-request-form" style="padding: 15px;">
             <input type="hidden" name="id" id="proc-req-id">
             <div class="sm-form-group">
                 <label class="sm-label">الحالة الجديدة:</label>
@@ -623,7 +623,7 @@ $all_requests = $is_official ? SM_DB::get_service_requests() : [];
         fieldLabels['cust_branch'] = 'الفرع';
 
         let html = `
-            <div style="background:#f8fafc; padding:15px; border-radius:10px; border:1px solid #e2e8f0; margin-bottom:20px;">
+            <div style="background:#f8fafc; padding:15px; border-radius:10px; border:1px solid #e2e8f0; margin-bottom: 10px;">
                 <h4 style="margin:0 0 10px 0; color:var(--sm-primary-color);">بيانات مقدم الطلب</h4>
                 <div style="display:grid; grid-template-columns:1fr 1fr; gap:10px; font-size:13px;">
                     <div><strong>الاسم:</strong> ${r.member_name || 'طلب خارجي'}</div>
@@ -632,7 +632,7 @@ $all_requests = $is_official ? SM_DB::get_service_requests() : [];
                     <div><strong>البريد:</strong> ${r.email || '---'}</div>
                 </div>
             </div>
-            <div style="margin-bottom:20px;"><strong style="color:var(--sm-dark-color);">الخدمة المطلوبة:</strong> <span class="sm-badge sm-badge-low">${r.service_name}</span></div>
+            <div style="margin-bottom: 10px;"><strong style="color:var(--sm-dark-color);">الخدمة المطلوبة:</strong> <span class="sm-badge sm-badge-low">${r.service_name}</span></div>
             <h4 style="border-bottom:1px solid #eee; padding-bottom:8px;">بيانات نموذج الخدمة</h4>
             <div style="display:grid; gap:12px; margin-top:10px;">`;
 

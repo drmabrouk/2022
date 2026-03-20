@@ -15,8 +15,8 @@ $can_apply_facility = (in_array($member->professional_grade, ['specialist', 'con
     <!-- Active Status Cards -->
     <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px;">
         <!-- Practice Permit -->
-        <div class="sm-card" style="background: #fff; padding: 25px; border-radius: 12px; border: 1px solid #e2e8f0; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.1);">
-            <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 20px;">
+        <div class="sm-card" style="background: #fff; padding: 15px; border-radius: 12px; border: 1px solid #e2e8f0; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.1);">
+            <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 10px;">
                 <div>
                     <h3 style="margin: 0; font-weight: 800; color: #1e293b;">تصريح مزاولة المهنة</h3>
                     <p style="margin: 5px 0 0 0; font-size: 13px; color: #64748b;">رخصة الممارسة المهنية الفردية</p>
@@ -37,18 +37,18 @@ $can_apply_facility = (in_array($member->professional_grade, ['specialist', 'con
                     <div><label style="font-size: 11px; color: #64748b; display: block; margin-bottom: 3px;">تاريخ الانتهاء</label><strong style="font-size: 15px; color: <?php echo $lic_color; ?>;"><?php echo esc_html($member->license_expiration_date ?: '---'); ?></strong></div>
                 </div>
             <?php else: ?>
-                <div style="text-align: center; padding: 20px; color: #94a3b8; font-style: italic;">لا يوجد تصريح مزاولة مسجل حالياً</div>
+                <div style="text-align: center; padding: 15px; color: #94a3b8; font-style: italic;">لا يوجد تصريح مزاولة مسجل حالياً</div>
             <?php endif; ?>
 
-            <div style="margin-top: 20px; display: grid; grid-template-columns: 1fr 1fr; gap: 10px;">
+            <div style="margin-top: 10px; display: grid; grid-template-columns: 1fr 1fr; gap: 10px;">
                 <button onclick="smSubmitProfRequest('permit_test', <?php echo $member->id; ?>)" class="sm-btn" style="height: 38px; font-size: 12px;">طلب دخول اختبار</button>
                 <button onclick="smSubmitProfRequest('permit_renewal', <?php echo $member->id; ?>)" class="sm-btn sm-btn-outline" style="height: 38px; font-size: 12px;" <?php echo empty($member->license_number) ? 'disabled' : ''; ?>>طلب تجديد التصريح</button>
             </div>
         </div>
 
         <!-- Facility License -->
-        <div class="sm-card" style="background: #fff; padding: 25px; border-radius: 12px; border: 1px solid #e2e8f0; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.1);">
-            <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 20px;">
+        <div class="sm-card" style="background: #fff; padding: 15px; border-radius: 12px; border: 1px solid #e2e8f0; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.1);">
+            <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 10px;">
                 <div>
                     <h3 style="margin: 0; font-weight: 800; color: #1e293b;">تراخيص المنشآت</h3>
                     <p style="margin: 5px 0 0 0; font-size: 13px; color: #64748b;">رخصة المنشأة أو الأكاديمية الرياضية</p>
@@ -72,10 +72,10 @@ $can_apply_facility = (in_array($member->professional_grade, ['specialist', 'con
                     </div>
                 </div>
             <?php else: ?>
-                <div style="text-align: center; padding: 20px; color: #94a3b8; font-style: italic;">لا توجد منشأة مسجلة باسمك</div>
+                <div style="text-align: center; padding: 15px; color: #94a3b8; font-style: italic;">لا توجد منشأة مسجلة باسمك</div>
             <?php endif; ?>
 
-            <div style="margin-top: 20px;">
+            <div style="margin-top: 10px;">
                 <?php if ($can_apply_facility): ?>
                     <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px;">
                         <button onclick="smSubmitProfRequest('facility_new', <?php echo $member->id; ?>)" class="sm-btn" style="height: 38px; font-size: 12px; background: #0ea5e9;" <?php echo !empty($member->facility_number) ? 'disabled' : ''; ?>>تسجيل منشأة جديدة</button>
@@ -92,7 +92,7 @@ $can_apply_facility = (in_array($member->professional_grade, ['specialist', 'con
     </div>
 
     <!-- Requests History -->
-    <div style="background: #fff; padding: 30px; border-radius: 12px; border: 1px solid #e2e8f0;">
+    <div style="background: #fff; padding: 15px; border-radius: 12px; border: 1px solid #e2e8f0;">
         <h3 style="margin: 0 0 20px 0; font-weight: 800; display: flex; align-items: center; gap: 10px;">
             <span class="dashicons dashicons-list-view"></span> سجل طلبات التراخيص والمهنة
         </h3>
@@ -122,7 +122,7 @@ $can_apply_facility = (in_array($member->professional_grade, ['specialist', 'con
                     ];
 
                     if (empty($requests)): ?>
-                        <tr><td colspan="4" style="text-align: center; padding: 30px; color: #94a3b8;">لا توجد طلبات سابقة</td></tr>
+                        <tr><td colspan="4" style="text-align: center; padding: 15px; color: #94a3b8;">لا توجد طلبات سابقة</td></tr>
                     <?php else: foreach ($requests as $r):
                         $s = $status_map[$r->status] ?? [$r->status, '#64748b'];
                     ?>

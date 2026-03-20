@@ -8,7 +8,7 @@
     <link href="https://fonts.googleapis.com/css2?family=Rubik:wght@300;400;500;700;800;900&display=swap" rel="stylesheet">
     <style>
         @page { size: portrait; margin: 15mm; }
-        body { font-family: 'Rubik', sans-serif; background: #f8fafc; margin: 0; padding: 20px; color: #2d3748; }
+        body { font-family: 'Rubik', sans-serif; background: #f8fafc; margin: 0; padding: 15px; color: #2d3748; }
         .cards-container {
             display: grid;
             grid-template-columns: repeat(2, 90mm);
@@ -41,7 +41,7 @@
     </style>
 </head>
 <body>
-    <div class="no-print" style="text-align:center; margin-bottom: 20px;">
+    <div class="no-print" style="text-align:center; margin-bottom: 10px;">
         <button onclick="window.print()" style="padding: 10px 20px; background: #27ae60; color: white; border: none; cursor: pointer; border-radius: 5px;">بدء الطباعة</button>
     </div>
     <?php

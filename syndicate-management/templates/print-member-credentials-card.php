@@ -20,22 +20,22 @@ if (empty($members_to_print) || !$members_to_print[0]) wp_die('Member(s) not fou
     <title>بطاقات بيانات الدخول</title>
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Rubik:wght@400;500;700;900&display=swap');
-        body { font-family: 'Rubik', sans-serif; margin: 0; padding: 20px; background: #f0f2f5; }
+        body { font-family: 'Rubik', sans-serif; margin: 0; padding: 15px; background: #f0f2f5; }
         .cards-wrapper { display: flex; flex-direction: column; align-items: center; gap: 40px; }
         .card { width: 450px; background: #fff; border-radius: 20px; overflow: hidden; box-shadow: 0 20px 25px -5px rgba(0,0,0,0.1); border: 1px solid #e2e8f0; page-break-inside: avoid; }
-        .card-header { background: #111F35; padding: 25px; text-align: center; color: #fff; }
+        .card-header { background: #111F35; padding: 15px; text-align: center; color: #fff; }
         .card-body { padding: 35px; text-align: center; }
         .syndicate-logo { height: 50px; margin-bottom: 10px; }
         .member-name { font-size: 20px; font-weight: 900; color: #111F35; margin-bottom: 5px; }
-        .member-class { font-size: 14px; color: #718096; margin-bottom: 30px; }
-        .cred-box { background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 12px; padding: 20px; margin-bottom: 20px; text-align: right; }
+        .member-class { font-size: 14px; color: #718096; margin-bottom: 10px; }
+        .cred-box { background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 12px; padding: 15px; margin-bottom: 10px; text-align: right; }
         .cred-label { font-size: 11px; color: #718096; font-weight: 700; margin-bottom: 5px; }
         .cred-value { font-family: monospace; font-size: 22px; font-weight: 900; color: #F63049; letter-spacing: 2px; }
-        .note { font-size: 11px; color: #718096; line-height: 1.5; margin-top: 20px; }
+        .note { font-size: 11px; color: #718096; line-height: 1.5; margin-top: 10px; }
         @media print {
             body { background: #fff; padding: 0; }
             .no-print { display: none; }
-            .card { box-shadow: none; border: 1px solid #eee; margin-bottom: 20px; }
+            .card { box-shadow: none; border: 1px solid #eee; margin-bottom: 10px; }
         }
     </style>
 </head>

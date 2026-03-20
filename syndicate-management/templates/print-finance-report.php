@@ -9,10 +9,10 @@ $syndicate = SM_Settings::get_syndicate_info();
     <title><?php echo esc_html($title); ?></title>
     <style>
         @page { size: A4; margin: 1cm; }
-        body { font-family: 'Arial', sans-serif; margin: 0; padding: 20px; color: #333; line-height: 1.4; }
-        .header { display: flex; justify-content: space-between; align-items: center; border-bottom: 2px solid #111F35; padding-bottom: 15px; margin-bottom: 30px; }
+        body { font-family: 'Arial', sans-serif; margin: 0; padding: 15px; color: #333; line-height: 1.4; }
+        .header { display: flex; justify-content: space-between; align-items: center; border-bottom: 2px solid #111F35; padding-bottom: 15px; margin-bottom: 10px; }
         .logo { max-height: 80px; }
-        .report-title { text-align: center; font-size: 1.5em; font-weight: bold; margin-bottom: 25px; color: #111F35; text-decoration: underline; }
+        .report-title { text-align: center; font-size: 1.5em; font-weight: bold; margin-bottom: 15px; color: #111F35; text-decoration: underline; }
         .data-table { width: 100%; border-collapse: collapse; font-size: 12px; }
         .data-table th { background: #f1f5f9; border: 1px solid #cbd5e0; padding: 10px; text-align: right; }
         .data-table td { border: 1px solid #cbd5e0; padding: 10px; }
@@ -22,7 +22,7 @@ $syndicate = SM_Settings::get_syndicate_info();
     </style>
 </head>
 <body>
-    <div class="no-print" style="margin-bottom: 20px;">
+    <div class="no-print" style="margin-bottom: 10px;">
         <button onclick="window.print()" style="padding: 10px 20px; background: #111F35; color: #fff; border: none; border-radius: 5px; cursor: pointer;">طباعة التقرير</button>
     </div>
 
@@ -54,7 +54,7 @@ $syndicate = SM_Settings::get_syndicate_info();
             <?php
             $total_amount = 0;
             if (empty($data)): ?>
-                <tr><td colspan="5" style="text-align: center; padding: 30px;">لا توجد بيانات متاحة لهذا التقرير.</td></tr>
+                <tr><td colspan="5" style="text-align: center; padding: 15px;">لا توجد بيانات متاحة لهذا التقرير.</td></tr>
             <?php else:
                 foreach ($data as $index => $row):
                     $total_amount += $row['amount'];

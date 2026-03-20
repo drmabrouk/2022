@@ -27,10 +27,10 @@ $appearance = SM_Settings::get_appearance();
         .syndicate-info h1 { margin: 0; font-size: 24px; color: <?php echo $appearance['dark_color']; ?>; }
         .invoice-title { text-align: left; }
         .invoice-title h2 { margin: 0; color: <?php echo $appearance['primary_color']; ?>; font-size: 32px; text-transform: uppercase; }
-        .details-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 40px; margin-bottom: 50px; }
+        .details-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 40px; margin-bottom: 35px; }
         .info-block h3 { font-size: 14px; text-transform: uppercase; color: #777; border-bottom: 1px solid #eee; padding-bottom: 5px; margin-bottom: 15px; }
         .info-block p { margin: 5px 0; font-weight: 700; }
-        .invoice-table { width: 100%; border-collapse: collapse; margin-bottom: 50px; }
+        .invoice-table { width: 100%; border-collapse: collapse; margin-bottom: 35px; }
         .invoice-table th { background: #f8f9fa; padding: 15px; text-align: right; border-bottom: 2px solid #dee2e6; color: #555; }
         .invoice-table td { padding: 15px; border-bottom: 1px solid #eee; }
         .total-section { display: flex; justify-content: flex-end; }

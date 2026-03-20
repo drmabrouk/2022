@@ -22,16 +22,16 @@ $branch_name = SM_Settings::get_branch_name($r->governorate);
     <style>
         @page { size: A4; margin: 15mm; }
         body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; line-height: 1.5; color: #333; margin: 0; padding: 0; background: #fff; font-size: 13px; }
-        .header { display: flex; justify-content: space-between; align-items: center; border-bottom: 2px solid #333; padding-bottom: 15px; margin-bottom: 25px; }
+        .header { display: flex; justify-content: space-between; align-items: center; border-bottom: 2px solid #333; padding-bottom: 15px; margin-bottom: 15px; }
         .header-logo { max-height: 80px; }
         .header-info { text-align: center; flex: 1; }
         .header-info h1 { margin: 0; font-size: 20px; font-weight: 900; }
         .header-info h2 { margin: 5px 0 0 0; font-size: 16px; color: #555; }
 
-        .form-title { text-align: center; margin-bottom: 25px; }
+        .form-title { text-align: center; margin-bottom: 15px; }
         .form-title span { display: inline-block; border: 1px solid #333; padding: 8px 30px; font-weight: 900; font-size: 18px; border-radius: 5px; background: #f9f9f9; }
 
-        .section { margin-bottom: 20px; }
+        .section { margin-bottom: 10px; }
         .section-header { background: #eee; padding: 5px 15px; font-weight: 900; border-right: 5px solid #333; margin-bottom: 12px; font-size: 14px; }
 
         .grid { display: grid; grid-template-columns: 1fr 1fr; gap: 15px 30px; padding: 0 10px; }
@@ -44,7 +44,7 @@ $branch_name = SM_Settings::get_branch_name($r->governorate);
         .photo-box { width: 100px; height: 120px; border: 1px solid #999; display: flex; align-items: center; justify-content: center; text-align: center; font-size: 11px; float: left; margin-top: -100px; }
 
         .footer { margin-top: 40px; border-top: 1px solid #eee; padding-top: 20px; }
-        .signatures { display: grid; grid-template-columns: 1fr 1fr 1fr; text-align: center; margin-top: 30px; }
+        .signatures { display: grid; grid-template-columns: 1fr 1fr 1fr; text-align: center; margin-top: 15px; }
         .sig-box { height: 80px; }
 
         .watermark { position: fixed; top: 40%; left: 10%; transform: rotate(-30deg); font-size: 80px; color: rgba(0,0,0,0.03); z-index: -1; font-weight: 900; width: 100%; text-align: center; }
@@ -130,7 +130,7 @@ $branch_name = SM_Settings::get_branch_name($r->governorate);
 
     <div class="footer">
         <p style="font-weight: 700;">إقرار من مقدم الطلب:</p>
-        <p style="font-size: 11px; margin-bottom: 30px;">أقر أنا الموقع أدناه بصحة كافة البيانات الواردة في هذا النموذج، وأتعهد بالالتزام بكافة القوانين واللوائح المنظمة للعمل النقابي، كما أقر بأنني لم يسبق شطبي من سجلات النقابة لأسباب تأديبية.</p>
+        <p style="font-size: 11px; margin-bottom: 10px;">أقر أنا الموقع أدناه بصحة كافة البيانات الواردة في هذا النموذج، وأتعهد بالالتزام بكافة القوانين واللوائح المنظمة للعمل النقابي، كما أقر بأنني لم يسبق شطبي من سجلات النقابة لأسباب تأديبية.</p>
 
         <div class="signatures">
             <div>
@@ -148,7 +148,7 @@ $branch_name = SM_Settings::get_branch_name($r->governorate);
         </div>
     </div>
 
-    <div style="margin-top: 30px; text-align: center; font-size: 10px; color: #999; border-top: 1px dashed #eee; padding-top: 10px;">
+    <div style="margin-top: 15px; text-align: center; font-size: 10px; color: #999; border-top: 1px dashed #eee; padding-top: 10px;">
         تم إنشاء هذا النموذج آلياً عبر المنصة الرقمية لنقابة الإصابات والتأهيل - <?php echo date('Y-m-d H:i'); ?>
     </div>
 

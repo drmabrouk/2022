@@ -9,22 +9,22 @@ if ($import_results) {
 ?>
 <div class="sm-content-wrapper" dir="rtl">
     <?php if ($import_results): ?>
-        <div style="background: #fff; border-radius: 12px; border: 1px solid var(--sm-border-color); margin-bottom: 30px; overflow: hidden; box-shadow: var(--sm-shadow);">
-            <div style="background: var(--sm-bg-light); padding: 15px 25px; border-bottom: 1px solid var(--sm-border-color); display: flex; justify-content: space-between; align-items: center;">
+        <div style="background: #fff; border-radius: 12px; border: 1px solid var(--sm-border-color); margin-bottom: 8px; overflow: hidden; box-shadow: var(--sm-shadow);">
+            <div style="background: var(--sm-bg-light); padding: 10px 15px; border-bottom: 1px solid var(--sm-border-color); display: flex; justify-content: space-between; align-items: center;">
                 <h4 style="margin:0; color: var(--sm-dark-color); font-weight: 800;">تقرير استيراد الأعضاء الأخير</h4>
                 <span style="font-size: 12px; color: #718096;">إجمالي السجلات المعالجة: <?php echo $import_results['total']; ?></span>
             </div>
-            <div style="padding: 25px;">
-                <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 20px; margin-bottom: 25px;">
-                    <div style="background: #f0fff4; padding: 15px; border-radius: 8px; border: 1px solid #c6f6d5; text-align: center;">
+            <div style="padding: 10px;">
+                <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 20px; margin-bottom: 8px;">
+                    <div style="background: #f0fff4; padding: 10px; border-radius: 8px; border: 1px solid #c6f6d5; text-align: center;">
                         <div style="font-size: 20px; font-weight: 800; color: #2f855a;"><?php echo $import_results['success']; ?></div>
                         <div style="font-size: 12px; color: #38a169;">تم الاستيراد بنجاح</div>
                     </div>
-                    <div style="background: #fffaf0; padding: 15px; border-radius: 8px; border: 1px solid #feebc8; text-align: center;">
+                    <div style="background: #fffaf0; padding: 10px; border-radius: 8px; border: 1px solid #feebc8; text-align: center;">
                         <div style="font-size: 20px; font-weight: 800; color: #c05621;"><?php echo $import_results['warning']; ?></div>
                         <div style="font-size: 12px; color: #dd6b20;">تنبيهات (بيانات ناقصة)</div>
                     </div>
-                    <div style="background: #fff5f5; padding: 15px; border-radius: 8px; border: 1px solid #fed7d7; text-align: center;">
+                    <div style="background: #fff5f5; padding: 10px; border-radius: 8px; border: 1px solid #fed7d7; text-align: center;">
                         <div style="font-size: 20px; font-weight: 800; color: #c53030;"><?php echo $import_results['error']; ?></div>
                         <div style="font-size: 12px; color: #e53e3e;">أخطاء (فشل الاستيراد)</div>
                     </div>
@@ -33,8 +33,8 @@ if ($import_results) {
         </div>
     <?php endif; ?>
 
-    <div style="background: white; padding: 30px; border: 1px solid var(--sm-border-color); border-radius: var(--sm-radius); margin-bottom: 30px; box-shadow: var(--sm-shadow);">
-        <form method="get" style="display: grid; grid-template-columns: 1.5fr 1fr 1fr 1fr auto; gap: 15px; align-items: end;">
+    <div style="background: white; padding: 10px; border: 1px solid var(--sm-border-color); border-radius: var(--sm-radius); margin-bottom: 8px; box-shadow: var(--sm-shadow);">
+        <form method="get" style="display: grid; grid-template-columns: 1.5fr 1fr 1fr 1fr auto; gap: 12px; align-items: end;">
             <input type="hidden" name="page" value="<?php echo esc_attr($_GET['page'] ?? ''); ?>">
             <input type="hidden" name="sm_tab" value="members">
 
@@ -86,16 +86,16 @@ if ($import_results) {
     </div>
 
     <?php if ($can_manage_members): ?>
-    <div style="display: flex; gap: 15px; margin-bottom: 30px; flex-wrap: wrap; align-items: center;">
+    <div style="display: flex; gap: 10px; margin-bottom: 8px; flex-wrap: wrap; align-items: center;">
         <button onclick="document.getElementById('add-single-member-modal').style.display='flex'" class="sm-btn">+ إضافة عضو جديد</button>
         <button onclick="document.getElementById('csv-import-form').style.display='block'" class="sm-btn sm-btn-secondary">استيراد أعضاء (Excel)</button>
         <a href="<?php echo admin_url('admin-ajax.php?action=sm_print&print_type=id_card'); ?>" target="_blank" class="sm-btn sm-btn-accent" style="background: #27ae60; text-decoration:none;">طباعة كافة البطاقات</a>
     </div>
 
     <!-- CSV Import Form -->
-    <div id="csv-import-form" style="display:none; background: #f8fafc; padding: 30px; border: 2px dashed #cbd5e0; border-radius: 12px; margin-bottom: 30px;">
+    <div id="csv-import-form" style="display:none; background: #f8fafc; padding: 10px; border: 2px dashed #cbd5e0; border-radius: 12px; margin-bottom: 8px;">
         <h3 style="margin-top:0; color:var(--sm-secondary-color);">استيراد الأعضاء من ملف CSV / Excel</h3>
-        <p style="font-size: 13px; color: #64748b; margin-bottom: 20px;">تأكد من أن الملف يحتوي على الأعمدة التالية بالترتيب: (الرقم القومي، الاسم، الدرجة الوظيفية، التخصص، الفرع، رقم الهاتف، البريد الإلكتروني)</p>
+        <p style="font-size: 13px; color: #64748b; margin-bottom: 8px;">تأكد من أن الملف يحتوي على الأعمدة التالية بالترتيب: (الرقم القومي، الاسم، الدرجة الوظيفية، التخصص، الفرع، رقم الهاتف، البريد الإلكتروني)</p>
 
         <form method="post" enctype="multipart/form-data">
             <?php wp_nonce_field('sm_admin_action', 'sm_admin_nonce'); ?>
@@ -138,7 +138,7 @@ if ($import_results) {
                     'offset' => $offset
                 ));
                 if (empty($members)): ?>
-                    <tr><td colspan="9" style="padding: 60px; text-align: center;">لا يوجد أعضاء يطابقون البحث.</td></tr>
+                    <tr><td colspan="9" style="padding: 15px; text-align: center;">لا يوجد أعضاء يطابقون البحث.</td></tr>
                 <?php else:
                     $grades = SM_Settings::get_professional_grades();
                     $specs = SM_Settings::get_specializations();
@@ -156,11 +156,11 @@ if ($import_results) {
                             <td><?php echo esc_html($member->membership_number); ?></td>
                             <td style="font-weight:700; color:<?php echo $finance['balance'] > 0 ? '#e53e3e' : '#38a169'; ?>;"><?php echo number_format($finance['balance'], 2); ?></td>
                             <td>
-                                <div style="display: flex; gap: 8px; justify-content: flex-end;">
-                                    <a href="<?php echo add_query_arg('sm_tab', 'member-profile'); ?>&member_id=<?php echo $member->id; ?>" class="sm-btn sm-btn-outline" style="padding: 5px 12px; font-size: 12px; height: 32px; text-decoration:none; display:flex; align-items:center;">عرض</a>
+                                <div style="display: flex; gap: 5px; justify-content: flex-end;">
+                                    <a href="<?php echo add_query_arg('sm_tab', 'member-profile'); ?>&member_id=<?php echo $member->id; ?>" class="sm-btn sm-btn-outline" style="padding: 4px 10px; font-size: 11px; height: 28px; text-decoration:none; display:flex; align-items:center;">عرض</a>
                                     <?php if ($can_manage_members): ?>
-                                        <button onclick='editSmMember(<?php echo json_encode($member); ?>)' class="sm-btn sm-btn-outline" style="padding: 5px 12px; font-size: 12px; height: 32px; color: #2c3e50; border-color: #2c3e50;">تعديل</button>
-                                        <button onclick='smOpenMemberAccountModal(<?php echo json_encode(["id" => $member->id, "wp_user_id" => $member->wp_user_id, "name" => $member->name, "email" => $member->email]); ?>)' class="sm-btn" style="padding: 5px 12px; font-size: 12px; height: 32px; background: #2c3e50;">الحساب</button>
+                                        <button onclick='editSmMember(<?php echo json_encode($member); ?>)' class="sm-btn sm-btn-outline" style="padding: 4px 10px; font-size: 11px; height: 28px; color: #2c3e50; border-color: #2c3e50;">تعديل</button>
+                                        <button onclick='smOpenMemberAccountModal(<?php echo json_encode(["id" => $member->id, "wp_user_id" => $member->wp_user_id, "name" => $member->name, "email" => $member->email]); ?>)' class="sm-btn" style="padding: 4px 10px; font-size: 11px; height: 28px; background: #2c3e50;">الحساب</button>
                                     <?php endif; ?>
                                 </div>
                             </td>
@@ -179,7 +179,7 @@ if ($import_results) {
     $current_page = isset($_GET['paged']) ? max(1, intval($_GET['paged'])) : 1;
     if ($total_pages > 1):
     ?>
-    <div class="sm-pagination" style="margin-top: 20px; display: flex; gap: 5px; justify-content: center;">
+    <div class="sm-pagination" style="margin-top: 10px; display: flex; gap: 5px; justify-content: center;">
         <?php for ($i = 1; $i <= $total_pages; $i++): ?>
             <a href="<?php echo add_query_arg('paged', $i); ?>" class="sm-btn <?php echo $i == $current_page ? '' : 'sm-btn-outline'; ?>" style="padding: 5px 12px; min-width: 40px; text-align: center;"><?php echo $i; ?></a>
         <?php endfor; ?>
@@ -192,18 +192,18 @@ if ($import_results) {
             <div class="sm-modal-header"><h3>تسجيل عضو جديد</h3><button class="sm-modal-close" onclick="document.getElementById('add-single-member-modal').style.display='none'">&times;</button></div>
             <form id="add-member-form">
                 <?php wp_nonce_field('sm_add_member', 'sm_nonce'); ?>
-                <div style="padding:20px;">
-                    <div style="display: grid; grid-template-columns: 2fr 1.2fr; gap: 15px; margin-bottom: 15px;">
+                <div style="padding: 10px;">
+                    <div style="display: grid; grid-template-columns: 2fr 1.2fr; gap: 15px; margin-bottom: 8px;">
                         <div class="sm-form-group"><input name="name" type="text" class="sm-input" required placeholder="الاسم كما في الهوية الوطنية"></div>
                         <div class="sm-form-group"><input name="national_id" type="text" class="sm-input" required maxlength="14" placeholder="الرقم القومي (14 رقم)"></div>
                     </div>
 
-                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px; margin-bottom: 15px;">
+                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px; margin-bottom: 8px;">
                         <div class="sm-form-group"><input name="email" type="email" class="sm-input" placeholder="البريد الإلكتروني"></div>
                         <div class="sm-form-group"><input name="phone" type="text" class="sm-input" placeholder="رقم الهاتف الجوال"></div>
                     </div>
 
-                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px; margin-bottom: 15px;">
+                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px; margin-bottom: 8px;">
                         <div class="sm-form-group">
                             <select name="residence_governorate" class="sm-select" required>
                                 <option value="">-- محافظة الإقامة --</option>
@@ -213,7 +213,7 @@ if ($import_results) {
                         <div class="sm-form-group"><input name="residence_city" type="text" class="sm-input" required placeholder="مدينة الإقامة"></div>
                     </div>
 
-                    <div class="sm-form-group" style="margin-bottom: 15px;">
+                    <div class="sm-form-group" style="margin-bottom: 8px;">
                         <input name="residence_street" type="text" class="sm-input" required placeholder="العنوان بالتفصيل">
                     </div>
 
@@ -267,7 +267,7 @@ if ($import_results) {
             <form id="edit-member-form">
                 <?php wp_nonce_field('sm_add_member', 'sm_nonce'); ?>
                 <input type="hidden" name="member_id" id="edit_member_id_hidden">
-                <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 15px; padding:20px;">
+                <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 15px; padding: 10px;">
                     <div class="sm-form-group"><label class="sm-label">الاسم الكامل:</label><input name="name" id="edit_name" type="text" class="sm-input" required></div>
                     <div class="sm-form-group"><label class="sm-label">الدرجة الوظيفية:</label><select name="professional_grade" id="edit_grade" class="sm-select"><?php foreach (SM_Settings::get_professional_grades() as $k => $v) echo "<option value='$k'>$v</option>"; ?></select></div>
 
@@ -303,7 +303,7 @@ if ($import_results) {
                 <?php wp_nonce_field('sm_admin_action', 'nonce'); ?>
                 <input type="hidden" name="member_id" id="acc_member_id">
                 <input type="hidden" name="wp_user_id" id="acc_wp_user_id">
-                <div style="padding: 20px;">
+                <div style="padding: 10px;">
                     <div class="sm-form-group">
                         <label class="sm-label">البريد الإلكتروني:</label>
                         <input name="email" id="acc_email" type="email" class="sm-input" required>
@@ -322,7 +322,7 @@ if ($import_results) {
                         </select>
                     </div>
                     <?php endif; ?>
-                    <div style="margin-top: 20px; display: flex; gap: 10px;">
+                    <div style="margin-top: 10px; display: flex; gap: 10px;">
                         <button type="submit" class="sm-btn" style="flex: 1;">حفظ التغييرات</button>
                         <button type="button" class="sm-btn sm-btn-outline" style="flex: 1;" onclick="document.getElementById('member-account-modal').style.display='none'">إلغاء</button>
                     </div>
