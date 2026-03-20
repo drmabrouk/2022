@@ -87,11 +87,11 @@
 }
 
 .sm-table .sm-btn {
-    height: 22px !important;
+    height: 24px !important;
     padding: 0 6px !important;
     font-size: 10px !important;
     border-radius: 4px;
-    line-height: 22px !important;
+    line-height: 24px !important;
 }
 
 .sm-table .dashicons {
@@ -254,7 +254,7 @@
 .sm-main-header {
     background: var(--sm-bg-light);
     color: var(--sm-dark-color);
-    padding: 10px 20px;
+    padding: 20px 30px;
     display: flex;
     justify-content: space-between;
     align-items: center;
@@ -270,7 +270,7 @@
 }
 .sm-stat-card {
     background: #fff;
-    padding: 15px;
+    padding: 25px;
     border-radius: var(--sm-radius);
     border: 1px solid var(--sm-border-color);
     box-shadow: var(--sm-shadow);
@@ -283,11 +283,11 @@
     gap: 5px;
     margin-bottom: 15px;
     border-bottom: 2px solid var(--sm-border-color);
-    padding: 0 10px;
+    padding: 0 15px;
 }
 
 .sm-tab-btn {
-    padding: 8px 12px;
+    padding: 15px 20px;
     border: none;
     background: transparent;
     cursor: pointer;

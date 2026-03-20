@@ -63,7 +63,7 @@ $status_labels = [
 ];
 ?>
 <div class="sm-content-wrapper" dir="rtl">
-    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 30px;">
+    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px;">
         <div>
             <h2 style="margin:0; font-weight: 800; color: var(--sm-dark-color);">إدارة طلبات العضوية</h2>
             <p style="margin:5px 0 0 0; color:#64748b; font-size:13px;">مراجعة طلبات الانضمام الجديدة، التحقق من السداد، وفحص المستندات.</p>
@@ -74,7 +74,7 @@ $status_labels = [
     </div>
 
     <!-- Filters Bar -->
-    <div style="background:#fff; padding: 20px; border-radius:15px; margin-bottom: 25px; box-shadow:0 2px 4px rgba(0,0,0,0.02); display:flex; gap:15px; align-items:flex-end; flex-wrap:wrap; border:1px solid #e2e8f0;">
+    <div style="background:#fff; padding: 15px; border-radius:15px; margin-bottom: 25px; box-shadow:0 2px 4px rgba(0,0,0,0.02); display:flex; gap:15px; align-items:flex-end; flex-wrap:wrap; border:1px solid #e2e8f0;">
         <div style="flex:1; min-width:200px;">
             <label style="display:block; font-size:12px; font-weight:700; color:#64748b; margin-bottom:8px;">بحث بالاسم أو الرقم القومي:</label>
             <input type="text" id="req-search" class="sm-input" value="<?php echo esc_attr($search_query); ?>" placeholder="أدخل بيانات البحث...">
@@ -114,7 +114,7 @@ $status_labels = [
             </thead>
             <tbody>
                 <?php if (empty($requests)): ?>
-                    <tr><td colspan="5" style="text-align: center; padding: 30px; color: #94a3b8; background:#fff;">لا توجد طلبات تطابق معايير البحث حالياً.</td></tr>
+                    <tr><td colspan="5" style="text-align: center; padding: 15px; color: #94a3b8; background:#fff;">لا توجد طلبات تطابق معايير البحث حالياً.</td></tr>
                 <?php else: ?>
                     <?php foreach ($requests as $r): ?>
                         <tr id="req-row-<?php echo $r->id; ?>">
