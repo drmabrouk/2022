@@ -81,6 +81,7 @@ class SM_License_Manager {
                     'branch' => SM_Settings::get_branch_name($member->governorate),
                     'grade' => $grades[$member->professional_grade] ?? $member->professional_grade,
                     'specialization' => $specs[$member->specialization] ?? $member->specialization,
+                    'role_label' => 'عضو عامل',
                 ];
                 $results['membership'] = [
                     'number' => $member->membership_number,
@@ -116,6 +117,9 @@ class SM_License_Manager {
                 'email' => $member->email,
                 'phone' => $member->phone,
                 'branch' => SM_Settings::get_branch_name($member->governorate),
+                'grade' => $grades[$member->professional_grade] ?? $member->professional_grade,
+                'specialization' => $specs[$member->specialization] ?? $member->specialization,
+                'role_label' => 'عضو عامل',
             ];
             $results['membership'] = [
                 'label' => 'بيانات العضوية والتسجيل النقابي',
@@ -137,6 +141,9 @@ class SM_License_Manager {
                 'email' => $member->email,
                 'phone' => $member->phone,
                 'branch' => SM_Settings::get_branch_name($member->governorate),
+                'grade' => $grades[$member->professional_grade] ?? $member->professional_grade,
+                'specialization' => $specs[$member->specialization] ?? $member->specialization,
+                'role_label' => 'ممارس معتمد',
             ];
             $results['practice'] = [
                 'label' => 'بيانات تصريح مزاولة المهنة المعتمد',
@@ -158,6 +165,9 @@ class SM_License_Manager {
                 'email' => $member->email,
                 'phone' => $member->phone,
                 'branch' => SM_Settings::get_branch_name($member->governorate),
+                'grade' => $grades[$member->professional_grade] ?? $member->professional_grade,
+                'specialization' => $specs[$member->specialization] ?? $member->specialization,
+                'role_label' => 'صاحب منشأة',
             ];
             $results['facility'] = [
                 'label' => 'رخصة تشغيل المنشأة / الأكاديمية',
