@@ -235,9 +235,27 @@ class SM_DB_System {
         ]);
     }
 
-    public static function get_branches_data() {
+    public static function get_branches_data($args = []) {
         global $wpdb;
-        return $wpdb->get_results("SELECT * FROM {$wpdb->prefix}sm_branches_data ORDER BY name ASC");
+        $where = "1=1";
+        $params = [];
+
+        if (!empty($args['search'])) {
+            $where .= " AND (name LIKE %s OR manager LIKE %s OR city LIKE %s OR address LIKE %s)";
+            $s = '%' . $wpdb->esc_like($args['search']) . '%';
+            $params = array_merge($params, [$s, $s, $s, $s]);
+        }
+
+        if (isset($args['is_active'])) {
+            $where .= " AND is_active = %d";
+            $params[] = (int)$args['is_active'];
+        }
+
+        $query = "SELECT * FROM {$wpdb->prefix}sm_branches_data WHERE $where ORDER BY name ASC";
+        if (!empty($params)) {
+            return $wpdb->get_results($wpdb->prepare($query, $params));
+        }
+        return $wpdb->get_results($query);
     }
 
     public static function save_branch($data) {
@@ -263,7 +281,8 @@ class SM_DB_System {
             'bank_local' => sanitize_text_field($data['bank_local'] ?? ''),
             'digital_wallet' => sanitize_text_field($data['digital_wallet'] ?? ''),
             'instapay_id' => sanitize_text_field($data['instapay_id'] ?? ''),
-            'postal_code' => sanitize_text_field($data['postal_code'] ?? '')
+            'postal_code' => sanitize_text_field($data['postal_code'] ?? ''),
+            'is_active' => isset($data['is_active']) ? 1 : 0
         ];
 
         if (!empty($data['id'])) {

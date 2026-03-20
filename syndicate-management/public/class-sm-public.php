@@ -401,6 +401,18 @@ class SM_Public {
             wp_redirect(add_query_arg(['sm_tab' => 'global-settings', 'sub' => 'init', 'settings_saved' => 1], wp_get_referer()));
             exit;
         }
+
+        if (isset($_POST['sm_save_verify_settings'])) {
+            check_admin_referer('sm_admin_action', 'sm_admin_nonce');
+            update_option('sm_verify_title', sanitize_text_field($_POST['sm_verify_title']));
+            update_option('sm_verify_desc', sanitize_text_field($_POST['sm_verify_desc']));
+            update_option('sm_verify_help', sanitize_text_field($_POST['sm_verify_help']));
+            update_option('sm_verify_show_membership', intval($_POST['sm_verify_show_membership']));
+            update_option('sm_verify_show_practice', intval($_POST['sm_verify_show_practice']));
+
+            wp_redirect(add_query_arg(['sm_tab' => 'advanced-settings', 'sub' => 'verification', 'settings_saved' => 1], wp_get_referer()));
+            exit;
+        }
     }
 
     public function ajax_refresh_dashboard() {

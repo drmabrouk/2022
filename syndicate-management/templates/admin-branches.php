@@ -2,9 +2,15 @@
 <div class="sm-content-wrapper">
     <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom: 30px;">
         <h2 style="margin:0; font-weight:800; color:var(--sm-dark-color);">إدارة فروع ولجان النقابة</h2>
-        <?php if (!in_array('sm_syndicate_admin', (array)wp_get_current_user()->roles)): ?>
-            <button onclick="smOpenBranchModal()" class="sm-btn" style="width:auto; padding:10px 25px;">+ إضافة فرع جديد</button>
-        <?php endif; ?>
+        <div style="display:flex; gap:10px;">
+            <div style="position:relative;">
+                <input type="text" id="sm-branch-search" class="sm-input" placeholder="بحث في الفروع..." style="padding-left:35px; width:250px; height:42px; font-size:13px;" oninput="smSearchBranches()">
+                <span class="dashicons dashicons-search" style="position:absolute; left:10px; top:11px; color:#94a3b8;"></span>
+            </div>
+            <?php if (!in_array('sm_syndicate_admin', (array)wp_get_current_user()->roles)): ?>
+                <button onclick="smOpenBranchModal()" class="sm-btn" style="width:auto; padding:0 25px; height:42px;">+ إضافة فرع جديد</button>
+            <?php endif; ?>
+        </div>
     </div>
 
     <div id="sm-branches-grid" style="display:grid; grid-template-columns: repeat(auto-fill, minmax(320px, 1fr)); gap:25px;">
@@ -14,8 +20,10 @@
             <div style="grid-column: 1/-1; text-align:center; padding:50px; background:#fff; border-radius:15px; border:1px dashed #cbd5e0;">
                 <p style="color:#718096;">لا توجد فروع مسجلة حالياً. قم بإضافة أول فرع للبدء.</p>
             </div>
-        <?php else: foreach($branches as $b): ?>
-            <div class="sm-branch-card" style="background:#fff; border:1px solid #e2e8f0; border-radius:20px; padding: 25px; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.05); transition:0.3s; position:relative;">
+        <?php else: foreach($branches as $b):
+            $is_hidden = !($b->is_active ?? 1);
+        ?>
+            <div class="sm-branch-card" data-name="<?php echo esc_attr($b->name); ?>" data-manager="<?php echo esc_attr($b->manager); ?>" style="background:<?php echo $is_hidden ? '#f8fafc' : '#fff'; ?>; border:1px solid #e2e8f0; border-radius:20px; padding: 25px; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.05); transition:0.3s; position:relative; opacity:<?php echo $is_hidden ? '0.7' : '1'; ?>;">
                 <div style="display:flex; justify-content:space-between; align-items:flex-start; margin-bottom:15px;">
                     <div style="width:45px; height:45px; background:var(--sm-primary-color); border-radius:12px; display:flex; align-items:center; justify-content:center; color:#fff;">
                         <span class="dashicons dashicons-location"></span>
@@ -65,6 +73,11 @@
                 <div class="sm-form-group" style="grid-column: span 2;"><label class="sm-label">البريد الإلكتروني:</label><input type="email" name="email" class="sm-input"></div>
                 <div class="sm-form-group" style="grid-column: span 2;"><label class="sm-label">العنوان التفصيلي:</label><input type="text" name="address" class="sm-input"></div>
                 <div class="sm-form-group" style="grid-column: span 2;"><label class="sm-label">وصف إضافي:</label><textarea name="description" class="sm-textarea" rows="2"></textarea></div>
+                <div class="sm-form-group" style="grid-column: span 2;">
+                    <label style="display:flex; align-items:center; gap:10px; cursor:pointer; font-weight:700;">
+                        <input type="checkbox" name="is_active" id="sm_branch_is_active" value="1" checked> تفعيل الفرع وظهوره في النظام
+                    </label>
+                </div>
             </div>
 
             <div style="margin-top: 20px; border-top:1px solid #edf2f7; padding-top:20px;">
@@ -115,8 +128,19 @@ window.smEditBranch = function(b) {
     f.digital_wallet.value = b.digital_wallet || '';
     f.instapay_id.value = b.instapay_id || '';
     f.postal_code.value = b.postal_code || '';
+    f.is_active.checked = (b.is_active != 0);
     document.getElementById('sm-branch-modal-title').innerText = 'تعديل بيانات الفرع';
     document.getElementById('sm-branch-modal').style.display = 'flex';
+};
+
+window.smSearchBranches = function() {
+    const q = document.getElementById('sm-branch-search').value.toLowerCase();
+    const cards = document.querySelectorAll('.sm-branch-card');
+    cards.forEach(c => {
+        const text = c.innerText.toLowerCase();
+        if (text.includes(q)) c.style.display = 'block';
+        else c.style.display = 'none';
+    });
 };
 
 window.smDeleteBranch = function(id) {

@@ -309,8 +309,8 @@ class SM_DB {
         return SM_DB_System::acknowledge_alert($aid, $uid);
     }
 
-    public static function get_branches_data() {
-        return SM_DB_System::get_branches_data();
+    public static function get_branches_data($args = []) {
+        return SM_DB_System::get_branches_data($args);
     }
 
     public static function save_branch($data) {
