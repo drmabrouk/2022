@@ -430,9 +430,11 @@ $is_syndicate_member = in_array('sm_syndicate_member', $roles);
 $is_member = in_array('sm_member', $roles);
 $is_officer = $is_syndicate_admin || $is_syndicate_member;
 
-$active_tab = isset($_GET['sm_tab']) ? sanitize_text_field($_GET['sm_tab']) : 'summary';
 $is_restricted = $is_member || $is_syndicate_member;
-if ($is_restricted && !in_array($active_tab, ['my-profile', 'member-profile', 'messaging', 'surveys', 'digital-services', 'permit-status', 'license-status'])) {
+$default_tab = $is_restricted ? 'my-profile' : 'summary';
+$active_tab = isset($_GET['sm_tab']) ? sanitize_text_field($_GET['sm_tab']) : $default_tab;
+
+if ($is_restricted && !in_array($active_tab, ['my-profile', 'member-profile'])) {
     $active_tab = 'my-profile';
 }
 
@@ -509,7 +511,7 @@ $greeting = ($hour >= 5 && $hour < 12) ? 'صباح الخير' : 'مساء ال�
                 </a>
 
                 <!-- Messages Icon -->
-                <a href="<?php echo add_query_arg('sm_tab', 'messaging'); ?>" class="sm-header-circle-icon" title="المراسلات والشكاوى">
+                <a href="<?php echo $is_restricted ? add_query_arg(['sm_tab' => 'my-profile', 'profile_tab' => 'correspondence']) : add_query_arg('sm_tab', 'messaging'); ?>" class="sm-header-circle-icon" title="المراسلات والشكاوى">
                     <span class="dashicons dashicons-email"></span>
                     <?php
                     $unread_msgs = $wpdb->get_var($wpdb->prepare("SELECT COUNT(*) FROM {$wpdb->prefix}sm_messages WHERE receiver_id = %d AND is_read = 0", $user->ID));
@@ -638,29 +640,15 @@ $greeting = ($hour >= 5 && $hour < 12) ? 'صباح الخير' : 'مساء ال�
 
     <div class="sm-admin-layout" style="display: flex; min-height: 800px;">
         <!-- SIDEBAR -->
-        <?php $is_restricted = $is_member || $is_syndicate_member; ?>
+        <?php if (!$is_restricted): ?>
         <div class="sm-sidebar" style="width: 280px; flex-shrink: 0; background: <?php echo $appearance['sidebar_bg_color']; ?>; border-left: 1px solid var(--sm-border-color); padding: 15px 0;">
             <ul style="list-style: none; padding: 0; margin: 0;">
 
-                <?php if (!$is_restricted): ?>
                 <li class="sm-sidebar-item <?php echo $active_tab == 'summary' ? 'sm-active' : ''; ?>">
                     <a href="<?php echo add_query_arg('sm_tab', 'summary'); ?>" class="sm-sidebar-link"><span class="dashicons dashicons-dashboard"></span> <?php echo $labels['tab_summary']; ?></a>
                 </li>
-                <?php endif; ?>
 
-                <?php if ($is_restricted): ?>
-                    <li class="sm-sidebar-item <?php echo in_array($active_tab, ['my-profile', 'member-profile']) ? 'sm-active' : ''; ?>">
-                        <a href="<?php echo add_query_arg('sm_tab', 'my-profile'); ?>" class="sm-sidebar-link"><span class="dashicons dashicons-admin-users"></span> <?php echo $labels['tab_my_profile']; ?></a>
-                    </li>
-                    <li class="sm-sidebar-item <?php echo $active_tab == 'permit-status' ? 'sm-active' : ''; ?>">
-                        <a href="<?php echo add_query_arg('sm_tab', 'permit-status'); ?>" class="sm-sidebar-link"><span class="dashicons dashicons-id-alt"></span> حالة تصريح المزاولة</a>
-                    </li>
-                    <li class="sm-sidebar-item <?php echo $active_tab == 'license-status' ? 'sm-active' : ''; ?>">
-                        <a href="<?php echo add_query_arg('sm_tab', 'license-status'); ?>" class="sm-sidebar-link"><span class="dashicons dashicons-building"></span> حالة تراخيص المنشآت</a>
-                    </li>
-                <?php endif; ?>
-
-                <?php if (!$is_restricted && ($is_admin || $is_sys_admin || $is_syndicate_admin)): ?>
+                <?php if ($is_admin || $is_sys_admin || $is_syndicate_admin): ?>
                     <li class="sm-sidebar-item <?php echo in_array($active_tab, ['members', 'update-requests', 'membership-requests', 'professional-requests']) ? 'sm-active' : ''; ?>">
                         <a href="<?php echo add_query_arg('sm_tab', 'members'); ?>" class="sm-sidebar-link"><span class="dashicons dashicons-groups"></span> <?php echo $labels['tab_members']; ?></a>
                         <ul class="sm-sidebar-dropdown" style="display: <?php echo in_array($active_tab, ['members', 'update-requests', 'membership-requests', 'professional-requests']) ? 'block' : 'none'; ?>;">
@@ -731,6 +719,7 @@ $greeting = ($hour >= 5 && $hour < 12) ? 'صباح الخير' : 'مساء ال�
                 <?php endif; ?>
             </ul>
         </div>
+        <?php endif; ?>
 
         <!-- CONTENT AREA -->
         <div class="sm-main-panel" style="flex: 1; min-width: 0; padding: 30px; background: #fff;">

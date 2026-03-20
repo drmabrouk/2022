@@ -116,6 +116,7 @@
     background: var(--sm-primary-color);
     color: white;
     text-decoration: none;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.05);
 }
 
 .sm-btn:hover {
@@ -275,6 +276,11 @@
     border: 1px solid var(--sm-border-color);
     box-shadow: var(--sm-shadow);
     text-align: center;
+    transition: transform 0.2s;
+}
+
+.sm-stat-card:hover {
+    transform: translateY(-3px);
 }
 
 /* Tabs */
@@ -284,7 +290,9 @@
     margin-bottom: 15px;
     border-bottom: 2px solid var(--sm-border-color);
     padding: 0 15px;
+    scrollbar-width: none;
 }
+.sm-tabs-wrapper::-webkit-scrollbar { display: none; }
 
 .sm-tab-btn {
     padding: 15px 20px;
