@@ -10,7 +10,7 @@ class SM_Education_Manager {
         }
         check_ajax_referer('sm_admin_action', 'nonce');
 
-        $id = SM_DB_Education::add_survey($_POST);
+        $id = SM_DB::add_survey($_POST);
         if ($id) {
             wp_send_json_success($id);
         } else {
@@ -25,7 +25,7 @@ class SM_Education_Manager {
         check_ajax_referer('sm_admin_action', 'nonce');
 
         $id = intval($_POST['id']);
-        if (SM_DB_Education::update_survey($id, $_POST)) {
+        if (SM_DB::update_survey_data($id, $_POST)) {
             wp_send_json_success();
         } else {
             wp_send_json_error('Failed to update test');
@@ -38,7 +38,7 @@ class SM_Education_Manager {
         }
         check_ajax_referer('sm_admin_action', 'nonce');
 
-        $id = SM_DB_Education::add_question($_POST);
+        $id = SM_DB::add_test_question($_POST);
         if ($id) {
             wp_send_json_success($id);
         } else {
@@ -53,7 +53,7 @@ class SM_Education_Manager {
         check_ajax_referer('sm_admin_action', 'nonce');
 
         $id = intval($_POST['id']);
-        if (SM_DB_Education::delete_question($id)) {
+        if (SM_DB::delete_test_question($id)) {
             wp_send_json_success();
         } else {
             wp_send_json_error('Failed to delete question');
@@ -88,15 +88,15 @@ class SM_Education_Manager {
         $sid = intval($_POST['survey_id']);
         $user_id = get_current_user_id();
         $responses = json_decode(stripslashes($_POST['responses'] ?? '[]'), true);
-        $questions = SM_DB_Education::get_test_questions($sid);
-        $survey = SM_DB_Education::get_survey($sid);
+        $questions = SM_DB::get_test_questions($sid);
+        $survey = SM_DB::get_survey($sid);
 
         if (!$survey) {
             wp_send_json_error('Test not found');
         }
 
         // Security: Check attempt limits
-        $attempts_made = SM_DB_Education::get_user_attempts_count($sid, $user_id);
+        $attempts_made = SM_DB::get_user_attempts_count($sid, $user_id);
         if ($attempts_made >= $survey->max_attempts) {
             wp_send_json_error('لقد استنفدت كافة المحاولات المتاحة لهذا الاختبار.');
         }
@@ -117,21 +117,19 @@ class SM_Education_Manager {
         $percent = $total_points > 0 ? ($score / $total_points) * 100 : 0;
         $passed = ($percent >= $survey->pass_score);
 
-        global $wpdb;
-        $wpdb->insert("{$wpdb->prefix}sm_survey_responses", array(
+        SM_DB::save_test_response([
             'survey_id' => $sid,
             'user_id' => get_current_user_id(),
-            'responses' => json_encode($responses),
+            'responses' => $responses,
             'score' => $percent,
-            'status' => $passed ? 'passed' : 'failed',
-            'created_at' => current_time('mysql')
-        ));
+            'status' => $passed ? 'passed' : 'failed'
+        ]);
 
         // Notify member of result
         $user = wp_get_current_user();
         $msg = "لقد أكملت اختبار: {$survey->title}\nالنتيجة: " . round($percent) . "%\nالحالة: " . ($passed ? 'ناجح ✅' : 'لم تجتز ❌');
 
-        SM_DB_Communications::send_message(
+        SM_DB::send_message(
             0, // System
             $user->ID,
             $msg,
@@ -151,9 +149,11 @@ class SM_Education_Manager {
             wp_send_json_error('Unauthorized');
         }
         check_ajax_referer('sm_admin_action', 'nonce');
-        global $wpdb;
-        $wpdb->update("{$wpdb->prefix}sm_surveys", ['status' => 'cancelled'], ['id' => intval($_POST['id'])]);
-        wp_send_json_success();
+        if (SM_DB::update_survey_data(intval($_POST['id']), ['status' => 'cancelled'])) {
+            wp_send_json_success();
+        } else {
+            wp_send_json_error('Failed');
+        }
     }
 
     public static function ajax_get_survey_results() {
@@ -190,15 +190,19 @@ class SM_Education_Manager {
         // Capability check: admins or the user assigned to the test
         $can_view = current_user_can('sm_manage_system');
         if (!$can_view) {
-            global $wpdb;
-            $is_assigned = $wpdb->get_var($wpdb->prepare("SELECT id FROM {$wpdb->prefix}sm_test_assignments WHERE test_id = %d AND user_id = %d", $test_id, get_current_user_id()));
-            if ($is_assigned) $can_view = true;
+            $assignments = SM_DB::get_test_assignments($test_id);
+            foreach ($assignments as $a) {
+                if ($a->user_id == get_current_user_id()) {
+                    $can_view = true;
+                    break;
+                }
+            }
         }
 
         if (!$can_view) {
             wp_send_json_error('Access denied');
         }
 
-        wp_send_json_success(SM_DB_Education::get_test_questions($test_id));
+        wp_send_json_success(SM_DB::get_test_questions($test_id));
     }
 }

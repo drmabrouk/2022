@@ -4,6 +4,12 @@ if (!defined('ABSPATH')) {
 }
 
 class SM_DB_Finance {
+    public static function delete_payments_by_member_ids($member_ids) {
+        global $wpdb;
+        $ids_str = implode(',', array_map('intval', $member_ids));
+        return $wpdb->query("DELETE FROM {$wpdb->prefix}sm_payments WHERE member_id IN ($ids_str)");
+    }
+
     public static function get_statistics($filters = array()) {
         global $wpdb;
         $stats = array();

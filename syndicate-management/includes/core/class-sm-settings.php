@@ -47,6 +47,24 @@ class SM_Settings {
         return wp_parse_args(get_option('sm_labels', array()), $default);
     }
 
+    public static function get_branch_fees($branch_slug) {
+        $global = self::get_finance_settings();
+        if (empty($branch_slug)) return $global;
+
+        $branch = SM_DB::get_branch_by_slug($branch_slug);
+        if (!$branch || empty($branch->fees)) return $global;
+
+        $branch_fees = json_decode($branch->fees, true);
+        if (empty($branch_fees)) return $global;
+
+        foreach ($global as $key => $val) {
+            if (isset($branch_fees[$key]) && $branch_fees[$key] !== '') {
+                $global[$key] = floatval($branch_fees[$key]);
+            }
+        }
+        return $global;
+    }
+
     public static function save_labels($labels) {
         update_option('sm_labels', $labels);
     }

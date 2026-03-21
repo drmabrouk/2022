@@ -105,8 +105,7 @@ class SM_Member_Manager {
             $u->set_role($role);
         }
 
-        global $wpdb;
-        $wpdb->update("{$wpdb->prefix}sm_members", ['email' => $email], ['id' => $mid]);
+        SM_DB::update_member($mid, ['email' => $email]);
 
         SM_Logger::log('تحديث حساب عضو', "تم تحديث بيانات الحساب للعضو ID: $mid");
         wp_send_json_success();
@@ -307,7 +306,6 @@ class SM_Member_Manager {
 
     public static function ajax_submit_membership_request_stage3() {
         $nid = sanitize_text_field($_POST['national_id']);
-        global $wpdb;
         if (!empty($_FILES)) {
             require_once(ABSPATH . 'wp-admin/includes/file.php');
             $upd = ['status' => 'Awaiting Physical Documents', 'current_stage' => 3];
@@ -326,7 +324,7 @@ class SM_Member_Manager {
                     }
                 }
             }
-            $wpdb->update("{$wpdb->prefix}sm_membership_requests", $upd, ['national_id' => $nid]);
+            SM_DB::update_membership_request($nid, $upd);
             wp_send_json_success();
         }
         wp_send_json_error('No files.');
@@ -342,8 +340,7 @@ class SM_Member_Manager {
         $status = sanitize_text_field($_POST['status']);
         $reason = sanitize_text_field($_POST['reason'] ?? '');
 
-        global $wpdb;
-        $req = $wpdb->get_row($wpdb->prepare("SELECT * FROM {$wpdb->prefix}sm_membership_requests WHERE id = %d", $rid));
+        $req = SM_DB::get_membership_request($rid);
         if (!$req) {
             wp_send_json_error('Request not found');
         }
@@ -412,7 +409,7 @@ class SM_Member_Manager {
             $upd['notes'] = $reason;
         }
 
-        $wpdb->update("{$wpdb->prefix}sm_membership_requests", $upd, ['id' => $rid]);
+        SM_DB::update_membership_request($rid, $upd);
 
         SM_Logger::log('معالجة طلب عضوية', "تم {$status} طلب العضوية للرقم القومي: {$req->national_id}");
         wp_send_json_success();
@@ -467,9 +464,8 @@ class SM_Member_Manager {
             wp_send_json_error('Unauthorized');
         }
         check_ajax_referer('sm_document_action', 'nonce');
-        global $wpdb;
-        $doc = $wpdb->get_row($wpdb->prepare("SELECT member_id FROM {$wpdb->prefix}sm_documents WHERE id = %d", intval($_POST['doc_id'])));
-        if (!$doc || !self::can_access_member($doc->member_id)) {
+        $mid = SM_DB::get_document_member_id(intval($_POST['doc_id']));
+        if (!$mid || !self::can_access_member($mid)) {
             wp_send_json_error('Access denied');
         }
         if (SM_DB::delete_document(intval($_POST['doc_id']))) {
@@ -483,9 +479,8 @@ class SM_Member_Manager {
         if (!is_user_logged_in()) {
             wp_send_json_error('Unauthorized');
         }
-        global $wpdb;
-        $doc = $wpdb->get_row($wpdb->prepare("SELECT member_id FROM {$wpdb->prefix}sm_documents WHERE id = %d", intval($_GET['doc_id'])));
-        if (!$doc || !self::can_access_member($doc->member_id)) {
+        $mid = SM_DB::get_document_member_id(intval($_GET['doc_id']));
+        if (!$mid || !self::can_access_member($mid)) {
             wp_send_json_error('Access denied');
         }
         wp_send_json_success(SM_DB::get_document_logs(intval($_GET['doc_id'])));
@@ -495,9 +490,8 @@ class SM_Member_Manager {
         if (!is_user_logged_in()) {
             wp_send_json_error('Unauthorized');
         }
-        global $wpdb;
-        $doc = $wpdb->get_row($wpdb->prepare("SELECT member_id FROM {$wpdb->prefix}sm_documents WHERE id = %d", intval($_POST['doc_id'])));
-        if (!$doc || !self::can_access_member($doc->member_id)) {
+        $mid = SM_DB::get_document_member_id(intval($_POST['doc_id']));
+        if (!$mid || !self::can_access_member($mid)) {
             wp_send_json_error('Access denied');
         }
         SM_DB::log_document_action(intval($_POST['doc_id']), 'view');
@@ -559,8 +553,7 @@ class SM_Member_Manager {
 
     public static function ajax_track_membership_request() {
         check_ajax_referer('sm_registration_nonce');
-        global $wpdb;
-        $req = $wpdb->get_row($wpdb->prepare("SELECT * FROM {$wpdb->prefix}sm_membership_requests WHERE national_id = %s", sanitize_text_field($_POST['national_id'])));
+        $req = SM_DB::get_membership_request_by_national_id(sanitize_text_field($_POST['national_id']));
         if (!$req) {
             wp_send_json_error('Not found');
         }

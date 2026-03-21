@@ -274,6 +274,16 @@ class SM_DB_Communications {
         return $wpdb->update("{$wpdb->prefix}sm_tickets", array('status' => $status), array('id' => $id));
     }
 
+    public static function mark_messages_read($receiver_id, $sender_id) {
+        global $wpdb;
+        return $wpdb->update("{$wpdb->prefix}sm_messages", ['is_read' => 1], ['receiver_id' => intval($receiver_id), 'sender_id' => intval($sender_id)]);
+    }
+
+    public static function get_notification_templates() {
+        global $wpdb;
+        return $wpdb->get_results("SELECT * FROM {$wpdb->prefix}sm_notification_templates WHERE is_enabled = 1");
+    }
+
     public static function log_notification($data) {
         global $wpdb;
         return $wpdb->insert($wpdb->prefix . 'sm_notification_logs', array(

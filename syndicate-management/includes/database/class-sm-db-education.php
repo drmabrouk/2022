@@ -92,12 +92,14 @@ class SM_DB_Education {
         return $wpdb->get_results($wpdb->prepare($query, ...$params));
     }
 
-    public static function save_survey_response($survey_id, $user_id, $responses) {
+    public static function save_test_response($data) {
         global $wpdb;
         return $wpdb->insert("{$wpdb->prefix}sm_survey_responses", array(
-            'survey_id' => $survey_id,
-            'user_id' => $user_id,
-            'responses' => json_encode($responses),
+            'survey_id' => intval($data['survey_id']),
+            'user_id' => intval($data['user_id']),
+            'responses' => json_encode($data['responses']),
+            'score' => floatval($data['score'] ?? 0),
+            'status' => sanitize_text_field($data['status'] ?? 'pending'),
             'created_at' => current_time('mysql')
         ));
     }

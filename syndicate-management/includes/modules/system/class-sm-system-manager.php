@@ -5,12 +5,31 @@ if (!defined('ABSPATH')) {
 
 class SM_System_Manager {
     public static function ajax_save_branch() {
-        if (!current_user_can('sm_full_access') && !current_user_can('manage_options')) {
+        $can_manage_all = current_user_can('sm_full_access') || current_user_can('manage_options');
+        $is_officer = in_array('sm_syndicate_admin', (array)wp_get_current_user()->roles);
+
+        if (!$can_manage_all && !$is_officer) {
             wp_send_json_error('Unauthorized');
         }
         check_ajax_referer('sm_admin_action', 'nonce');
 
         $data = $_POST;
+        $id = !empty($data['id']) ? intval($data['id']) : null;
+
+        // Granular Permissions: Branch officers can only edit their own branch
+        if ($is_officer && !$can_manage_all) {
+            $my_gov = get_user_meta(get_current_user_id(), 'sm_governorate', true);
+            if (!$id) {
+                wp_send_json_error('لا تملك صلاحية إضافة فروع جديدة.');
+            }
+            $branch = SM_DB::get_branch_by_id($id);
+            if (!$branch || $branch->slug !== $my_gov) {
+                wp_send_json_error('لا تملك صلاحية تعديل هذا الفرع.');
+            }
+            // Officers cannot change the slug (internal routing)
+            unset($data['slug']);
+        }
+
         if (isset($data['is_active'])) {
             $data['is_active'] = (int)$data['is_active'];
         }
@@ -25,7 +44,7 @@ class SM_System_Manager {
 
     public static function ajax_delete_branch() {
         if (!current_user_can('sm_full_access') && !current_user_can('manage_options')) {
-            wp_send_json_error('Unauthorized');
+            wp_send_json_error('Unauthorized: لا يملك مسؤول الفرع صلاحية الحذف.');
         }
         check_ajax_referer('sm_admin_action', 'nonce');
         $id = intval($_POST['id']);
@@ -101,9 +120,8 @@ class SM_System_Manager {
             wp_send_json_error('كلمة المرور غير صحيحة.');
         }
 
-        global $wpdb;
         $tables = ['sm_members', 'sm_payments', 'sm_logs', 'sm_messages', 'sm_surveys', 'sm_survey_responses', 'sm_update_requests'];
-        $uids = $wpdb->get_col("SELECT wp_user_id FROM {$wpdb->prefix}sm_members WHERE wp_user_id IS NOT NULL");
+        $uids = SM_DB::get_member_wp_user_ids();
 
         if (!empty($uids)) {
             require_once(ABSPATH . 'wp-admin/includes/user.php');
@@ -112,9 +130,7 @@ class SM_System_Manager {
             }
         }
 
-        foreach ($tables as $t) {
-            $wpdb->query("TRUNCATE TABLE {$wpdb->prefix}$t");
-        }
+        SM_DB::truncate_tables($tables);
         delete_option('sm_invoice_sequence_' . date('Y'));
 
         SM_Logger::log('إعادة تهيئة النظام', "تم مسح كافة البيانات وتصفير النظام بالكامل");
@@ -128,8 +144,7 @@ class SM_System_Manager {
         check_ajax_referer('sm_admin_action', 'nonce');
 
         $lid = intval($_POST['log_id']);
-        global $wpdb;
-        $log = $wpdb->get_row($wpdb->prepare("SELECT * FROM {$wpdb->prefix}sm_logs WHERE id = %d", $lid));
+        $log = SM_DB::get_log($lid);
 
         if (!$log || strpos($log->details, 'ROLLBACK_DATA:') !== 0) {
             wp_send_json_error('لا توجد بيانات استعادة');
@@ -172,19 +187,19 @@ class SM_System_Manager {
 
             unset($data['id']);
             $data['wp_user_id'] = $uid;
-            if ($wpdb->insert("{$wpdb->prefix}sm_members", $data)) {
+            if (SM_DB::add_member($data)) {
                 SM_Logger::log('استعادة بيانات', "تم استعادة العضو: " . $data['name']);
                 wp_send_json_success();
             } else {
-                wp_send_json_error('فشل في إدراج البيانات: ' . $wpdb->last_error);
+                wp_send_json_error('فشل في إدراج البيانات');
             }
         } elseif ($table === 'services') {
             unset($data['id']);
-            if ($wpdb->insert("{$wpdb->prefix}sm_services", $data)) {
+            if (SM_DB::add_service($data)) {
                 SM_Logger::log('استعادة بيانات', "تم استعادة الخدمة: " . $data['name']);
                 wp_send_json_success();
             } else {
-                wp_send_json_error('فشل في إدراج البيانات: ' . $wpdb->last_error);
+                wp_send_json_error('فشل في إدراج البيانات');
             }
         }
         wp_send_json_error('نوع الاستعادة غير مدعوم');
@@ -202,23 +217,21 @@ class SM_System_Manager {
             wp_send_json_error('Unauthorized');
         }
         check_ajax_referer('sm_admin_action', 'nonce');
-        global $wpdb;
         $gov = sanitize_text_field($_POST['governorate']);
         if (!$gov) {
             wp_send_json_error('فرع غير محددة');
         }
-        $m_ids = $wpdb->get_col($wpdb->prepare("SELECT id FROM {$wpdb->prefix}sm_members WHERE governorate = %s", $gov));
+        $m_ids = SM_DB::get_member_ids_by_governorate($gov);
         if (empty($m_ids)) {
             wp_send_json_success('لا توجد بيانات');
         }
-        $uids = $wpdb->get_col($wpdb->prepare("SELECT wp_user_id FROM {$wpdb->prefix}sm_members WHERE governorate = %s AND wp_user_id IS NOT NULL", $gov));
+        $uids = SM_DB::get_member_wp_user_ids($gov);
         if (!empty($uids)) {
             require_once(ABSPATH . 'wp-admin/includes/user.php');
             foreach ($uids as $uid) wp_delete_user($uid);
         }
-        $ids_str = implode(',', array_map('intval', $m_ids));
-        $wpdb->query("DELETE FROM {$wpdb->prefix}sm_payments WHERE member_id IN ($ids_str)");
-        $wpdb->query($wpdb->prepare("DELETE FROM {$wpdb->prefix}sm_members WHERE governorate = %s", $gov));
+        SM_DB::delete_payments_by_member_ids($m_ids);
+        SM_DB::delete_members_by_governorate($gov);
         SM_Logger::log('حذف بيانات فرع', "تم مسح كافة بيانات فرع: $gov");
         wp_send_json_success();
     }
@@ -254,8 +267,7 @@ class SM_System_Manager {
                 $row['wp_user_id'] = $uid;
                 update_user_meta($uid, 'sm_governorate', $gov);
             }
-            global $wpdb;
-            if ($wpdb->insert("{$wpdb->prefix}sm_members", $row)) {
+            if (SM_DB::add_member($row)) {
                 $success++;
             }
         }
@@ -267,8 +279,7 @@ class SM_System_Manager {
             wp_send_json_error('Unauthorized');
         }
         check_ajax_referer('sm_admin_action', 'nonce');
-        global $wpdb;
-        $wpdb->delete("{$wpdb->prefix}sm_logs", ['id' => intval($_POST['log_id'])]);
+        SM_DB::delete_log(intval($_POST['log_id']));
         wp_send_json_success();
     }
 
@@ -277,8 +288,7 @@ class SM_System_Manager {
             wp_send_json_error('Unauthorized');
         }
         check_ajax_referer('sm_admin_action', 'nonce');
-        global $wpdb;
-        $wpdb->query("TRUNCATE TABLE {$wpdb->prefix}sm_logs");
+        SM_DB::truncate_logs();
         wp_send_json_success();
     }
 
@@ -286,8 +296,7 @@ class SM_System_Manager {
         if (!current_user_can('sm_manage_system')) {
             wp_send_json_error('Unauthorized');
         }
-        global $wpdb;
-        $t = $wpdb->get_row($wpdb->prepare("SELECT * FROM {$wpdb->prefix}sm_pub_templates WHERE id = %d", intval($_GET['id'])));
+        $t = SM_DB::get_pub_template(intval($_GET['id']));
         if ($t) {
             wp_send_json_success($t);
         } else {
@@ -368,9 +377,8 @@ class SM_System_Manager {
         if (!current_user_can('sm_manage_system')) {
             wp_die('Unauthorized');
         }
-        global $wpdb;
         $id = intval($_GET['id']);
-        $doc = $wpdb->get_row($wpdb->prepare("SELECT * FROM {$wpdb->prefix}sm_pub_documents WHERE id = %d", $id));
+        $doc = SM_DB::get_pub_document_by_id($id);
         if (!$doc) {
             wp_die('Document not found');
         }

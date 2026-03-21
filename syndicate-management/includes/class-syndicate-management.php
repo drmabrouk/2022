@@ -18,6 +18,7 @@ class Syndicate_Management {
         require_once SM_PLUGIN_DIR . 'includes/core/class-sm-loader.php';
         require_once SM_PLUGIN_DIR . 'includes/core/class-sm-settings.php';
         require_once SM_PLUGIN_DIR . 'includes/core/class-sm-logger.php';
+        require_once SM_PLUGIN_DIR . 'includes/core/class-sm-health-check.php';
 
         // Database Layer
         require_once SM_PLUGIN_DIR . 'includes/database/class-sm-db-members.php';
@@ -170,6 +171,7 @@ class Syndicate_Management {
             'sm_submit_membership_request' => ['SM_Auth', 'ajax_submit_membership_request'],
 
             'sm_get_template_ajax' => ['SM_Notifications', 'ajax_get_template_ajax'],
+            'sm_run_health_check' => ['SM_Health_Check', 'ajax_run_health_check'],
         ];
 
         foreach ($ajax_map as $action => $callback) {
