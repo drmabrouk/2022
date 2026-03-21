@@ -224,12 +224,26 @@ function smTogglePass(id, btn) {
 function smToggleRecovery() { const m = document.getElementById("sm-recovery-modal"); m.style.display = m.style.display === "none" ? "flex" : "none"; }
 function smToggleActivation() { const m = document.getElementById("sm-activation-modal"); m.style.display = m.style.display === "none" ? "flex" : "none"; if(m.style.display==="flex") smActivateGoTo(1); }
 function smActivateGoTo(step) {
-    if (step === 2) { if (!document.getElementById("act_branch").value) return alert("يرجى اختيار الفرع أولاً."); }
+    if (step === 2) {
+        if (!document.getElementById("act_branch").value) {
+            if (typeof smShowNotification === 'function') smShowNotification("يرجى اختيار الفرع أولاً.", true);
+            else alert("يرجى اختيار الفرع أولاً.");
+            return;
+        }
+    }
     if (step === 4) {
         const email = document.getElementById("act_email").value;
         const phone = document.getElementById("act_phone").value;
-        if(!/^\S+@\S+\.\S+$/.test(email)) return alert("يرجى إدخال بريد إلكتروني صحيح");
-        if(phone.length < 10) return alert("يرجى إدخال رقم هاتف صحيح");
+        if(!/^\S+@\S+\.\S+$/.test(email)) {
+            if (typeof smShowNotification === 'function') smShowNotification("يرجى إدخال بريد إلكتروني صحيح", true);
+            else alert("يرجى إدخال بريد إلكتروني صحيح");
+            return;
+        }
+        if(phone.length < 10) {
+            if (typeof smShowNotification === 'function') smShowNotification("يرجى إدخال رقم هاتف صحيح", true);
+            else alert("يرجى إدخال رقم هاتف صحيح");
+            return;
+        }
     }
     document.querySelectorAll("[id^='activation-step-']").forEach(s => s.style.display = "none");
     document.getElementById("activation-step-" + step).style.display = "block";
@@ -244,7 +258,11 @@ function smActivateStep2Check() {
     const nid = document.getElementById("act_national_id").value;
     const mem = document.getElementById("act_mem_no").value;
     const branch = document.getElementById("act_branch").value;
-    if(!/^[0-9]{14}$/.test(nid)) return alert("يرجى إدخال رقم قومي صحيح (14 رقم)");
+    if(!/^[0-9]{14}$/.test(nid)) {
+        if (typeof smShowNotification === 'function') smShowNotification("يرجى إدخال رقم قومي صحيح (14 رقم)", true);
+        else alert("يرجى إدخال رقم قومي صحيح (14 رقم)");
+        return;
+    }
     const fd = new FormData();
     fd.append("action", "sm_activate_account_step1");
     fd.append("national_id", nid);
@@ -253,13 +271,35 @@ function smActivateStep2Check() {
     fd.append("_wpnonce", document.getElementById("nonce_activation").value);
     fetch(ajaxurl, {method:"POST", body:fd}).then(r=>r.json()).then(res=>{
         if(res.success) smActivateGoTo(3);
-        else alert(res.data);
-    });
+        else {
+            let msg = res.data && res.data.message ? res.data.message : (typeof res.data === 'string' ? res.data : 'فشل التحقق');
+            alert(msg);
+        }
+    }).catch(err => { console.error(err); alert('حدث خطأ في الاتصال بالسيرفر'); });
 }
 function smToggleRegistration() { const m = document.getElementById("sm-registration-modal"); const isClosing = m.style.display !== "none"; m.style.display = isClosing ? "none" : "flex"; if (!isClosing) { smRegNext(1); document.getElementById("sm-membership-request-form").reset(); } }
 document.querySelectorAll(".academic-cascading").forEach((el, idx, arr) => { el.addEventListener("change", function() { if (this.value && idx < arr.length - 1) { arr[idx + 1].disabled = false; } else if (!this.value) { for (let i = idx + 1; i < arr.length; i++) { arr[i].value = ""; arr[i].disabled = true; } } }); });
 function smRegNext(step) {
-    if (step > 1) { const prevStep = step - 1; const prevDiv = document.getElementById("reg-step-" + prevStep); const inputs = prevDiv.querySelectorAll("input[required], select[required]"); for (const input of inputs) { if (!input.value) return alert("يرجى ملء كافة الحقول المطلوبة للمتابعة."); } if (prevStep === 1) { const nid = prevDiv.querySelector("[name=\"national_id\"]").value; if (nid.length !== 14) return alert("الرقم القومي يجب أن يتكون من 14 رقم."); } }
+    if (step > 1) {
+        const prevStep = step - 1;
+        const prevDiv = document.getElementById("reg-step-" + prevStep);
+        const inputs = prevDiv.querySelectorAll("input[required], select[required]");
+        for (const input of inputs) {
+            if (!input.value) {
+                if (typeof smShowNotification === 'function') smShowNotification("يرجى ملء كافة الحقول المطلوبة للمتابعة.", true);
+                else alert("يرجى ملء كافة الحقول المطلوبة للمتابعة.");
+                return;
+            }
+        }
+        if (prevStep === 1) {
+            const nid = prevDiv.querySelector("[name=\"national_id\"]").value;
+            if (nid.length !== 14) {
+                if (typeof smShowNotification === 'function') smShowNotification("الرقم القومي يجب أن يتكون من 14 رقم.", true);
+                else alert("الرقم القومي يجب أن يتكون من 14 رقم.");
+                return;
+            }
+        }
+    }
 
     if (step === 4 || step === 5) {
         const branchSlug = document.querySelector('[name="governorate"]').value;
@@ -322,8 +362,121 @@ function smRegNext(step) {
     document.getElementById("reg-step-" + step).style.display = "block";
     for (let i = 1; i <= 5; i++) { const dot = document.getElementById("reg-dot-" + i); if (!dot) continue; if (i < step) { dot.style.background = "#38a169"; dot.style.color = "white"; dot.innerText = "✓"; } else if (i === step) { dot.style.background = "var(--sm-primary-color)"; dot.style.color = "white"; dot.innerText = i; } else { dot.style.background = "#edf2f7"; dot.style.color = "#718096"; dot.innerText = i; } }
 }
-function smRequestOTP() { const nid = document.getElementById("rec_national_id").value; const fd = new FormData(); fd.append("action", "sm_forgot_password_otp"); fd.append("national_id", nid); fd.append("_wpnonce", document.getElementById("nonce_recovery").value); fetch(ajaxurl, {method:"POST", body:fd}).then(r=>r.json()).then(res=>{ if(res.success) { document.getElementById("recovery-step-1").style.display="none"; document.getElementById("recovery-step-2").style.display="block"; } else alert(res.data); }); }
-function smResetPassword() { const nid = document.getElementById("rec_national_id").value; const otp = document.getElementById("rec_otp").value; const pass = document.getElementById("rec_new_pass").value; const fd = new FormData(); fd.append("action", "sm_reset_password_otp"); fd.append("national_id", nid); fd.append("otp", otp); fd.append("new_password", pass); fd.append("_wpnonce", document.getElementById("nonce_recovery").value); fetch(ajaxurl, {method:"POST", body:fd}).then(r=>r.json()).then(res=>{ if(res.success) { alert(res.data); location.reload(); } else alert(res.data); }); }
-function smActivateFinal() { const nid = document.getElementById("act_national_id").value; const mem = document.getElementById("act_mem_no").value; const email = document.getElementById("act_email").value; const phone = document.getElementById("act_phone").value; const pass = document.getElementById("act_pass").value; if(!/^\S+@\S+\.\S+$/.test(email)) return alert("يرجى إدخال بريد إلكتروني صحيح"); if(pass.length < 10) return alert("كلمة المرور يجب أن تكون 10 أحرف على الأقل"); const fd = new FormData(); fd.append("action", "sm_activate_account_final"); fd.append("national_id", nid); fd.append("membership_number", mem); fd.append("email", email); fd.append("phone", phone); fd.append("password", pass); fd.append("_wpnonce", document.getElementById("nonce_activation").value); fetch(ajaxurl, {method:"POST", body:fd}).then(r=>r.json()).then(res=>{ if(res.success) { alert(res.data); location.reload(); } else alert(res.data); }); }
-document.getElementById("sm-membership-request-form")?.addEventListener("submit", function(e) { e.preventDefault(); const fd = new FormData(this); fd.append("action", "sm_submit_membership_request"); fd.append("nonce", "<?php echo wp_create_nonce('sm_registration_nonce'); ?>"); const nid = fd.get("national_id"); if(!/^[0-9]{14}$/.test(nid)) return alert("الرقم القومي يجب أن يتكون من 14 رقم."); const btn = e.submitter || this.querySelector("button[type=\"submit\"]"); const originalText = btn.innerText; btn.disabled = true; btn.innerText = "جاري الحفظ..."; fetch(ajaxurl, {method:"POST", body:fd}).then(r=>r.json()).then(res=>{ btn.disabled = false; btn.innerText = originalText; if(res.success) { const trackingCode = res.data; document.getElementById("sm-registration-modal").querySelector(".sm-modal-content").innerHTML = `<div style="text-align:center; padding:40px;"><div style="font-size:60px; margin-bottom:20px;">✅</div><h3 style="font-weight:900; font-size:1.8em; margin:0 0 10px 0;">تم تسجيل طلبك بنجاح!</h3><p style="color:#64748b; line-height:1.6; margin-bottom:25px;">يرجى تصوير كود التتبع التالي لمتابعة طلبك:</p><div style="background:#f8fafc; border:2px dashed var(--sm-primary-color); padding:20px; font-size:28px; font-weight:900; color:var(--sm-primary-color); border-radius:15px; margin-bottom:30px; letter-spacing:2px;">${trackingCode}</div><button onclick="location.reload()" class="sm-btn" style="width:100%; height:50px; font-weight:800;">إغلاق والعودة</button></div>`; } else alert(res.data); }); });
+function smRequestOTP() {
+    const nid = document.getElementById("rec_national_id").value;
+    const fd = new FormData();
+    fd.append("action", "sm_forgot_password_otp");
+    fd.append("national_id", nid);
+    fd.append("_wpnonce", document.getElementById("nonce_recovery").value);
+    fetch(ajaxurl, {method:"POST", body:fd}).then(r=>r.json()).then(res=>{
+        if(res.success) {
+            document.getElementById("recovery-step-1").style.display="none";
+            document.getElementById("recovery-step-2").style.display="block";
+        } else {
+            if (typeof smHandleAjaxError === 'function') smHandleAjaxError(res.data, 'فشل طلب الرمز');
+            else alert('فشل طلب الرمز: ' + (res.data.message || res.data));
+        }
+    }).catch(err => {
+        console.error(err);
+        if (typeof smHandleAjaxError === 'function') smHandleAjaxError(err);
+        else alert('حدث خطأ في الاتصال');
+    });
+}
+function smResetPassword() {
+    const nid = document.getElementById("rec_national_id").value;
+    const otp = document.getElementById("rec_otp").value;
+    const pass = document.getElementById("rec_new_pass").value;
+    const fd = new FormData();
+    fd.append("action", "sm_reset_password_otp");
+    fd.append("national_id", nid);
+    fd.append("otp", otp);
+    fd.append("new_password", pass);
+    fd.append("_wpnonce", document.getElementById("nonce_recovery").value);
+    fetch(ajaxurl, {method:"POST", body:fd}).then(r=>r.json()).then(res=>{
+        if(res.success) {
+            if (typeof smShowNotification === 'function') smShowNotification('تم تغيير كلمة المرور بنجاح');
+            else alert('تم تغيير كلمة المرور بنجاح');
+            setTimeout(() => location.reload(), 1000);
+        } else {
+            if (typeof smHandleAjaxError === 'function') smHandleAjaxError(res.data, 'فشل تغيير كلمة المرور');
+            else alert('فشل تغيير كلمة المرور: ' + (res.data.message || res.data));
+        }
+    }).catch(err => {
+        console.error(err);
+        if (typeof smHandleAjaxError === 'function') smHandleAjaxError(err);
+        else alert('حدث خطأ في الاتصال');
+    });
+}
+function smActivateFinal() {
+    const nid = document.getElementById("act_national_id").value;
+    const mem = document.getElementById("act_mem_no").value;
+    const email = document.getElementById("act_email").value;
+    const phone = document.getElementById("act_phone").value;
+    const pass = document.getElementById("act_pass").value;
+    if(!/^\S+@\S+\.\S+$/.test(email)) {
+        if (typeof smShowNotification === 'function') smShowNotification("يرجى إدخال بريد إلكتروني صحيح", true);
+        else alert("يرجى إدخال بريد إلكتروني صحيح");
+        return;
+    }
+    if(pass.length < 10) {
+        if (typeof smShowNotification === 'function') smShowNotification("كلمة المرور يجب أن تكون 10 أحرف على الأقل", true);
+        else alert("كلمة المرور يجب أن تكون 10 أحرف على الأقل");
+        return;
+    }
+    const fd = new FormData();
+    fd.append("action", "sm_activate_account_final");
+    fd.append("national_id", nid);
+    fd.append("membership_number", mem);
+    fd.append("email", email);
+    fd.append("phone", phone);
+    fd.append("password", pass);
+    fd.append("_wpnonce", document.getElementById("nonce_activation").value);
+    fetch(ajaxurl, {method:"POST", body:fd}).then(r=>r.json()).then(res=>{
+        if(res.success) {
+            if (typeof smShowNotification === 'function') smShowNotification('تم التفعيل بنجاح');
+            else alert('تم التفعيل بنجاح');
+            setTimeout(() => location.reload(), 1000);
+        } else {
+            if (typeof smHandleAjaxError === 'function') smHandleAjaxError(res.data, 'فشل التنشيط');
+            else alert('فشل التنشيط: ' + (res.data.message || res.data));
+        }
+    }).catch(err => {
+        console.error(err);
+        if (typeof smHandleAjaxError === 'function') smHandleAjaxError(err);
+        else alert('حدث خطأ في الاتصال');
+    });
+}
+document.getElementById("sm-membership-request-form")?.addEventListener("submit", function(e) {
+    e.preventDefault();
+    const fd = new FormData(this);
+    fd.append("action", "sm_submit_membership_request");
+    fd.append("nonce", "<?php echo wp_create_nonce('sm_registration_nonce'); ?>");
+    const nid = fd.get("national_id");
+    if(!/^[0-9]{14}$/.test(nid)) {
+        if (typeof smShowNotification === 'function') smShowNotification("الرقم القومي يجب أن يتكون من 14 رقم.", true);
+        else alert("الرقم القومي يجب أن يتكون من 14 رقم.");
+        return;
+    }
+    const btn = e.submitter || this.querySelector("button[type=\"submit\"]");
+    const originalText = btn.innerText;
+    btn.disabled = true;
+    btn.innerText = "جاري الحفظ...";
+    fetch(ajaxurl, {method:"POST", body:fd}).then(r=>r.json()).then(res=>{
+        btn.disabled = false;
+        btn.innerText = originalText;
+        if(res.success) {
+            const trackingCode = res.data;
+            document.getElementById("sm-registration-modal").querySelector(".sm-modal-content").innerHTML = `<div style="text-align:center; padding:40px;"><div style="font-size:60px; margin-bottom:20px;">✅</div><h3 style="font-weight:900; font-size:1.8em; margin:0 0 10px 0;">تم تسجيل طلبك بنجاح!</h3><p style="color:#64748b; line-height:1.6; margin-bottom:25px;">يرجى تصوير كود التتبع التالي لمتابعة طلبك:</p><div style="background:#f8fafc; border:2px dashed var(--sm-primary-color); padding:20px; font-size:28px; font-weight:900; color:var(--sm-primary-color); border-radius:15px; margin-bottom:30px; letter-spacing:2px;">${trackingCode}</div><button onclick="location.reload()" class="sm-btn" style="width:100%; height:50px; font-weight:800;">إغلاق والعودة</button></div>`;
+        } else {
+            if (typeof smHandleAjaxError === 'function') smHandleAjaxError(res.data, 'فشل إرسال الطلب');
+            else alert('فشل إرسال الطلب: ' + (res.data.message || res.data));
+        }
+    }).catch(err => {
+        console.error(err);
+        if (typeof smHandleAjaxError === 'function') smHandleAjaxError(err);
+        else alert('حدث خطأ في الاتصال');
+        btn.disabled = false;
+        btn.innerText = originalText;
+    });
+});
 </script>

@@ -137,6 +137,11 @@ if ($import_results) {
                     'limit' => $limit,
                     'offset' => $offset
                 ));
+
+                if (!empty($members)) {
+                    SM_Finance::prefetch_data(array_map(fn($m) => $m->id, $members));
+                }
+
                 if (empty($members)): ?>
                     <tr><td colspan="9" style="padding: 15px; text-align: center;">لا يوجد أعضاء يطابقون البحث.</td></tr>
                 <?php else:
@@ -144,7 +149,7 @@ if ($import_results) {
                     $specs = SM_Settings::get_specializations();
                     $statuses = SM_Settings::get_membership_statuses();
                     foreach ($members as $member):
-                        $finance = SM_Finance::calculate_member_dues($member->id);
+                        $finance = SM_Finance::calculate_member_dues($member);
                     ?>
                         <tr id="member-row-<?php echo $member->id; ?>">
                             <td><input type="checkbox" class="member-checkbox" value="<?php echo $member->id; ?>"></td>
@@ -392,26 +397,29 @@ if ($import_results) {
         };
 
         window.smOpenMemberAccountModal = function(data) {
-            document.getElementById('acc_member_id').value = data.id;
-            document.getElementById('acc_wp_user_id').value = data.wp_user_id;
-            document.getElementById('acc_member_name').innerText = data.name;
-            document.getElementById('acc_email').value = data.email;
+            const mid = document.getElementById('acc_member_id');
+            const uid = document.getElementById('acc_wp_user_id');
+            const name = document.getElementById('acc_member_name');
+            const email = document.getElementById('acc_email');
 
-            // If role dropdown exists (for full admins)
+            if (mid) mid.value = data.id || '';
+            if (uid) uid.value = data.wp_user_id || '';
+            if (name) name.innerText = data.name || '';
+            if (email) email.value = data.email || '';
+
             const roleSelect = document.getElementById('acc_role');
             if (roleSelect && data.wp_user_id) {
-                // We'd ideally fetch the current role via AJAX or have it in the data
-                // For now let's set it to default and maybe add a quick fetch
                 fetch('<?php echo admin_url('admin-ajax.php'); ?>?action=sm_get_user_role&user_id=' + data.wp_user_id)
                 .then(r => r.json()).then(res => {
-                    if (res.success) roleSelect.value = res.data.role;
-                });
+                    if (res.success && res.data && res.data.role) roleSelect.value = res.data.role;
+                    else smHandleAjaxError(res);
+                }).catch(err => smHandleAjaxError(err));
             }
 
-            document.getElementById('member-account-modal').style.display = 'flex';
+            const modal = document.getElementById('member-account-modal');
+            if (modal) modal.style.display = 'flex';
         };
 
-        // Form submissions...
         const addMemberForm = document.getElementById('add-member-form');
         if (addMemberForm) {
             addMemberForm.onsubmit = function(e) {
@@ -419,7 +427,10 @@ if ($import_results) {
                 const formData = new FormData(this);
                 formData.append('action', 'sm_add_member_ajax');
                 fetch('<?php echo admin_url('admin-ajax.php'); ?>', { method: 'POST', body: formData })
-                .then(r => r.json()).then(res => { if(res.success) location.reload(); else alert(res.data); });
+                .then(r => r.json()).then(res => {
+                    if(res.success) location.reload();
+                    else smHandleAjaxError(res);
+                }).catch(err => smHandleAjaxError(err));
             };
         }
 
@@ -430,7 +441,14 @@ if ($import_results) {
                 const formData = new FormData(this);
                 formData.append('action', 'sm_update_member_account_ajax');
                 fetch('<?php echo admin_url('admin-ajax.php'); ?>', { method: 'POST', body: formData })
-                .then(r => r.json()).then(res => { if(res.success) { alert('تم التحديث بنجاح'); location.reload(); } else alert(res.data); });
+                .then(r => r.json()).then(res => {
+                    if(res.success) {
+                        smShowNotification('تم تحديث بيانات الحساب بنجاح');
+                        setTimeout(() => location.reload(), 1000);
+                    } else {
+                        smHandleAjaxError(res);
+                    }
+                }).catch(err => smHandleAjaxError(err));
             };
         }
 
@@ -441,7 +459,10 @@ if ($import_results) {
                 const formData = new FormData(this);
                 formData.append('action', 'sm_update_member_ajax');
                 fetch('<?php echo admin_url('admin-ajax.php'); ?>', { method: 'POST', body: formData })
-                .then(r => r.json()).then(res => { if(res.success) location.reload(); else alert(res.data); });
+                .then(r => r.json()).then(res => {
+                    if(res.success) location.reload();
+                    else smHandleAjaxError(res);
+                }).catch(err => smHandleAjaxError(err));
             };
         }
     })();

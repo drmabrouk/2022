@@ -121,10 +121,11 @@ function processRequest(id, status) {
     .then(r => r.json())
     .then(res => {
         if (res.success) {
-            location.reload();
+            smShowNotification('تمت العملية بنجاح');
+            setTimeout(() => location.reload(), 1000);
         } else {
-            alert('خطأ: ' + res.data);
+            smHandleAjaxError(res);
         }
-    });
+    }).catch(err => smHandleAjaxError(err));
 }
 </script>

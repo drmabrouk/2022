@@ -5,9 +5,44 @@ if (!defined('ABSPATH')) {
 
 class SM_Finance {
 
-    public static function calculate_member_dues($member_id) {
+    private static $bulk_payments = null;
+    private static $bulk_services = null;
+
+    public static function prefetch_data($member_ids) {
         global $wpdb;
-        $member = SM_DB::get_member_by_id($member_id);
+        if (empty($member_ids)) return;
+
+        $ids_str = implode(',', array_map('intval', $member_ids));
+
+        // Prefetch payments
+        $pmts = $wpdb->get_results("SELECT member_id, SUM(amount) as total FROM {$wpdb->prefix}sm_payments WHERE member_id IN ($ids_str) GROUP BY member_id");
+        self::$bulk_payments = [];
+        foreach ($pmts as $p) {
+            self::$bulk_payments[$p->member_id] = (float)$p->total;
+        }
+
+        // Prefetch service fees
+        $svcs = $wpdb->get_results("SELECT r.member_id, r.fees_paid, s.name
+             FROM {$wpdb->prefix}sm_service_requests r
+             JOIN {$wpdb->prefix}sm_services s ON r.service_id = s.id
+             WHERE r.member_id IN ($ids_str) AND r.status = 'approved' AND r.fees_paid > 0");
+        self::$bulk_services = [];
+        foreach ($svcs as $s) {
+            self::$bulk_services[$s->member_id][] = $s;
+        }
+    }
+
+    public static function calculate_member_dues($member_or_id) {
+        global $wpdb;
+
+        if (is_object($member_or_id)) {
+            $member = $member_or_id;
+            $member_id = intval($member->id);
+        } else {
+            $member_id = intval($member_or_id);
+            $member = SM_DB::get_member_by_id($member_id);
+        }
+
         if (!$member) {
             return array(
                 'total_owed' => 0,
@@ -113,13 +148,17 @@ class SM_Finance {
         }
 
         // 4. Digital Services Fees
-        $svc_fees = $wpdb->get_results($wpdb->prepare(
-            "SELECT r.fees_paid, s.name
-             FROM {$wpdb->prefix}sm_service_requests r
-             JOIN {$wpdb->prefix}sm_services s ON r.service_id = s.id
-             WHERE r.member_id = %d AND r.status = 'approved' AND r.fees_paid > 0",
-            $member_id
-        ));
+        if (self::$bulk_services !== null) {
+            $svc_fees = self::$bulk_services[$member_id] ?? [];
+        } else {
+            $svc_fees = $wpdb->get_results($wpdb->prepare(
+                "SELECT r.fees_paid, s.name
+                 FROM {$wpdb->prefix}sm_service_requests r
+                 JOIN {$wpdb->prefix}sm_services s ON r.service_id = s.id
+                 WHERE r.member_id = %d AND r.status = 'approved' AND r.fees_paid > 0",
+                $member_id
+            ));
+        }
 
         foreach ($svc_fees as $sf) {
             $total_owed += (float)$sf->fees_paid;
@@ -166,6 +205,9 @@ class SM_Finance {
     }
 
     public static function get_total_paid($member_id) {
+        if (self::$bulk_payments !== null) {
+            return self::$bulk_payments[$member_id] ?? 0.0;
+        }
         global $wpdb;
         $sum = $wpdb->get_var($wpdb->prepare(
             "SELECT SUM(amount) FROM {$wpdb->prefix}sm_payments WHERE member_id = %d",
@@ -328,12 +370,16 @@ class SM_Finance {
         }
 
         $paid = $wpdb->get_var($wpdb->prepare("SELECT SUM(p.amount) FROM {$wpdb->prefix}sm_payments p $j_p WHERE $w_p", ...$p_p)) ?: 0;
-        $members = $wpdb->get_results($wpdb->prepare("SELECT id FROM {$wpdb->prefix}sm_members WHERE $w_m", ...$p_m));
+        $members = $wpdb->get_results($wpdb->prepare("SELECT * FROM {$wpdb->prefix}sm_members WHERE $w_m", ...$p_m));
+
+        if (!empty($members)) {
+            self::prefetch_data(array_map(fn($m) => $m->id, $members));
+        }
 
         $owed = 0;
         $penalty = 0;
         foreach ($members as $m) {
-            $dues = self::calculate_member_dues($m->id);
+            $dues = self::calculate_member_dues($m);
             $owed += $dues['total_owed'];
             foreach ($dues['breakdown'] as $i) {
                 if (!empty($i['penalty'])) {
@@ -375,10 +421,15 @@ class SM_Finance {
         }
 
         $ms = $wpdb->get_results($wpdb->prepare("SELECT * FROM {$wpdb->prefix}sm_members WHERE $w_m LIMIT 200", ...$params));
+
+        if (!empty($ms)) {
+            self::prefetch_data(array_map(fn($m) => $m->id, $ms));
+        }
+
         $delayed = [];
 
         foreach ($ms as $m) {
-            $dues = self::calculate_member_dues($m->id);
+            $dues = self::calculate_member_dues($m);
             if ($dues['balance'] > 0) {
                 $lp = (int)$m->last_paid_membership_year ?: ((int)date('Y', strtotime($m->registration_date)) - 1);
                 $delayed[] = [

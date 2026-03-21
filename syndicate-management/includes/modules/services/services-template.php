@@ -73,7 +73,10 @@ window.smLoadMoreServices = function() {
 window.smTrackServiceRequest = function() {
     const code = document.getElementById('sm_service_tracking_input').value.trim();
     const area = document.getElementById('sm-tracking-results-area');
-    if(!code) return alert('يرجى إدخال كود التتبع');
+    if(!code) {
+        smShowNotification('يرجى إدخال كود التتبع', true);
+        return;
+    }
 
     const fd = new FormData();
     fd.append('action', 'sm_track_service_request');
@@ -218,10 +221,19 @@ window.smOpenProgressiveForm = function(btn, s) {
     window.smServiceGoTo = (step) => {
         if (step === 2) {
             const inputs = document.querySelectorAll('#service-req-fields input');
-            for(let i of inputs) { if(i.required && !i.value) return alert('يرجى ملء الحقول المطلوبة.'); currentFormData[i.id.replace('f_','')] = i.value; }
+            for(let i of inputs) {
+                if(i.required && !i.value) {
+                    smShowNotification('يرجى ملء الحقول المطلوبة.', true);
+                    return;
+                }
+                currentFormData[i.id.replace('f_','')] = i.value;
+            }
         }
         if (step === 4) {
-            if (!document.getElementById('sm_terms_agree').checked) return alert('يجب الموافقة على الشروط للمتابعة.');
+            if (!document.getElementById('sm_terms_agree').checked) {
+                smShowNotification('يجب الموافقة على الشروط للمتابعة.', true);
+                return;
+            }
         }
         renderStep(step);
     };
@@ -245,7 +257,8 @@ window.smOpenProgressiveForm = function(btn, s) {
             if(res.success) {
                 body.innerHTML = `<div style="text-align:center; padding:20px;"><div style="font-size:60px; margin-bottom:20px;">✅</div><h3 style="font-weight:900; font-size:1.8em;">تم تقديم طلبك بنجاح!</h3><p style="color:#64748b; margin-bottom:20px;">كود تتبع الطلب الخاص بك:</p><div style="background:#f8fafc; border:2px dashed var(--sm-primary-color); padding:15px; font-size:24px; font-weight:900; color:var(--sm-primary-color); border-radius:15px; margin-bottom:30px;">${res.data}</div><button onclick="location.reload()" class="sm-btn" style="width:100%;">إغلاق</button></div>`;
             } else {
-                alert(res.data); btn.disabled = false; btn.innerText = 'تأكيد وإرسال الطلب';
+                smHandleAjaxError(res.data, 'فشل تقديم الطلب');
+                btn.disabled = false; btn.innerText = 'تأكيد وإرسال الطلب';
             }
         });
     };

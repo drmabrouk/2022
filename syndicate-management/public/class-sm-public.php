@@ -316,7 +316,14 @@ class SM_Public {
                     form.style.display = 'none';
                     document.getElementById('sm-contact-success').style.display = 'block';
                 } else {
-                    alert('خطأ: ' + res.data);
+                    if (typeof smHandleAjaxError === 'function') {
+                        smHandleAjaxError(res.data, 'فشل إرسال الرسالة');
+                    } else if (typeof smShowNotification === 'function') {
+                        smShowNotification('خطأ: ' + (res.data.message || res.data), true);
+                    } else {
+                        if (typeof smShowNotification === 'function') smShowNotification('خطأ: ' + (res.data.message || res.data), true);
+                        else alert('خطأ: ' + (res.data.message || res.data));
+                    }
                     btn.disabled = false;
                     btn.innerText = 'إرسال الرسالة الآن';
                 }

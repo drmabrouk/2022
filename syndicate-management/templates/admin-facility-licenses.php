@@ -250,8 +250,8 @@ document.getElementById('sm-facility-form').addEventListener('submit', function(
             smShowNotification('تم حفظ بيانات المنشأة بنجاح');
             setTimeout(() => location.reload(), 500);
         } else {
-            smShowNotification('خطأ: ' + res.data, true);
+            smHandleAjaxError(res);
         }
-    });
+    }).catch(err => smHandleAjaxError(err));
 });
 </script>

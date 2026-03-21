@@ -40,7 +40,7 @@ $grades = SM_Settings::get_professional_grades();
 $specs = SM_Settings::get_specializations();
 $govs = SM_Settings::get_governorates();
 $statuses = SM_Settings::get_membership_statuses();
-$finance = SM_Finance::calculate_member_dues($member->id);
+$finance = SM_Finance::calculate_member_dues($member);
 $acc_status = SM_Finance::get_member_status($member->id);
 ?>
 
@@ -436,13 +436,13 @@ function smUploadMemberPhoto(memberId) {
     fetch('<?php echo admin_url('admin-ajax.php'); ?>', { method: 'POST', body: formData })
     .then(r => r.json())
     .then(res => {
-        if (res.success) {
+        if (res.success && res.data && res.data.photo_url) {
             document.getElementById('member-photo-container').innerHTML = `<img src="${res.data.photo_url}" style="width:100%; height:100%; object-fit:cover;">`;
             smShowNotification('تم تحديث الصورة الشخصية');
         } else {
-            alert('فشل الرفع: ' + res.data);
+            smHandleAjaxError(res);
         }
-    });
+    }).catch(err => smHandleAjaxError(err));
 }
 
 function smOpenUpdateMemberRequestModal() {
@@ -462,9 +462,9 @@ document.getElementById('member-update-request-form').onsubmit = function(e) {
             smShowNotification('تم إرسال طلب التحديث بنجاح. سنقوم بمراجعته قريباً.');
             document.getElementById('member-update-request-modal').style.display = 'none';
         } else {
-            alert('خطأ: ' + res.data);
+            smHandleAjaxError(res);
         }
-    });
+    }).catch(err => smHandleAjaxError(err));
 };
 
 function deleteMember(id, name) {
@@ -478,11 +478,14 @@ function deleteMember(id, name) {
     .then(r => r.json())
     .then(res => {
         if (res.success) {
-            window.location.href = '<?php echo add_query_arg('sm_tab', 'members'); ?>';
+            smShowNotification('تم حذف العضو بنجاح');
+            setTimeout(() => {
+                window.location.href = '<?php echo add_query_arg('sm_tab', 'members'); ?>';
+            }, 1000);
         } else {
-            alert('خطأ: ' + res.data);
+            smHandleAjaxError(res);
         }
-    });
+    }).catch(err => smHandleAjaxError(err));
 }
 
 window.editSmMember = function(s) {
@@ -541,11 +544,11 @@ document.getElementById('edit-member-form').onsubmit = function(e) {
     .then(r => r.json()).then(res => {
         if(res.success) {
             smShowNotification('تم تحديث البيانات بنجاح');
-            setTimeout(() => location.reload(), 500);
+            setTimeout(() => location.reload(), 1000);
         } else {
-            alert(res.data);
+            smHandleAjaxError(res);
         }
-    });
+    }).catch(err => smHandleAjaxError(err));
 };
 
 document.addEventListener('click', function(e) {

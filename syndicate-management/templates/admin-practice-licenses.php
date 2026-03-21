@@ -234,8 +234,8 @@ document.getElementById('sm-license-form').addEventListener('submit', function(e
             smShowNotification('تم حفظ بيانات الترخيص بنجاح');
             setTimeout(() => location.reload(), 500);
         } else {
-            smShowNotification('خطأ: ' + res.data, true);
+            smHandleAjaxError(res);
         }
-    });
+    }).catch(err => smHandleAjaxError(err));
 });
 </script>

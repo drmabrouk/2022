@@ -238,8 +238,13 @@ class SM_Notifications {
             return;
         }
         $ms = SM_DB::get_members(['limit' => -1]);
+
+        if (!empty($ms)) {
+            SM_Finance::prefetch_data(array_map(fn($m) => $m->id, $ms));
+        }
+
         foreach ($ms as $m) {
-            $dues = SM_Finance::calculate_member_dues($m->id);
+            $dues = SM_Finance::calculate_member_dues($m);
             if ($dues['balance'] > 500 && !self::already_notified($m->id, 'payment_reminder', 30)) {
                 self::send_template_notification($m->id, 'payment_reminder', ['{balance}' => $dues['balance']]);
             }

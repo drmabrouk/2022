@@ -31,6 +31,10 @@ class SM_Print_Manager {
                 if (!$is_admin && $my_gov) $args['governorate'] = $my_gov;
                 $results = SM_DB::get_members($args);
 
+                if (!empty($results)) {
+                    SM_Finance::prefetch_data(array_map(fn($m) => $m->id, $results));
+                }
+
                 foreach ($results as $row) {
                     $item = [];
                     $dues = null;
@@ -49,7 +53,7 @@ class SM_Print_Manager {
                                 break;
                             case 'governorate': $item['الفرع'] = SM_Settings::get_branch_name($row->governorate); break;
                             case 'outstanding_fees':
-                                if ($dues === null) $dues = SM_Finance::calculate_member_dues($row->id);
+                                if ($dues === null) $dues = SM_Finance::calculate_member_dues($row);
                                 $item['المستحقات'] = number_format($dues['balance'], 2);
                                 break;
                             case 'phone': $item['الهاتف'] = $row->phone; break;

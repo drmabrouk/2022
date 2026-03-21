@@ -182,10 +182,12 @@ class SM_Auth {
                 .then(r => r.json())
                 .then(res => {
                     if (res.success) {
-                        alert('تم تحديث الملف الشخصي بنجاح');
-                        location.reload();
+                        if (typeof smShowNotification === 'function') smShowNotification('تم تحديث الملف الشخصي بنجاح');
+                        else alert('تم تحديث الملف الشخصي بنجاح');
+                        setTimeout(() => location.reload(), 1000);
                     } else {
-                        alert('خطأ: ' + res.data);
+                        if (typeof smHandleAjaxError === 'function') smHandleAjaxError(res.data, 'فشل تحديث الملف الشخصي');
+                        else alert('خطأ: ' + (res.data.message || res.data));
                     }
                 });
             };

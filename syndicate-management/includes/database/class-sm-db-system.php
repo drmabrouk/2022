@@ -289,9 +289,13 @@ class SM_DB_System {
         ]);
     }
 
+    private static $branch_slug_cache = [];
     public static function get_branch_by_slug($slug) {
+        if (isset(self::$branch_slug_cache[$slug])) return self::$branch_slug_cache[$slug];
         global $wpdb;
-        return $wpdb->get_row($wpdb->prepare("SELECT * FROM {$wpdb->prefix}sm_branches_data WHERE slug = %s", $slug));
+        $branch = $wpdb->get_row($wpdb->prepare("SELECT * FROM {$wpdb->prefix}sm_branches_data WHERE slug = %s", $slug));
+        self::$branch_slug_cache[$slug] = $branch;
+        return $branch;
     }
 
     public static function get_branches_data($args = []) {

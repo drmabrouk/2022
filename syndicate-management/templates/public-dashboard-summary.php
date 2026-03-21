@@ -88,12 +88,19 @@ function smStartProfessionalTest(s) {
             testQuestions = res.data;
             smRenderTestQuestions();
             smStartTimer(s.time_limit);
-        } else alert(res.data);
+        } else {
+            smHandleAjaxError(res);
+            smExitTest();
+        }
+    }).catch(err => {
+        smHandleAjaxError(err);
+        smExitTest();
     });
 }
 
 function smRenderTestQuestions() {
     const area = document.getElementById('test-questions-area');
+    if (!area) return;
     let html = '';
     testQuestions.forEach((q, idx) => {
         html += `
@@ -104,7 +111,8 @@ function smRenderTestQuestions() {
         `;
 
         if(q.question_type === 'mcq') {
-            const opts = JSON.parse(q.options);
+            let opts = [];
+            try { opts = JSON.parse(q.options); } catch(e) { console.error(e); }
             html += '<div style="display:grid; gap:12px;">';
             opts.forEach((opt, oidx) => {
                 html += `
@@ -144,7 +152,7 @@ function smStartTimer(mins) {
         el.innerText = `${m.toString().padStart(2,'0')}:${s.toString().padStart(2,'0')}`;
         if(sec <= 0) {
             clearInterval(currentTestTimer);
-            alert('انتهى الوقت المحدد للاختبار! سيتم إرسال إجاباتك الحالية تلقائياً.');
+            smShowNotification('انتهى الوقت المحدد للاختبار! سيتم إرسال إجاباتك الحالية تلقائياً.', true);
             smFinishTest();
         }
         sec--;
@@ -175,18 +183,31 @@ function smFinishTest() {
             const title = data.passed ? 'تهانينا، لقد اجتزت الاختبار!' : 'عذراً، لم تجتز الاختبار هذه المرة';
             const color = data.passed ? '#38a169' : '#e53e3e';
 
-            document.getElementById('test-questions-area').innerHTML = `
-                <div style="text-align:center; padding:50px;">
-                    <div style="font-size:80px; margin-bottom: 20px;">${emoji}</div>
-                    <h2 style="font-weight:900; color:${color};">${title}</h2>
-                    <div style="font-size:2.5em; font-weight:900; margin:20px 0;">${Math.round(data.score)}%</div>
-                    <p style="font-size:1.2em; color:#64748b; margin-bottom: 30px;">تم حفظ النتيجة وإخطار الإدارة بنجاح.</p>
-                    <button class="sm-btn" onclick="location.reload()" style="width:auto; padding:0 50px;">العودة للوحة التحكم</button>
-                </div>
-            `;
-            document.getElementById('submit-test-btn').style.display = 'none';
-            document.getElementById('test-timer').style.display = 'none';
-        } else alert(res.data);
+            const area = document.getElementById('test-questions-area');
+            if (area) {
+                area.innerHTML = `
+                    <div style="text-align:center; padding:50px;">
+                        <div style="font-size:80px; margin-bottom: 20px;">${emoji}</div>
+                        <h2 style="font-weight:900; color:${color};">${title}</h2>
+                        <div style="font-size:2.5em; font-weight:900; margin:20px 0;">${Math.round(data.score)}%</div>
+                        <p style="font-size:1.2em; color:#64748b; margin-bottom: 30px;">تم حفظ النتيجة وإخطار الإدارة بنجاح.</p>
+                        <button class="sm-btn" onclick="location.reload()" style="width:auto; padding:0 50px;">العودة للوحة التحكم</button>
+                    </div>
+                `;
+            }
+            const submitBtn = document.getElementById('submit-test-btn');
+            if (submitBtn) submitBtn.style.display = 'none';
+            const timerEl = document.getElementById('test-timer');
+            if (timerEl) timerEl.style.display = 'none';
+        } else {
+            smHandleAjaxError(res);
+            document.getElementById('submit-test-btn').disabled = false;
+            document.getElementById('submit-test-btn').innerText = 'إرسال الإجابات النهائية وتصحيح الاختبار';
+        }
+    }).catch(err => {
+        smHandleAjaxError(err);
+        document.getElementById('submit-test-btn').disabled = false;
+        document.getElementById('submit-test-btn').innerText = 'إرسال الإجابات النهائية وتصحيح الاختبار';
     });
 }
 

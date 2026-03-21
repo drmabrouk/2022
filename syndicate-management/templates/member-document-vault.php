@@ -101,7 +101,7 @@ function smLoadDocuments() {
     fetch(`<?php echo admin_url('admin-ajax.php'); ?>?action=sm_get_documents&member_id=<?php echo $member_id; ?>&search=${search}&category=${category}`)
     .then(r => r.json())
     .then(res => {
-        if (res.success) {
+        if (res.success && res.data) {
             if (res.data.length === 0) {
                 grid.innerHTML = '<div style="grid-column: 1/-1; text-align: center; padding: 35px; color: #94a3b8;">لا توجد مستندات في هذا القسم حالياً.</div>';
                 return;
@@ -113,7 +113,7 @@ function smLoadDocuments() {
                 const icon = isPdf ? 'dashicons-pdf' : 'dashicons-format-image';
                 html += `
                     <div class="sm-doc-card" onclick="smViewDocument('${doc.file_url}', '${doc.title}', ${doc.id})">
-                        <span class="sm-doc-category-tag">${catNames[doc.category]}</span>
+                        <span class="sm-doc-category-tag">${catNames[doc.category] || doc.category}</span>
                         <?php if (current_user_can('sm_manage_members') || $member->wp_user_id == get_current_user_id()): ?>
                         <span class="sm-doc-delete dashicons dashicons-trash" onclick="event.stopPropagation(); smDeleteDocument(${doc.id})"></span>
                         <?php endif; ?>
@@ -124,8 +124,10 @@ function smLoadDocuments() {
                 `;
             });
             grid.innerHTML = html;
+        } else {
+            smHandleAjaxError(res);
         }
-    });
+    }).catch(err => smHandleAjaxError(err));
 }
 
 function smViewDocument(url, title, id) {
@@ -160,18 +162,24 @@ function smDeleteDocument(id) {
 
     fetch('<?php echo admin_url('admin-ajax.php'); ?>', { method: 'POST', body: fd })
     .then(r => r.json()).then(res => {
-        if (res.success) { smShowNotification('تم حذف المستند'); smLoadDocuments(); }
-    });
+        if (res.success) {
+            smShowNotification('تم حذف المستند');
+            smLoadDocuments();
+        } else {
+            smHandleAjaxError(res);
+        }
+    }).catch(err => smHandleAjaxError(err));
 }
 
 function smShowDocLogs() {
     const body = document.getElementById('sm-doc-logs-body');
+    if (!body) return;
     body.innerHTML = 'جاري التحميل...';
     document.getElementById('sm-doc-logs-modal').style.display = 'flex';
 
     fetch(`<?php echo admin_url('admin-ajax.php'); ?>?action=sm_get_document_logs&doc_id=${currentViewingDocId}`)
     .then(r => r.json()).then(res => {
-        if (res.success) {
+        if (res.success && res.data) {
             let html = '<div style="display:grid; gap:10px;">';
             const actionLabels = { upload: 'رفع المستند', view: 'عرض المستند', delete: 'حذف المستند' };
             res.data.forEach(log => {
@@ -185,8 +193,10 @@ function smShowDocLogs() {
             });
             html += '</div>';
             body.innerHTML = html;
+        } else {
+            smHandleAjaxError(res);
         }
-    });
+    }).catch(err => smHandleAjaxError(err));
 }
 
 function smLogAction(docId, action) {
@@ -215,8 +225,11 @@ document.getElementById('sm-upload-doc-form').onsubmit = function(e) {
             smLoadDocuments();
             this.reset();
         } else {
-            alert(res.data);
+            smHandleAjaxError(res);
         }
+    }).catch(err => {
+        btn.disabled = false; btn.innerText = 'بدء الرفع والأرشفة';
+        smHandleAjaxError(err);
     });
 };
 

@@ -175,16 +175,26 @@ function smLoadTemplate(type) {
     .then(res => {
         if (res.success) {
             const t = res.data;
-            document.getElementById('template-empty-state').style.display = 'none';
-            document.getElementById('template-editor-form').style.display = 'block';
+            const emptyState = document.getElementById('template-empty-state');
+            const editorForm = document.getElementById('template-editor-form');
+            if (emptyState) emptyState.style.display = 'none';
+            if (editorForm) editorForm.style.display = 'block';
 
-            document.getElementById('edit_template_type').value = t.template_type;
-            document.getElementById('edit_template_label').innerText = labels[t.template_type];
-            document.getElementById('edit_subject').value = t.subject;
-            document.getElementById('edit_body').value = t.body;
-            document.getElementById('edit_days_before').value = t.days_before;
-            document.getElementById('edit_is_enabled').checked = (t.is_enabled == 1);
+            const typeField = document.getElementById('edit_template_type');
+            if (typeField) typeField.value = t.template_type;
+            const labelEl = document.getElementById('edit_template_label');
+            if (labelEl) labelEl.innerText = labels[t.template_type] || t.template_type;
+            const subjectField = document.getElementById('edit_subject');
+            if (subjectField) subjectField.value = t.subject;
+            const bodyField = document.getElementById('edit_body');
+            if (bodyField) bodyField.value = t.body;
+            const daysField = document.getElementById('edit_days_before');
+            if (daysField) daysField.value = t.days_before;
+            const enabledField = document.getElementById('edit_is_enabled');
+            if (enabledField) enabledField.checked = (t.is_enabled == 1);
+        } else {
+            smHandleAjaxError(res);
         }
-    });
+    }).catch(err => smHandleAjaxError(err));
 }
 </script>
