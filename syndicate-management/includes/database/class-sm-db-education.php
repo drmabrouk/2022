@@ -193,6 +193,11 @@ class SM_DB_Education {
         return $wpdb->get_var($wpdb->prepare("SELECT MAX(score) FROM {$wpdb->prefix}sm_survey_responses WHERE survey_id = %d AND user_id = %d", $test_id, $user_id));
     }
 
+    public static function get_user_survey_response_id($survey_id, $user_id) {
+        global $wpdb;
+        return $wpdb->get_var($wpdb->prepare("SELECT id FROM {$wpdb->prefix}sm_survey_responses WHERE survey_id = %d AND user_id = %d", intval($survey_id), intval($user_id)));
+    }
+
     public static function get_surveys_admin($args = []) {
         global $wpdb;
         $user = wp_get_current_user();

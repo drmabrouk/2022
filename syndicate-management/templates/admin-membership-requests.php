@@ -1,7 +1,6 @@
 <?php if (!defined('ABSPATH')) exit; ?>
 <?php
 if (!defined('ABSPATH')) exit;
-global $wpdb;
 
 $status_filter = $_GET['status_filter'] ?? '';
 $branch_filter = $_GET['branch_filter'] ?? '';
@@ -212,7 +211,7 @@ function smPrintReqForm(id) {
 
 function processMembership(requestId, status) {
     if (status === 'update') {
-        const newStatus = prompt("أدخل الحالة الجديدة (مثال: Payment Under Review, Awaiting Physical Documents, Under Final Review):");
+        const newStatus = prompt("أدخل الحالة الجديدة (مثال: Payment Under Review, Payment Approved, Awaiting Physical Documents, Under Final Review):");
         if (!newStatus) return;
         status = newStatus;
     }

@@ -27,14 +27,18 @@ class SM_Service_Manager {
         return ob_get_clean();
     }
 
-    public static function ajax_add_service() {
-        if (!current_user_can('sm_manage_system')) {
-            wp_send_json_error('Unauthorized');
+    private static function check_capability($cap) {
+        if (!current_user_can($cap)) {
+            wp_send_json_error(['message' => 'Unauthorized access.']);
         }
+    }
+
+    public static function ajax_add_service() {
+        self::check_capability('sm_manage_system');
         check_ajax_referer('sm_admin_action', 'nonce');
 
         if (empty($_POST['name'])) {
-            wp_send_json_error('اسم الخدمة مطلوب');
+            wp_send_json_error(['message' => 'اسم الخدمة مطلوب']);
         }
 
         $data = [
@@ -53,27 +57,22 @@ class SM_Service_Manager {
         if (SM_DB::add_service($data)) {
             wp_send_json_success();
         } else {
-            global $wpdb;
-            wp_send_json_error('Failed to add service: ' . $wpdb->last_error);
+            wp_send_json_error(['message' => 'Failed to add service']);
         }
     }
 
     public static function ajax_update_service() {
-        if (!current_user_can('sm_manage_system')) {
-            wp_send_json_error('Unauthorized');
-        }
+        self::check_capability('sm_manage_system');
         check_ajax_referer('sm_admin_action', 'nonce');
         if (SM_DB::update_service(intval($_POST['id']), $_POST)) {
             wp_send_json_success();
         } else {
-            wp_send_json_error('Failed');
+            wp_send_json_error(['message' => 'Failed']);
         }
     }
 
     public static function ajax_get_services_html() {
-        if (!current_user_can('sm_manage_system')) {
-            wp_send_json_error('Unauthorized');
-        }
+        self::check_capability('sm_manage_system');
         check_ajax_referer('sm_admin_action', 'nonce');
         ob_start();
         include SM_PLUGIN_DIR . 'templates/admin-services.php';
@@ -81,45 +80,40 @@ class SM_Service_Manager {
     }
 
     public static function ajax_delete_service() {
-        if (!current_user_can('sm_manage_system')) {
-            wp_send_json_error('Unauthorized');
-        }
+        self::check_capability('sm_manage_system');
         check_ajax_referer('sm_admin_action', 'nonce');
         if (SM_DB::delete_service(intval($_POST['id']), !empty($_POST['permanent']))) {
             wp_send_json_success();
         } else {
-            wp_send_json_error('Failed');
+            wp_send_json_error(['message' => 'Failed']);
         }
     }
 
     public static function ajax_restore_service() {
-        if (!current_user_can('sm_manage_system')) {
-            wp_send_json_error('Unauthorized');
-        }
+        self::check_capability('sm_manage_system');
         check_ajax_referer('sm_admin_action', 'nonce');
         if (SM_DB::restore_service(intval($_POST['id']))) {
             wp_send_json_success();
         } else {
-            wp_send_json_error('Failed');
+            wp_send_json_error(['message' => 'Failed']);
         }
     }
 
     public static function ajax_submit_service_request() {
         $sid = intval($_POST['service_id']);
-        global $wpdb;
-        $service = $wpdb->get_row($wpdb->prepare("SELECT * FROM {$wpdb->prefix}sm_services WHERE id = %d", $sid));
+        $service = SM_DB_Services::get_service_by_id($sid);
 
         if (!$service) {
-            wp_send_json_error('Service not found');
+            wp_send_json_error(['message' => 'Service not found']);
         }
 
         $mid = intval($_POST['member_id'] ?? 0);
         if ($service->requires_login) {
             if (!is_user_logged_in()) {
-                wp_send_json_error('هذه الخدمة تتطلب تسجيل الدخول');
+                wp_send_json_error(['message' => 'هذه الخدمة تتطلب تسجيل الدخول']);
             }
             if (!SM_Member_Manager::can_access_member($mid)) {
-                wp_send_json_error('Access denied');
+                wp_send_json_error(['message' => 'Access denied']);
             }
         }
 
@@ -143,7 +137,7 @@ class SM_Service_Manager {
 
     public static function ajax_process_service_request() {
         if (!current_user_can('sm_manage_members')) {
-            wp_send_json_error('Unauthorized');
+            wp_send_json_error(['message' => 'Unauthorized']);
         }
         check_ajax_referer('sm_admin_action', 'nonce');
 
@@ -151,13 +145,12 @@ class SM_Service_Manager {
         $status = sanitize_text_field($_POST['status']);
         $notes = sanitize_textarea_field($_POST['notes'] ?? '');
 
-        global $wpdb;
-        $req = $wpdb->get_row($wpdb->prepare("SELECT * FROM {$wpdb->prefix}sm_service_requests WHERE id = %d", $id));
+        $req = SM_DB_Services::get_service_request_by_id($id);
         if (!$req) {
-            wp_send_json_error('Request not found');
+            wp_send_json_error(['message' => 'Request not found']);
         }
 
-        $service = $wpdb->get_row($wpdb->prepare("SELECT fees, name FROM {$wpdb->prefix}sm_services WHERE id = %d", $req->service_id));
+        $service = SM_DB_Services::get_service_by_id($req->service_id);
 
         if (SM_DB::update_service_request_status($id, $status, ($status === 'approved' && $service) ? $service->fees : null, $notes)) {
              if ($status === 'approved') {
@@ -186,15 +179,11 @@ class SM_Service_Manager {
     }
 
     public static function ajax_track_service_request() {
-        // This is a public tracking form, no login required, but we should use a nonce if possible.
-        // Let's check for it if it was provided.
         check_ajax_referer('sm_contact_action');
         $code = trim(sanitize_text_field($_POST['tracking_code'] ?? ''));
         if (empty($code)) {
-            wp_send_json_error('يرجى إدخال كود التتبع');
+            wp_send_json_error(['message' => 'يرجى إدخال كود التتبع']);
         }
-
-        global $wpdb;
 
         if (strpos($code, 'REG-') === 0) {
             $id = substr($code, 12);
@@ -202,9 +191,9 @@ class SM_Service_Manager {
                 $id = str_replace('REG-', '', $code);
             }
 
-            $req = $wpdb->get_row($wpdb->prepare("SELECT * FROM {$wpdb->prefix}sm_membership_requests WHERE id = %d", (int)$id));
+            $req = SM_DB::get_membership_request((int)$id);
             if (!$req) {
-                wp_send_json_error('لم يتم العثور على طلب عضوية بهذا الكود');
+                wp_send_json_error(['message' => 'لم يتم العثور على طلب عضوية بهذا الكود']);
             }
 
             $labels = [
@@ -239,20 +228,13 @@ class SM_Service_Manager {
         }
 
         if (!$id || !is_numeric($id)) {
-            wp_send_json_error('كود تتبع غير صحيح');
+            wp_send_json_error(['message' => 'كود تتبع غير صحيح']);
         }
 
-        $req = $wpdb->get_row($wpdb->prepare(
-            "SELECT r.*, s.name as service_name, m.name as member_name, m.email as member_email, m.phone as member_phone, m.governorate as member_branch
-             FROM {$wpdb->prefix}sm_service_requests r
-             JOIN {$wpdb->prefix}sm_services s ON r.service_id = s.id
-             LEFT JOIN {$wpdb->prefix}sm_members m ON r.member_id = m.id
-             WHERE r.id = %d",
-            (int)$id
-        ));
+        $req = SM_DB::get_service_request_by_id((int)$id);
 
         if (!$req) {
-            wp_send_json_error('لم يتم العثور على طلب بهذا الكود');
+            wp_send_json_error(['message' => 'لم يتم العثور على طلب بهذا الكود']);
         }
 
         $contact = [
@@ -297,8 +279,7 @@ class SM_Service_Manager {
     }
 
     public static function ajax_print_service_request() {
-        global $wpdb;
-        $req = $wpdb->get_row($wpdb->prepare("SELECT member_id, status FROM {$wpdb->prefix}sm_service_requests WHERE id = %d", intval($_GET['id'])));
+        $req = SM_DB_Services::get_service_request_by_id(intval($_GET['id']));
         if (!$req || !SM_Member_Manager::can_access_member($req->member_id)) {
             wp_die('Unauthorized');
         }

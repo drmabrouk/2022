@@ -5,10 +5,25 @@ if (!defined('ABSPATH')) {
 
 class SM_DB_Services {
 
+    public static function get_service_by_id($id) {
+        global $wpdb;
+        return $wpdb->get_row($wpdb->prepare("SELECT * FROM {$wpdb->prefix}sm_services WHERE id = %d", intval($id)));
+    }
+
+    public static function get_service_request_by_id($id) {
+        global $wpdb;
+        return $wpdb->get_row($wpdb->prepare("SELECT * FROM {$wpdb->prefix}sm_service_requests WHERE id = %d", intval($id)));
+    }
+
     public static function get_services($args = array()) {
         global $wpdb;
         $where = "1=1";
         $params = [];
+
+        if (!empty($args['id'])) {
+            $where .= " AND id = %d";
+            $params[] = intval($args['id']);
+        }
 
         if (isset($args['is_deleted'])) {
             $where .= " AND is_deleted = %d";

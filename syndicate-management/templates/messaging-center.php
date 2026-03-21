@@ -288,8 +288,8 @@ $statuses = array(
     let selectedMembers = new Map();
     let lastSearchResults = [];
 
-    const categories = <?php echo json_encode($categories); ?>;
-    const statuses = <?php echo json_encode($statuses); ?>;
+    const categories = <?php echo wp_json_encode($categories); ?>;
+    const statuses = <?php echo wp_json_encode($statuses); ?>;
     const isOfficial = <?php echo $is_official ? 'true' : 'false'; ?>;
     const currentUserId = <?php echo $my_id; ?>;
 

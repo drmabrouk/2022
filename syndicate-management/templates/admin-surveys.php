@@ -1,4 +1,4 @@
-<?php if (!defined('ABSPATH')) exit; global $wpdb; ?>
+<?php if (!defined('ABSPATH')) exit; ?>
 <div class="sm-surveys-container">
     <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
         <h3 style="margin:0;">إدارة اختبارات الممارسة المهنية</h3>
@@ -100,8 +100,8 @@
                     </td>
                     <td>
                         <div style="display:flex; gap:8px; justify-content: flex-end;">
-                            <button class="sm-btn" style="padding:6px 12px; font-size:11px; background:var(--sm-dark-color); border-radius: 8px;" onclick='smOpenQuestionBank(<?php echo json_encode($s); ?>)'>الأسئلة</button>
-                            <button class="sm-btn sm-btn-outline" onclick="smOpenEditSurveyModal(<?php echo json_encode($s); ?>)" style="padding: 6px 10px; font-size: 11px; border-radius: 8px;" title="تعديل"><span class="dashicons dashicons-edit"></span></button>
+                            <button class="sm-btn" style="padding:6px 12px; font-size:11px; background:var(--sm-dark-color); border-radius: 8px;" onclick='smOpenQuestionBank(<?php echo esc_attr(json_encode($s)); ?>)'>الأسئلة</button>
+                            <button class="sm-btn sm-btn-outline" onclick="smOpenEditSurveyModal(<?php echo esc_attr(json_encode($s)); ?>)" style="padding: 6px 10px; font-size: 11px; border-radius: 8px;" title="تعديل"><span class="dashicons dashicons-edit"></span></button>
                             <?php if ($s->status === 'active'): ?>
                                 <button class="sm-btn" style="padding: 6px 15px; font-size: 11px; border-radius: 8px; background: #3182ce;" onclick="smOpenAssignModal(<?php echo $s->id; ?>, '<?php echo esc_js($s->title); ?>')">تعيين للعضو</button>
                             <?php endif; ?>

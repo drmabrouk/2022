@@ -15,6 +15,11 @@
             setTimeout(() => { toast.style.opacity = '0'; toast.style.transition = '0.5s'; setTimeout(() => toast.remove(), 500); }, 3000);
         },
 
+        handleAjaxError: function(err, customMsg = 'حدث خطأ أثناء تنفيذ العملية') {
+            console.error('SM_AJAX_ERROR:', err);
+            this.showNotification(customMsg + ': ' + (err.message || err), true);
+        },
+
         openInternalTab: function(tabId, element) {
             const target = document.getElementById(tabId);
             if (!target || !element) return;
@@ -31,6 +36,7 @@
     };
 
     window.smShowNotification = SM_UI.showNotification;
+    window.smHandleAjaxError = SM_UI.handleAjaxError.bind(SM_UI);
     window.smOpenInternalTab = SM_UI.openInternalTab;
 
     window.smViewLogDetails = function(log) {
@@ -280,6 +286,78 @@
                 btn.innerText = 'بدء عملية الاستعادة الآمنة';
             }
         });
+    };
+
+    window.smRunHealthCheck = function() {
+        const btn = document.getElementById('run-health-btn');
+        const results = document.getElementById('health-check-results');
+        btn.disabled = true;
+        btn.innerText = 'جاري الفحص...';
+        results.innerHTML = '<div style="grid-column: 1/-1; text-align:center; padding:50px;"><div class="sm-loader-mini" style="margin-bottom:15px;"></div><p>يتم الآن إجراء تدقيق شامل لكافة سجلات النظام...</p></div>';
+
+        const fd = new FormData();
+        fd.append('action', 'sm_run_health_check');
+        fd.append('nonce', '<?php echo wp_create_nonce("sm_admin_action"); ?>');
+
+        fetch(ajaxurl, { method: 'POST', body: fd })
+        .then(r => r.json())
+        .then(res => {
+            btn.disabled = false; btn.innerText = 'بدء الفحص الشامل الآن';
+            if (res.success) {
+                let html = '';
+                for (const [key, check] of Object.entries(res.data)) {
+                    const statusColor = check.status === 'success' ? '#38a169' : (check.status === 'danger' ? '#e53e3e' : '#d69e2e');
+                    const statusBg = check.status === 'success' ? '#f0fff4' : (check.status === 'danger' ? '#fff5f5' : '#fffaf0');
+                    const statusIcon = check.status === 'success' ? '✓' : '!';
+
+                    html += `
+                        <div style="background:${statusBg}; border:1px solid ${statusColor}33; border-radius:10px; padding:20px;">
+                            <div style="display:flex; justify-content:space-between; align-items:flex-start; margin-bottom:15px;">
+                                <h4 style="margin:0; font-size:14px; color:var(--sm-dark-color);">${check.label}</h4>
+                                <span style="background:${statusColor}; color:white; width:24px; height:24px; border-radius:50%; display:flex; align-items:center; justify-content:center; font-weight:900;">${statusIcon}</span>
+                            </div>
+                            <div style="font-size:24px; font-weight:900; color:${statusColor};">${check.count}</div>
+                            <div style="font-size:11px; color:#64748b; margin-top:5px;">سجلات تحتاج للمراجعة</div>
+                            ${check.count > 0 ? `
+                                <button onclick="smShowHealthDetails('${key}', ${JSON.stringify(check.items).replace(/"/g, '&quot;')})" style="background:none; border:none; color:var(--sm-primary-color); font-size:11px; font-weight:800; cursor:pointer; padding:0; margin-top:10px; text-decoration:underline;">عرض القائمة</button>
+                            ` : ''}
+                        </div>
+                    `;
+                }
+                results.innerHTML = html;
+            } else {
+                smShowNotification('فشل إجراء الفحص: ' + res.data, true);
+            }
+        });
+    };
+
+    window.smShowHealthDetails = function(key, items) {
+        const modal = document.getElementById('log-details-modal');
+        const body = document.getElementById('log-details-body');
+        modal.style.display = 'flex';
+
+        let html = '<div class="sm-table-container"><table class="sm-table sm-table-dense"><thead><tr>';
+        if (key === 'members_vs_users') html += '<th>الاسم</th><th>الرقم القومي</th>';
+        else if (key === 'orphaned_payments') html += '<th>المبلغ</th><th>التاريخ</th><th>ID العضو</th>';
+        else if (key === 'governorate_consistency') html += '<th>الاسم</th><th>فرع العضو</th><th>فرع المستخدم</th>';
+        else if (key === 'schema_integrity') html += '<th>اسم الجدول المفقود</th>';
+        else if (key === 'performance_metrics') html += '<th>الاستعلام</th><th>الوقت (ثانية)</th>';
+        else html += '<th>العنوان</th><th>الرابط</th>';
+        html += '</tr></thead><tbody>';
+
+        items.forEach(it => {
+            html += '<tr>';
+            if (key === 'members_vs_users') html += `<td>${it.name}</td><td>${it.national_id}</td>`;
+            else if (key === 'orphaned_payments') html += `<td>${it.amount}</td><td>${it.payment_date}</td><td>${it.member_id}</td>`;
+            else if (key === 'governorate_consistency') html += `<td>${it.name}</td><td>${it.member_gov}</td><td>${it.user_gov}</td>`;
+            else if (key === 'schema_integrity') html += `<td>${it}</td>`;
+            else if (key === 'performance_metrics') html += `<td style="font-size:9px;">${it.query}</td><td>${it.time}</td>`;
+            else html += `<td>${it.title}</td><td>${it.file_url}</td>`;
+            html += '</tr>';
+        });
+
+        html += '</tbody></table></div>';
+        body.innerHTML = html;
     };
 
     window.smUpdateBackupFreq = function(freq) {
@@ -610,7 +688,6 @@
 </script>
 
 <?php
-global $wpdb;
 $user = wp_get_current_user();
 $roles = (array)$user->roles;
 $is_admin = in_array('administrator', $roles) || current_user_can('manage_options');
@@ -704,13 +781,13 @@ $greeting = ($hour >= 5 && $hour < 12) ? 'صباح الخير' : 'مساء ال�
                 <a href="<?php echo $is_restricted ? add_query_arg(['sm_tab' => 'my-profile', 'profile_tab' => 'correspondence']) : add_query_arg('sm_tab', 'messaging'); ?>" class="sm-header-circle-icon" title="المراسلات والشكاوى">
                     <span class="dashicons dashicons-email"></span>
                     <?php
-                    $unread_msgs = $wpdb->get_var($wpdb->prepare("SELECT COUNT(*) FROM {$wpdb->prefix}sm_messages WHERE receiver_id = %d AND is_read = 0", $user->ID));
+                    $unread_msgs = SM_DB_Communications::get_unread_count($user->ID);
 
                     // Also count unread tickets for members
                     if ($is_restricted) {
-                        $member_id = $wpdb->get_var($wpdb->prepare("SELECT id FROM {$wpdb->prefix}sm_members WHERE wp_user_id = %d", $user->ID));
-                        if ($member_id) {
-                            $unread_tickets = $wpdb->get_var($wpdb->prepare("SELECT COUNT(*) FROM {$wpdb->prefix}sm_tickets WHERE member_id = %d AND status != 'closed' AND updated_at > created_at", $member_id));
+                        $member = SM_DB_Members::get_member_by_wp_user_id($user->ID);
+                        if ($member) {
+                            $unread_tickets = SM_DB_Communications::get_unread_tickets_count($member->id);
                             $unread_msgs += intval($unread_tickets);
                         }
                     }
@@ -727,7 +804,7 @@ $greeting = ($hour >= 5 && $hour < 12) ? 'صباح الخير' : 'مساء ال�
                         <?php
                         $notif_alerts = [];
                         if ($is_restricted) {
-                            $member_by_wp = $wpdb->get_row($wpdb->prepare("SELECT id, last_paid_membership_year FROM {$wpdb->prefix}sm_members WHERE wp_user_id = %d", $user->ID));
+                            $member_by_wp = SM_DB_Members::get_member_by_wp_user_id($user->ID);
                             if ($member_by_wp) {
                                 if ($member_by_wp->last_paid_membership_year < date('Y')) {
                                     $notif_alerts[] = ['text' => 'يوجد متأخرات في تجديد العضوية السنوية', 'type' => 'warning'];
@@ -735,7 +812,7 @@ $greeting = ($hour >= 5 && $hour < 12) ? 'صباح الخير' : 'مساء ال�
                             }
                         }
                         if (current_user_can('sm_manage_members')) {
-                            $pending_updates = $wpdb->get_var("SELECT COUNT(*) FROM {$wpdb->prefix}sm_update_requests WHERE status = 'pending'");
+                            $pending_updates = SM_DB_Members::count_pending_update_requests();
                             if ($pending_updates > 0) {
                                 $notif_alerts[] = ['text' => 'يوجد ' . $pending_updates . ' طلبات تحديث بيانات بانتظار المراجعة', 'type' => 'info'];
                             }
@@ -760,10 +837,10 @@ $greeting = ($hour >= 5 && $hour < 12) ? 'صباح الخير' : 'مساء ال�
                                 <div style="font-size: 12px; padding: 8px; border-bottom: 1px solid #f9fafb; color: #4a5568; display: flex; gap: 8px; align-items: flex-start;">
                                     <span class="dashicons <?php echo $a['type'] == 'system' ? 'dashicons-megaphone' : 'dashicons-warning'; ?>" style="font-size: 16px; color: <?php echo $a['type'] == 'system' ? 'var(--sm-primary-color)' : '#d69e2e'; ?>;"></span>
                                     <span>
-                                        <strong style="display:block; margin-bottom:2px;"><?php echo $a['text']; ?></strong>
+                        <strong style="display:block; margin-bottom:2px;"><?php echo esc_html($a['text']); ?></strong>
                                         <?php if($a['type'] == 'system'): ?>
-                                            <div style="font-size:10px; color:#718096; margin-bottom:5px;"><?php echo mb_strimwidth(strip_tags($a['details']), 0, 80, "..."); ?></div>
-                                            <a href="javascript:smAcknowledgeAlert(<?php echo $a['id']; ?>)" style="font-size:10px; color:var(--sm-primary-color); font-weight:700;">عرض التفاصيل / إغلاق</a>
+                            <div style="font-size:10px; color:#718096; margin-bottom:5px;"><?php echo esc_html(mb_strimwidth(strip_tags($a['details']), 0, 80, "...")); ?></div>
+                            <a href="javascript:smAcknowledgeAlert(<?php echo intval($a['id']); ?>)" style="font-size:10px; color:var(--sm-primary-color); font-weight:700;">عرض التفاصيل / إغلاق</a>
                                         <?php endif; ?>
                                     </span>
                                 </div>
@@ -982,7 +1059,7 @@ $greeting = ($hour >= 5 && $hour < 12) ? 'صباح الخير' : 'مساء ال�
                 case 'member-profile':
                 case 'my-profile':
                     if ($active_tab === 'my-profile') {
-                        $member_by_wp = $wpdb->get_row($wpdb->prepare("SELECT id FROM {$wpdb->prefix}sm_members WHERE wp_user_id = %d", get_current_user_id()));
+                        $member_by_wp = SM_DB_Members::get_member_by_wp_user_id(get_current_user_id());
                         if ($member_by_wp) $_GET['member_id'] = $member_by_wp->id;
                     }
                     include SM_PLUGIN_DIR . 'templates/admin-member-profile.php';
@@ -1043,7 +1120,24 @@ $greeting = ($hour >= 5 && $hour < 12) ? 'صباح الخير' : 'مساء ال�
                             <button class="sm-tab-btn <?php echo ($sub == 'backup') ? 'sm-active' : ''; ?>" onclick="smOpenInternalTab('backup-settings', this)">مركز النسخ الاحتياطي</button>
                             <button class="sm-tab-btn <?php echo ($sub == 'emails') ? 'sm-active' : ''; ?>" onclick="smOpenInternalTab('system-email-settings', this)">إعدادات البريد</button>
                             <button class="sm-tab-btn <?php echo ($sub == 'logs') ? 'sm-active' : ''; ?>" onclick="smOpenInternalTab('activity-logs', this)">سجل النشاطات</button>
+                            <button class="sm-tab-btn <?php echo ($sub == 'health') ? 'sm-active' : ''; ?>" onclick="smOpenInternalTab('system-health-tab', this)">صحة النظام</button>
                             <button class="sm-tab-btn <?php echo ($sub == 'about') ? 'sm-active' : ''; ?>" onclick="smOpenInternalTab('system-about-tab', this)">عن النظام</button>
+                        </div>
+
+                        <div id="system-health-tab" class="sm-internal-tab" style="display: <?php echo ($sub == 'health') ? 'block' : 'none'; ?>;">
+                            <div style="background:#fff; border:1px solid #e2e8f0; border-radius:12px; padding: 25px;">
+                                <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:25px; border-bottom:2px solid #f1f5f9; padding-bottom:15px;">
+                                    <h3 style="margin:0; font-weight:800; color:var(--sm-dark-color);">مركز تدقيق سلامة البيانات (Health Check)</h3>
+                                    <button onclick="smRunHealthCheck()" class="sm-btn" id="run-health-btn" style="width:auto; padding:0 30px; background:#3182ce;">بدء الفحص الشامل الآن</button>
+                                </div>
+                                <p style="font-size:13px; color:#64748b; margin-bottom:25px;">يقوم النظام بفحص اتساق البيانات، الروابط المكسورة، والتحقق من مطابقة حسابات المستخدمين مع سجلات الأعضاء لضمان استقرار المنصة.</p>
+
+                                <div id="health-check-results" style="display:grid; grid-template-columns: 1fr 1fr; gap:20px;">
+                                    <div style="grid-column: 1/-1; text-align:center; padding:50px; color:#94a3b8; background:#f8fafc; border:1px dashed #cbd5e0; border-radius:12px;">
+                                        يرجى النقر على زر "بدء الفحص" لبدء عملية التدقيق الرقمي.
+                                    </div>
+                                </div>
+                            </div>
                         </div>
 
                         <div id="system-about-tab" class="sm-internal-tab" style="display: <?php echo ($sub == 'about') ? 'block' : 'none'; ?>;">
@@ -1261,7 +1355,7 @@ $greeting = ($hour >= 5 && $hour < 12) ? 'صباح الخير' : 'مساء ال�
                                                     </td>
                                                     <td>
                                                         <div style="display:flex; gap:5px;">
-                                                            <button onclick='smEditAlert(<?php echo json_encode($al); ?>)' class="sm-btn sm-btn-outline" style="padding:4px 10px; font-size:11px;">تعديل</button>
+                                                            <button onclick='smEditAlert(<?php echo esc_attr(json_encode($al)); ?>)' class="sm-btn sm-btn-outline" style="padding:4px 10px; font-size:11px;">تعديل</button>
                                                             <button onclick="smDeleteAlert(<?php echo $al->id; ?>)" class="sm-btn" style="background:#e53e3e; padding:4px 10px; font-size:11px;">حذف</button>
                                                         </div>
                                                     </td>
@@ -1435,7 +1529,7 @@ $greeting = ($hour >= 5 && $hour < 12) ? 'صباح الخير' : 'مساء ال�
                                                     <td style="padding:6px 8px; color:#4a5568; line-height:1.4;"><?php echo mb_strimwidth($details_display, 0, 100, "..."); ?></td>
                                                     <td style="padding:6px 8px;">
                                                         <div style="display:flex; gap:5px;">
-                                                            <button onclick='smViewLogDetails(<?php echo json_encode($log); ?>)' class="sm-btn sm-btn-outline" style="padding:2px 8px; font-size:10px;">التفاصيل</button>
+                                                            <button onclick='smViewLogDetails(<?php echo esc_attr(json_encode($log)); ?>)' class="sm-btn sm-btn-outline" style="padding:2px 8px; font-size:10px;">التفاصيل</button>
                                                             <?php if ($can_rollback): ?>
                                                                 <button onclick="smRollbackLog(<?php echo $log->id; ?>)" class="sm-btn" style="padding:2px 8px; font-size:10px; background:#38a169;">استعادة</button>
                                                             <?php endif; ?>

@@ -4,9 +4,21 @@ if (!defined('ABSPATH')) {
 }
 
 class SM_Messaging_Manager {
+    private static function check_capability($cap) {
+        if (!current_user_can($cap)) {
+            wp_send_json_error(['message' => 'Unauthorized access.']);
+        }
+    }
+
+    private static function validate_member_access($member_id) {
+        if (!SM_Member_Manager::can_access_member($member_id)) {
+            wp_send_json_error(['message' => 'Access denied to this member data.']);
+        }
+    }
+
     public static function ajax_send_message() {
         if (!is_user_logged_in()) {
-            wp_send_json_error('Unauthorized');
+            wp_send_json_error(['message' => 'Unauthorized']);
         }
         check_ajax_referer('sm_message_action', 'nonce');
 
@@ -20,13 +32,11 @@ class SM_Messaging_Manager {
             }
         }
 
-        if (!SM_Member_Manager::can_access_member($mid)) {
-            wp_send_json_error('Access denied');
-        }
+        self::validate_member_access($mid);
 
         $member = SM_DB::get_member_by_id($mid);
         if (!$member) {
-            wp_send_json_error('Invalid member context');
+            wp_send_json_error(['message' => 'Invalid member context']);
         }
 
         $msg = sanitize_textarea_field($_POST['message'] ?? '');
@@ -49,7 +59,7 @@ class SM_Messaging_Manager {
 
     public static function ajax_get_conversation() {
         if (!is_user_logged_in()) {
-            wp_send_json_error('Unauthorized');
+            wp_send_json_error(['message' => 'Unauthorized']);
         }
         check_ajax_referer('sm_message_action', 'nonce');
 
@@ -61,9 +71,7 @@ class SM_Messaging_Manager {
             }
         }
 
-        if (!SM_Member_Manager::can_access_member($mid)) {
-            wp_send_json_error('Access denied');
-        }
+        self::validate_member_access($mid);
 
         wp_send_json_success(SM_DB::get_ticket_messages($mid));
     }
@@ -94,13 +102,13 @@ class SM_Messaging_Manager {
         if ($tid) {
             wp_send_json_success();
         } else {
-            wp_send_json_error('فشل تقديم تذكرة الدعم');
+            wp_send_json_error(['message' => 'فشل تقديم تذكرة الدعم']);
         }
     }
 
     public static function ajax_get_conversations() {
         if (!is_user_logged_in()) {
-            wp_send_json_error('Unauthorized');
+            wp_send_json_error(['message' => 'Unauthorized']);
         }
         check_ajax_referer('sm_message_action', 'nonce');
         $user = wp_get_current_user();
@@ -108,7 +116,7 @@ class SM_Messaging_Manager {
         $has_full = current_user_can('sm_full_access') || current_user_can('manage_options');
 
         if (!$gov && !$has_full) {
-            wp_send_json_error('No governorate assigned');
+            wp_send_json_error(['message' => 'No governorate assigned']);
         }
 
         if (in_array('sm_syndicate_member', (array)$user->roles)) {
@@ -136,7 +144,7 @@ class SM_Messaging_Manager {
 
     public static function ajax_mark_read() {
         if (!is_user_logged_in()) {
-            wp_send_json_error('Unauthorized');
+            wp_send_json_error(['message' => 'Unauthorized']);
         }
         check_ajax_referer('sm_message_action', 'nonce');
         SM_DB::mark_messages_read(get_current_user_id(), intval($_POST['other_user_id']));
@@ -145,7 +153,7 @@ class SM_Messaging_Manager {
 
     public static function ajax_get_tickets() {
         if (!is_user_logged_in()) {
-            wp_send_json_error('Unauthorized');
+            wp_send_json_error(['message' => 'Unauthorized']);
         }
         check_ajax_referer('sm_ticket_action', 'nonce');
         wp_send_json_success(SM_DB::get_tickets($_GET));
@@ -153,13 +161,13 @@ class SM_Messaging_Manager {
 
     public static function ajax_create_ticket() {
         if (!is_user_logged_in()) {
-            wp_send_json_error('Unauthorized');
+            wp_send_json_error(['message' => 'Unauthorized']);
         }
         check_ajax_referer('sm_ticket_action', 'nonce');
         $user = wp_get_current_user();
         $member = SM_DB_Members::get_member_by_username($user->user_login);
         if (!$member) {
-            wp_send_json_error('Member profile not found');
+            wp_send_json_error(['message' => 'Member profile not found']);
         }
         $url = null;
         $attachment_path = null;
@@ -193,31 +201,31 @@ class SM_Messaging_Manager {
             }
             wp_send_json_success($tid);
         } else {
-            wp_send_json_error('Failed to create ticket');
+            wp_send_json_error(['message' => 'Failed to create ticket']);
         }
     }
 
     public static function ajax_get_ticket_details() {
         if (!is_user_logged_in()) {
-            wp_send_json_error('Unauthorized');
+            wp_send_json_error(['message' => 'Unauthorized']);
         }
         check_ajax_referer('sm_ticket_action', 'nonce');
         $id = intval($_GET['id']);
         $ticket = SM_DB::get_ticket($id);
         if (!$ticket) {
-            wp_send_json_error('Ticket not found');
+            wp_send_json_error(['message' => 'Ticket not found']);
         }
         $user = wp_get_current_user();
         if (!current_user_can('sm_full_access') && !current_user_can('manage_options')) {
             if (in_array('sm_syndicate_admin', $user->roles)) {
                 $gov = get_user_meta($user->ID, 'sm_governorate', true);
                 if ($gov && $ticket->province !== $gov) {
-                    wp_send_json_error('Access denied');
+                    wp_send_json_error(['message' => 'Access denied']);
                 }
             } else {
                 $member = SM_DB_Members::get_member_by_username($user->user_login);
                 if (!$member || $ticket->member_id != $member->id) {
-                    wp_send_json_error('Access denied');
+                    wp_send_json_error(['message' => 'Access denied']);
                 }
             }
         }
@@ -226,12 +234,12 @@ class SM_Messaging_Manager {
 
     public static function ajax_add_ticket_reply() {
         if (!is_user_logged_in()) {
-            wp_send_json_error('Unauthorized');
+            wp_send_json_error(['message' => 'Unauthorized']);
         }
         check_ajax_referer('sm_ticket_action', 'nonce');
         $tid = intval($_POST['ticket_id']);
         $ticket = SM_DB::get_ticket($tid);
-        if (!$ticket) wp_send_json_error('Ticket not found');
+        if (!$ticket) wp_send_json_error(['message' => 'Ticket not found']);
 
         $url = null;
         $attachment_path = null;
@@ -269,33 +277,29 @@ class SM_Messaging_Manager {
             }
             wp_send_json_success($rid);
         } else {
-            wp_send_json_error('Failed to add reply');
+            wp_send_json_error(['message' => 'Failed to add reply']);
         }
     }
 
     public static function ajax_close_ticket() {
         if (!is_user_logged_in()) {
-            wp_send_json_error('Unauthorized');
+            wp_send_json_error(['message' => 'Unauthorized']);
         }
         check_ajax_referer('sm_ticket_action', 'nonce');
         if (SM_DB::update_ticket_status(intval($_POST['id']), 'closed')) {
             wp_send_json_success();
         } else {
-            wp_send_json_error('Failed to close ticket');
+            wp_send_json_error(['message' => 'Failed to close ticket']);
         }
     }
 
     public static function ajax_get_communication_templates() {
-        if (!current_user_can('sm_manage_system')) {
-            wp_send_json_error('Unauthorized');
-        }
+        self::check_capability('sm_manage_system');
         wp_send_json_success(SM_DB::get_notification_templates());
     }
 
     public static function ajax_send_direct_message() {
-        if (!current_user_can('sm_manage_system')) {
-            wp_send_json_error('Unauthorized');
-        }
+        self::check_capability('sm_manage_system');
         check_ajax_referer('sm_message_action', 'nonce');
 
         $member_ids = isset($_POST['member_ids']) ? array_map('intval', $_POST['member_ids']) : [];
@@ -303,7 +307,7 @@ class SM_Messaging_Manager {
             $member_ids[] = intval($_POST['member_id']);
         }
 
-        if (empty($member_ids)) wp_send_json_error('لم يتم اختيار أعضاء');
+        if (empty($member_ids)) wp_send_json_error(['message' => 'لم يتم اختيار أعضاء']);
 
         // Handle Attachments
         $attachment_paths = [];
@@ -500,9 +504,7 @@ class SM_Messaging_Manager {
     }
 
     public static function ajax_get_member_comms_log() {
-        if (!current_user_can('sm_manage_system')) {
-            wp_send_json_error('Unauthorized');
-        }
+        self::check_capability('sm_manage_system');
         $mid = intval($_GET['member_id'] ?? 0);
         wp_send_json_success(SM_DB_Communications::get_member_notification_logs($mid));
     }

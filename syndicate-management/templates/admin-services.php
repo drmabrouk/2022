@@ -5,8 +5,7 @@ $roles = (array)$user->roles;
 $is_official = in_array('sm_syndicate_admin', $roles) || in_array('sm_system_admin', $roles) || in_array('administrator', $roles);
 
 $member_id = 0;
-global $wpdb;
-$member_by_wp = $wpdb->get_row($wpdb->prepare("SELECT id FROM {$wpdb->prefix}sm_members WHERE wp_user_id = %d", $user->ID));
+$member_by_wp = SM_DB_Members::get_member_by_wp_user_id($user->ID);
 if ($member_by_wp) $member_id = $member_by_wp->id;
 
 // Fetch services
@@ -60,7 +59,7 @@ $all_requests = $is_official ? SM_DB::get_service_requests() : [];
                             <div style="font-weight: 700; color: var(--sm-primary-color);"><?php echo $s->fees > 0 ? number_format($s->fees, 2) . ' ج.م' : 'خدمة مجانية'; ?></div>
                             <?php if ($is_official): ?>
                                 <div style="display: flex; gap: 5px;">
-                                    <button class="sm-btn sm-btn-outline" style="padding: 5px 10px; font-size: 11px;" onclick='editService(<?php echo json_encode($s); ?>)'>تعديل</button>
+                                    <button class="sm-btn sm-btn-outline" style="padding: 5px 10px; font-size: 11px;" onclick='editService(<?php echo esc_attr(json_encode($s)); ?>)'>تعديل</button>
                                     <?php if ($is_active): ?>
                                         <button class="sm-btn" style="padding: 5px 10px; font-size: 11px; background: #f6993f;" onclick="toggleServiceStatus(<?php echo $s->id; ?>, 'suspended')">تعطيل</button>
                                     <?php else: ?>
@@ -70,7 +69,7 @@ $all_requests = $is_official ? SM_DB::get_service_requests() : [];
                                 </div>
                             <?php else: ?>
                                 <?php if ($is_active): ?>
-                                    <button class="sm-btn" style="width: auto; padding: 8px 20px;" onclick='requestService(<?php echo json_encode($s); ?>)'>طلب الخدمة</button>
+                                    <button class="sm-btn" style="width: auto; padding: 8px 20px;" onclick='requestService(<?php echo esc_attr(json_encode($s)); ?>)'>طلب الخدمة</button>
                                 <?php else: ?>
                                     <button class="sm-btn" style="width: auto; padding: 8px 20px; background: #cbd5e0; cursor: not-allowed;" disabled>غير متوفرة</button>
                                 <?php endif; ?>
@@ -213,7 +212,7 @@ $all_requests = $is_official ? SM_DB::get_service_requests() : [];
                                     <div class="sm-actions-dropdown">
                                         <button class="sm-actions-trigger">الخيارات <span class="dashicons dashicons-arrow-down-alt2"></span></button>
                                         <div class="sm-actions-content">
-                                            <a href="javascript:void(0)" onclick='viewRequest(<?php echo json_encode($r); ?>)' class="sm-action-item">
+                                            <a href="javascript:void(0)" onclick='viewRequest(<?php echo esc_attr(json_encode($r)); ?>)' class="sm-action-item">
                                                 <span class="dashicons dashicons-visibility"></span> تفاصيل البيانات
                                             </a>
                                             <a href="<?php echo admin_url('admin-ajax.php?action=sm_print_service_request&id=' . $r->id); ?>" target="_blank" class="sm-action-item" style="color: #27ae60;">

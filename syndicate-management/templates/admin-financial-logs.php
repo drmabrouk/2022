@@ -1,7 +1,5 @@
 <?php if (!defined('ABSPATH')) exit;
 
-global $wpdb;
-
 $user = wp_get_current_user();
 $is_sys_manager = current_user_can('sm_full_access') || current_user_can('manage_options');
 

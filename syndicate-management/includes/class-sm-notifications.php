@@ -176,6 +176,26 @@ class SM_Notifications {
         self::check_membership_renewals();
         self::check_license_expirations();
         self::check_payment_dues();
+
+        // Data Integrity Monitoring
+        $health = SM_Health_Check::run_all_checks();
+        $issues = 0;
+        foreach($health as $check) {
+            if ($check['status'] !== 'success') {
+                $issues += $check['count'];
+            }
+        }
+
+        if ($issues > 0) {
+            SM_DB::save_alert([
+                'title' => 'تنبيه: اكتشاف فجوات في سلامة بيانات النظام',
+                'message' => "تم اكتشاف عدد ($issues) مشكلة محتملة في قاعدة البيانات خلال الفحص التلقائي اليومي. يرجى مراجعة صفحة 'صحة النظام' في الإعدادات المتقدمة.",
+                'severity' => 'warning',
+                'status' => 'active',
+                'target_roles' => ['sm_system_admin', 'administrator'],
+                'must_acknowledge' => 1
+            ]);
+        }
     }
 
     private static function check_membership_renewals() {

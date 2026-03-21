@@ -178,6 +178,14 @@ class SM_DB {
         return SM_DB_Finance::get_payments($args);
     }
 
+    public static function get_payment_by_id($id) {
+        return SM_DB_Finance::get_payment_by_id($id);
+    }
+
+    public static function delete_payment($id) {
+        return SM_DB_Finance::delete_payment($id);
+    }
+
     // Communications Delegation
     public static function send_message($sid, $rid, $msg, $mid = null, $url = null, $gov = null) {
         return SM_DB_Communications::send_message($sid, $rid, $msg, $mid, $url, $gov);
@@ -342,8 +350,7 @@ class SM_DB {
     }
 
     public static function get_pub_document_by_id($id) {
-        global $wpdb;
-        return $wpdb->get_row($wpdb->prepare("SELECT * FROM {$wpdb->prefix}sm_pub_documents WHERE id = %d", intval($id)));
+        return SM_DB_System::get_pub_document_by_id($id);
     }
 
     public static function generate_pub_document($data) {
@@ -368,6 +375,10 @@ class SM_DB {
 
     public static function get_alerts($args = []) {
         return SM_DB_System::get_alerts($args);
+    }
+
+    public static function get_service_request_by_id($id) {
+        return SM_DB_Services::get_service_request_by_id($id);
     }
 
     public static function get_alert($id) {

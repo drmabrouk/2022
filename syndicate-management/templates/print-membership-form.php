@@ -2,8 +2,7 @@
 if (!defined('ABSPATH')) exit;
 
 $request_id = intval($_GET['request_id'] ?? 0);
-global $wpdb;
-$r = $wpdb->get_row($wpdb->prepare("SELECT * FROM {$wpdb->prefix}sm_membership_requests WHERE id = %d", $request_id));
+$r = SM_DB_Members::get_membership_request($request_id);
 
 if (!$r) wp_die('طلب غير موجود.');
 

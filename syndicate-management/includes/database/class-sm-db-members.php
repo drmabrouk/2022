@@ -162,8 +162,12 @@ class SM_DB_Members {
         if (!$user) {
             return null;
         }
+        return self::get_member_by_wp_user_id($user->ID);
+    }
+
+    public static function get_member_by_wp_user_id($wp_user_id) {
         global $wpdb;
-        return $wpdb->get_row($wpdb->prepare("SELECT * FROM {$wpdb->prefix}sm_members WHERE wp_user_id = %d", $user->ID));
+        return $wpdb->get_row($wpdb->prepare("SELECT * FROM {$wpdb->prefix}sm_members WHERE wp_user_id = %d", intval($wp_user_id)));
     }
 
     public static function count_members($args = []) {
@@ -562,6 +566,26 @@ class SM_DB_Members {
             JOIN {$wpdb->prefix}sm_members m ON r.member_id = m.id
             WHERE $where
             ORDER BY r.created_at DESC
+        ");
+    }
+
+    public static function count_pending_update_requests() {
+        global $wpdb;
+        $user = wp_get_current_user();
+        $is_officer = in_array('sm_syndicate_admin', (array)$user->roles) || in_array('sm_syndicate_member', (array)$user->roles);
+        $has_full_access = current_user_can('sm_full_access') || current_user_can('manage_options');
+        $my_gov = get_user_meta($user->ID, 'sm_governorate', true);
+
+        $where = "r.status = 'pending'";
+        if ($is_officer && !$has_full_access && $my_gov) {
+            $where .= $wpdb->prepare(" AND m.governorate = %s", $my_gov);
+        }
+
+        return (int)$wpdb->get_var("
+            SELECT COUNT(*)
+            FROM {$wpdb->prefix}sm_update_requests r
+            JOIN {$wpdb->prefix}sm_members m ON r.member_id = m.id
+            WHERE $where
         ");
     }
 
