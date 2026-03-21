@@ -227,7 +227,6 @@ function smActivateGoTo(step) {
     if (step === 2) {
         if (!document.getElementById("act_branch").value) {
             if (typeof smShowNotification === 'function') smShowNotification("يرجى اختيار الفرع أولاً.", true);
-            else alert("يرجى اختيار الفرع أولاً.");
             return;
         }
     }
@@ -236,12 +235,10 @@ function smActivateGoTo(step) {
         const phone = document.getElementById("act_phone").value;
         if(!/^\S+@\S+\.\S+$/.test(email)) {
             if (typeof smShowNotification === 'function') smShowNotification("يرجى إدخال بريد إلكتروني صحيح", true);
-            else alert("يرجى إدخال بريد إلكتروني صحيح");
             return;
         }
         if(phone.length < 10) {
             if (typeof smShowNotification === 'function') smShowNotification("يرجى إدخال رقم هاتف صحيح", true);
-            else alert("يرجى إدخال رقم هاتف صحيح");
             return;
         }
     }
@@ -260,7 +257,6 @@ function smActivateStep2Check() {
     const branch = document.getElementById("act_branch").value;
     if(!/^[0-9]{14}$/.test(nid)) {
         if (typeof smShowNotification === 'function') smShowNotification("يرجى إدخال رقم قومي صحيح (14 رقم)", true);
-        else alert("يرجى إدخال رقم قومي صحيح (14 رقم)");
         return;
     }
     const fd = new FormData();
@@ -272,10 +268,14 @@ function smActivateStep2Check() {
     fetch(ajaxurl, {method:"POST", body:fd}).then(r=>r.json()).then(res=>{
         if(res.success) smActivateGoTo(3);
         else {
-            let msg = res.data && res.data.message ? res.data.message : (typeof res.data === 'string' ? res.data : 'فشل التحقق');
-            alert(msg);
+            if (typeof smHandleAjaxError === 'function') smHandleAjaxError(res.data, 'فشل التحقق');
+            else alert('فشل التحقق: ' + (res.data.message || res.data));
         }
-    }).catch(err => { console.error(err); alert('حدث خطأ في الاتصال بالسيرفر'); });
+    }).catch(err => {
+        console.error(err);
+        if (typeof smHandleAjaxError === 'function') smHandleAjaxError(err);
+        else alert('حدث خطأ في الاتصال بالسيرفر');
+    });
 }
 function smToggleRegistration() { const m = document.getElementById("sm-registration-modal"); const isClosing = m.style.display !== "none"; m.style.display = isClosing ? "none" : "flex"; if (!isClosing) { smRegNext(1); document.getElementById("sm-membership-request-form").reset(); } }
 document.querySelectorAll(".academic-cascading").forEach((el, idx, arr) => { el.addEventListener("change", function() { if (this.value && idx < arr.length - 1) { arr[idx + 1].disabled = false; } else if (!this.value) { for (let i = idx + 1; i < arr.length; i++) { arr[i].value = ""; arr[i].disabled = true; } } }); });
@@ -287,7 +287,6 @@ function smRegNext(step) {
         for (const input of inputs) {
             if (!input.value) {
                 if (typeof smShowNotification === 'function') smShowNotification("يرجى ملء كافة الحقول المطلوبة للمتابعة.", true);
-                else alert("يرجى ملء كافة الحقول المطلوبة للمتابعة.");
                 return;
             }
         }
@@ -295,7 +294,6 @@ function smRegNext(step) {
             const nid = prevDiv.querySelector("[name=\"national_id\"]").value;
             if (nid.length !== 14) {
                 if (typeof smShowNotification === 'function') smShowNotification("الرقم القومي يجب أن يتكون من 14 رقم.", true);
-                else alert("الرقم القومي يجب أن يتكون من 14 رقم.");
                 return;
             }
         }

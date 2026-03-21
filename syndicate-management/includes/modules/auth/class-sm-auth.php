@@ -183,11 +183,9 @@ class SM_Auth {
                 .then(res => {
                     if (res.success) {
                         if (typeof smShowNotification === 'function') smShowNotification('تم تحديث الملف الشخصي بنجاح');
-                        else alert('تم تحديث الملف الشخصي بنجاح');
                         setTimeout(() => location.reload(), 1000);
                     } else {
                         if (typeof smHandleAjaxError === 'function') smHandleAjaxError(res.data, 'فشل تحديث الملف الشخصي');
-                        else alert('خطأ: ' + (res.data.message || res.data));
                     }
                 });
             };
