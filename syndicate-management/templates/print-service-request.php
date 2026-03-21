@@ -1,15 +1,31 @@
 <?php if (!defined('ABSPATH')) exit; ?>
 <?php
 $request_id = intval($_GET['id']);
-global $wpdb;
-$req = $wpdb->get_row($wpdb->prepare("
-    SELECT r.*, s.name as service_name, s.description as service_desc, s.selected_profile_fields, s.required_fields as service_fields, m.name as member_name, m.national_id, m.membership_number, m.governorate, m.professional_grade, m.specialization, m.phone, m.email, m.facility_name
-    FROM {$wpdb->prefix}sm_service_requests r
-    JOIN {$wpdb->prefix}sm_services s ON r.service_id = s.id
-    LEFT JOIN {$wpdb->prefix}sm_members m ON r.member_id = m.id
-    WHERE r.id = %d", $request_id));
+$req = SM_DB_Services::get_service_request_by_id($request_id);
 
 if (!$req) wp_die('Request not found');
+
+// If the request exists, we need the extra fields that were joined before
+$service = SM_DB_Services::get_service_by_id($req->service_id);
+if ($service) {
+    $req->service_name = $service->name;
+    $req->service_desc = $service->description;
+    $req->selected_profile_fields = $service->selected_profile_fields;
+    $req->service_fields = $service->required_fields;
+}
+
+$member = SM_DB_Members::get_member_by_id($req->member_id);
+if ($member) {
+    $req->member_name = $member->name;
+    $req->national_id = $member->national_id;
+    $req->membership_number = $member->membership_number;
+    $req->governorate = $member->governorate;
+    $req->professional_grade = $member->professional_grade;
+    $req->specialization = $member->specialization;
+    $req->phone = $member->phone;
+    $req->email = $member->email;
+    $req->facility_name = $member->facility_name;
+}
 
 $syndicate = SM_Settings::get_syndicate_info();
 $data = json_decode($req->request_data, true);

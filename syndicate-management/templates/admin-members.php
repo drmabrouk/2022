@@ -1,6 +1,5 @@
 <?php if (!defined('ABSPATH')) exit; ?>
 <?php
-global $wpdb;
 $can_manage_members = current_user_can('sm_manage_members');
 $import_results = get_transient('sm_import_results_' . get_current_user_id());
 if ($import_results) {
@@ -160,8 +159,8 @@ if ($import_results) {
                                 <div style="display: flex; gap: 5px; justify-content: flex-end;">
                                     <a href="<?php echo add_query_arg('sm_tab', 'member-profile'); ?>&member_id=<?php echo $member->id; ?>" class="sm-btn sm-btn-outline" style="padding: 4px 10px; font-size: 11px; height: 28px; text-decoration:none; display:flex; align-items:center;">عرض</a>
                                     <?php if ($can_manage_members): ?>
-                                        <button onclick='editSmMember(<?php echo json_encode($member); ?>)' class="sm-btn sm-btn-outline" style="padding: 4px 10px; font-size: 11px; height: 28px; color: #2c3e50; border-color: #2c3e50;">تعديل</button>
-                                        <button onclick='smOpenMemberAccountModal(<?php echo json_encode(["id" => $member->id, "wp_user_id" => $member->wp_user_id, "name" => $member->name, "email" => $member->email]); ?>)' class="sm-btn" style="padding: 4px 10px; font-size: 11px; height: 28px; background: #2c3e50;">الحساب</button>
+                                        <button onclick='editSmMember(<?php echo esc_attr(json_encode($member)); ?>)' class="sm-btn sm-btn-outline" style="padding: 4px 10px; font-size: 11px; height: 28px; color: #2c3e50; border-color: #2c3e50;">تعديل</button>
+                                        <button onclick='smOpenMemberAccountModal(<?php echo esc_attr(json_encode(["id" => $member->id, "wp_user_id" => $member->wp_user_id, "name" => $member->name, "email" => $member->email])); ?>)' class="sm-btn" style="padding: 4px 10px; font-size: 11px; height: 28px; background: #2c3e50;">الحساب</button>
                                     <?php endif; ?>
                                 </div>
                             </td>

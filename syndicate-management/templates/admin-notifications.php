@@ -1,7 +1,5 @@
 <?php if (!defined('ABSPATH')) exit; ?>
 <?php
-global $wpdb;
-
 // Handle Form Submissions
 if (isset($_POST['sm_save_notification_design'])) {
     check_admin_referer('sm_admin_action', 'sm_admin_nonce');

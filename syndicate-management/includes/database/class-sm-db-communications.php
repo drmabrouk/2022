@@ -287,6 +287,16 @@ class SM_DB_Communications {
         return $wpdb->update("{$wpdb->prefix}sm_messages", ['is_read' => 1], ['receiver_id' => intval($receiver_id), 'sender_id' => intval($sender_id)]);
     }
 
+    public static function get_unread_count($user_id) {
+        global $wpdb;
+        return (int)$wpdb->get_var($wpdb->prepare("SELECT COUNT(*) FROM {$wpdb->prefix}sm_messages WHERE receiver_id = %d AND is_read = 0", intval($user_id)));
+    }
+
+    public static function get_unread_tickets_count($member_id) {
+        global $wpdb;
+        return (int)$wpdb->get_var($wpdb->prepare("SELECT COUNT(*) FROM {$wpdb->prefix}sm_tickets WHERE member_id = %d AND status != 'closed' AND updated_at > created_at", intval($member_id)));
+    }
+
     public static function get_notification_templates() {
         global $wpdb;
         return $wpdb->get_results("SELECT * FROM {$wpdb->prefix}sm_notification_templates WHERE is_enabled = 1");

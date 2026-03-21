@@ -89,7 +89,7 @@ $current_user_gov = get_user_meta(get_current_user_id(), 'sm_governorate', true)
                         <div style="display:flex; gap:5px;">
                             <button onclick="smViewBranchDetailedPage(<?php echo $b->id; ?>)" class="sm-btn sm-btn-outline" style="padding:6px 12px; font-size:11px; width:auto; height:auto; color:var(--sm-dark-color) !important;">عرض التفاصيل</button>
                             <?php if ($can_edit): ?>
-                                <button onclick='smEditBranch(<?php echo json_encode($b); ?>)' class="sm-btn" style="padding:6px 12px; font-size:11px; width:auto; height:auto;">تعديل</button>
+                                <button onclick='smEditBranch(<?php echo esc_attr(json_encode($b)); ?>)' class="sm-btn" style="padding:6px 12px; font-size:11px; width:auto; height:auto;">تعديل</button>
                             <?php endif; ?>
                         </div>
                     </div>

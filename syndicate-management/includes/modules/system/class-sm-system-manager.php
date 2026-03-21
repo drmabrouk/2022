@@ -4,12 +4,18 @@ if (!defined('ABSPATH')) {
 }
 
 class SM_System_Manager {
+    private static function check_capability($cap) {
+        if (!current_user_can($cap)) {
+            wp_send_json_error(['message' => 'Unauthorized access.']);
+        }
+    }
+
     public static function ajax_save_branch() {
         $can_manage_all = current_user_can('sm_full_access') || current_user_can('manage_options');
         $is_officer = in_array('sm_syndicate_admin', (array)wp_get_current_user()->roles);
 
         if (!$can_manage_all && !$is_officer) {
-            wp_send_json_error('Unauthorized');
+            wp_send_json_error(['message' => 'Unauthorized']);
         }
         check_ajax_referer('sm_admin_action', 'nonce');
 
@@ -20,11 +26,11 @@ class SM_System_Manager {
         if ($is_officer && !$can_manage_all) {
             $my_gov = get_user_meta(get_current_user_id(), 'sm_governorate', true);
             if (!$id) {
-                wp_send_json_error('لا تملك صلاحية إضافة فروع جديدة.');
+                wp_send_json_error(['message' => 'لا تملك صلاحية إضافة فروع جديدة.']);
             }
             $branch = SM_DB::get_branch_by_id($id);
             if (!$branch || $branch->slug !== $my_gov) {
-                wp_send_json_error('لا تملك صلاحية تعديل هذا الفرع.');
+                wp_send_json_error(['message' => 'لا تملك صلاحية تعديل هذا الفرع.']);
             }
             // Officers cannot change the slug (internal routing)
             unset($data['slug']);
@@ -36,57 +42,53 @@ class SM_System_Manager {
 
         if (SM_DB::save_branch($data) !== false) {
             SM_Logger::log('حفظ بيانات فرع', "تم حفظ بيانات الفرع: " . sanitize_text_field($data['name'] ?? ''));
-            wp_send_json_success();
+            wp_send_json_success('Branch saved');
         } else {
-            wp_send_json_error('Failed to save branch');
+            wp_send_json_error(['message' => 'Failed to save branch']);
         }
     }
 
     public static function ajax_delete_branch() {
         if (!current_user_can('sm_full_access') && !current_user_can('manage_options')) {
-            wp_send_json_error('Unauthorized: لا يملك مسؤول الفرع صلاحية الحذف.');
+            wp_send_json_error(['message' => 'Unauthorized: لا يملك مسؤول الفرع صلاحية الحذف.']);
         }
         check_ajax_referer('sm_admin_action', 'nonce');
         $id = intval($_POST['id']);
         if (SM_DB::delete_branch($id)) {
             SM_Logger::log('حذف فرع', "تم حذف الفرع رقم #$id");
-            wp_send_json_success();
+            wp_send_json_success('Branch deleted');
         } else {
-            wp_send_json_error('Failed to delete branch');
+            wp_send_json_error(['message' => 'Failed to delete branch']);
         }
     }
 
     public static function ajax_delete_alert() {
-        if (!current_user_can('sm_manage_system')) {
-            wp_send_json_error('Unauthorized');
-        }
+        self::check_capability('sm_manage_system');
         check_ajax_referer('sm_admin_action', 'nonce');
         $id = intval($_POST['id']);
         if (SM_DB::delete_alert($id)) {
-            wp_send_json_success();
+            wp_send_json_success('Alert deleted');
         } else {
-            wp_send_json_error('Failed to delete alert');
+            wp_send_json_error(['message' => 'Failed to delete alert']);
         }
     }
 
     public static function ajax_acknowledge_alert() {
         if (!is_user_logged_in()) {
-            wp_send_json_error('Unauthorized');
+            wp_send_json_error(['message' => 'Unauthorized']);
         }
         check_ajax_referer('sm_admin_action', 'nonce');
         $aid = intval($_POST['alert_id']);
         $uid = get_current_user_id();
         if (SM_DB::acknowledge_alert($aid, $uid)) {
-            wp_send_json_success();
+            wp_send_json_success('Alert acknowledged');
         } else {
-            wp_send_json_error('Failed to acknowledge alert');
+            wp_send_json_error(['message' => 'Failed to acknowledge alert']);
         }
     }
 
     public static function ajax_save_alert() {
-        if (!current_user_can('sm_manage_system')) {
-            wp_send_json_error('Unauthorized');
-        }
+        self::check_capability('sm_manage_system');
         check_ajax_referer('sm_admin_action', 'nonce');
 
         $data = [
@@ -102,22 +104,22 @@ class SM_System_Manager {
         ];
 
         if (SM_DB::save_alert($data)) {
-            wp_send_json_success();
+            wp_send_json_success('Alert saved');
         } else {
-            wp_send_json_error('Failed to save alert');
+            wp_send_json_error(['message' => 'Failed to save alert']);
         }
     }
 
     public static function ajax_reset_system() {
         if (!current_user_can('manage_options') && !current_user_can('sm_full_access')) {
-            wp_send_json_error('Unauthorized');
+            wp_send_json_error(['message' => 'Unauthorized']);
         }
         check_ajax_referer('sm_admin_action', 'nonce');
 
         $pass = $_POST['admin_password'] ?? '';
         $user = wp_get_current_user();
         if (!wp_check_password($pass, $user->user_pass, $user->ID)) {
-            wp_send_json_error('كلمة المرور غير صحيحة.');
+            wp_send_json_error(['message' => 'كلمة المرور غير صحيحة.']);
         }
 
         $tables = ['sm_members', 'sm_payments', 'sm_logs', 'sm_messages', 'sm_surveys', 'sm_survey_responses', 'sm_update_requests'];
@@ -134,12 +136,12 @@ class SM_System_Manager {
         delete_option('sm_invoice_sequence_' . date('Y'));
 
         SM_Logger::log('إعادة تهيئة النظام', "تم مسح كافة البيانات وتصفير النظام بالكامل");
-        wp_send_json_success();
+        wp_send_json_success('System reset complete');
     }
 
     public static function ajax_rollback_log() {
         if (!current_user_can('manage_options') && !current_user_can('sm_full_access')) {
-            wp_send_json_error('Unauthorized');
+            wp_send_json_error(['message' => 'Unauthorized']);
         }
         check_ajax_referer('sm_admin_action', 'nonce');
 
@@ -147,12 +149,12 @@ class SM_System_Manager {
         $log = SM_DB::get_log($lid);
 
         if (!$log || strpos($log->details, 'ROLLBACK_DATA:') !== 0) {
-            wp_send_json_error('لا توجد بيانات استعادة');
+            wp_send_json_error(['message' => 'لا توجد بيانات استعادة']);
         }
 
         $info = json_decode(str_replace('ROLLBACK_DATA:', '', $log->details), true);
         if (!$info || !isset($info['table'])) {
-            wp_send_json_error('تنسيق غير صحيح');
+            wp_send_json_error(['message' => 'تنسيق غير صحيح']);
         }
 
         $table = $info['table'];
@@ -161,7 +163,7 @@ class SM_System_Manager {
         if ($table === 'members') {
             $uid = $data['wp_user_id'] ?? null;
             if (!empty($data['national_id']) && username_exists($data['national_id'])) {
-                wp_send_json_error('اسم المستخدم موجود بالفعل');
+                wp_send_json_error(['message' => 'اسم المستخدم موجود بالفعل']);
             }
 
             if ($uid && !get_userdata($uid)) {
@@ -189,37 +191,37 @@ class SM_System_Manager {
             $data['wp_user_id'] = $uid;
             if (SM_DB::add_member($data)) {
                 SM_Logger::log('استعادة بيانات', "تم استعادة العضو: " . $data['name']);
-                wp_send_json_success();
+                wp_send_json_success('Member restored');
             } else {
-                wp_send_json_error('فشل في إدراج البيانات');
+                wp_send_json_error(['message' => 'فشل في إدراج البيانات']);
             }
         } elseif ($table === 'services') {
             unset($data['id']);
             if (SM_DB::add_service($data)) {
                 SM_Logger::log('استعادة بيانات', "تم استعادة الخدمة: " . $data['name']);
-                wp_send_json_success();
+                wp_send_json_success('Service restored');
             } else {
-                wp_send_json_error('فشل في إدراج البيانات');
+                wp_send_json_error(['message' => 'فشل في إدراج البيانات']);
             }
         }
-        wp_send_json_error('نوع الاستعادة غير مدعوم');
+        wp_send_json_error(['message' => 'نوع الاستعادة غير مدعوم']);
     }
 
     public static function ajax_get_counts() {
         if (!is_user_logged_in()) {
-            wp_send_json_error('Unauthorized');
+            wp_send_json_error(['message' => 'Unauthorized']);
         }
         wp_send_json_success(['pending_reports' => SM_DB::get_pending_reports_count()]);
     }
 
     public static function ajax_delete_gov_data() {
         if (!current_user_can('manage_options') && !current_user_can('sm_full_access')) {
-            wp_send_json_error('Unauthorized');
+            wp_send_json_error(['message' => 'Unauthorized']);
         }
         check_ajax_referer('sm_admin_action', 'nonce');
         $gov = sanitize_text_field($_POST['governorate']);
         if (!$gov) {
-            wp_send_json_error('فرع غير محددة');
+            wp_send_json_error(['message' => 'فرع غير محددة']);
         }
         $m_ids = SM_DB::get_member_ids_by_governorate($gov);
         if (empty($m_ids)) {
@@ -233,21 +235,21 @@ class SM_System_Manager {
         SM_DB::delete_payments_by_member_ids($m_ids);
         SM_DB::delete_members_by_governorate($gov);
         SM_Logger::log('حذف بيانات فرع', "تم مسح كافة بيانات فرع: $gov");
-        wp_send_json_success();
+        wp_send_json_success('Governorate data deleted');
     }
 
     public static function ajax_merge_gov_data() {
         if (!current_user_can('manage_options') && !current_user_can('sm_full_access')) {
-            wp_send_json_error('Unauthorized');
+            wp_send_json_error(['message' => 'Unauthorized']);
         }
         check_ajax_referer('sm_admin_action', 'nonce');
         $gov = sanitize_text_field($_POST['governorate']);
         if (empty($_FILES['backup_file']['tmp_name'])) {
-            wp_send_json_error('الملف غير موجود');
+            wp_send_json_error(['message' => 'الملف غير موجود']);
         }
         $data = json_decode(file_get_contents($_FILES['backup_file']['tmp_name']), true);
         if (!$data || !isset($data['members'])) {
-            wp_send_json_error('تنسيق غير صحيح');
+            wp_send_json_error(['message' => 'تنسيق غير صحيح']);
         }
         $success = 0;
         foreach ($data['members'] as $row) {
@@ -275,38 +277,34 @@ class SM_System_Manager {
     }
 
     public static function ajax_delete_log() {
-        if (!current_user_can('manage_options')) {
-            wp_send_json_error('Unauthorized');
-        }
+        self::check_capability('manage_options');
         check_ajax_referer('sm_admin_action', 'nonce');
         SM_DB::delete_log(intval($_POST['log_id']));
-        wp_send_json_success();
+        wp_send_json_success('Log deleted');
     }
 
     public static function ajax_clear_all_logs() {
-        if (!current_user_can('manage_options')) {
-            wp_send_json_error('Unauthorized');
-        }
+        self::check_capability('manage_options');
         check_ajax_referer('sm_admin_action', 'nonce');
         SM_DB::truncate_logs();
-        wp_send_json_success();
+        wp_send_json_success('Logs cleared');
     }
 
     public static function ajax_get_pub_template() {
         if (!current_user_can('sm_manage_system')) {
-            wp_send_json_error('Unauthorized');
+            wp_send_json_error(['message' => 'Unauthorized']);
         }
         $t = SM_DB::get_pub_template(intval($_GET['id']));
         if ($t) {
             wp_send_json_success($t);
         } else {
-            wp_send_json_error('Not found');
+            wp_send_json_error(['message' => 'Not found']);
         }
     }
 
     public static function ajax_generate_pub_doc() {
         if (!current_user_can('sm_manage_system')) {
-            wp_send_json_error('Unauthorized');
+            wp_send_json_error(['message' => 'Unauthorized']);
         }
         check_ajax_referer('sm_pub_action', 'nonce');
         $did = SM_DB::generate_pub_document([
@@ -325,13 +323,13 @@ class SM_System_Manager {
         if ($did) {
             wp_send_json_success(['url' => admin_url('admin-ajax.php?action=sm_print_pub_doc&id=' . $did . '&format=' . sanitize_text_field($_POST['format'] ?? 'pdf'))]);
         } else {
-            wp_send_json_error('Failed');
+            wp_send_json_error(['message' => 'Failed']);
         }
     }
 
     public static function ajax_save_pub_identity() {
         if (!current_user_can('sm_manage_system')) {
-            wp_send_json_error('Unauthorized');
+            wp_send_json_error(['message' => 'Unauthorized']);
         }
         check_ajax_referer('sm_pub_action', 'nonce');
         $info = SM_Settings::get_syndicate_info();
@@ -343,18 +341,16 @@ class SM_System_Manager {
         $info['syndicate_logo'] = esc_url_raw($_POST['syndicate_logo']);
         $info['authority_logo'] = esc_url_raw($_POST['authority_logo']);
         SM_Settings::save_syndicate_info($info);
-        wp_send_json_success();
+        wp_send_json_success('Identity saved');
     }
 
     public static function ajax_save_pub_template() {
-        if (!current_user_can('sm_manage_system')) {
-            wp_send_json_error('Unauthorized');
-        }
+        self::check_capability('sm_manage_system');
         check_ajax_referer('sm_pub_action', 'nonce');
         if (SM_DB::save_pub_template($_POST)) {
-            wp_send_json_success();
+            wp_send_json_success('Template saved');
         } else {
-            wp_send_json_error('Failed');
+            wp_send_json_error(['message' => 'Failed to save template']);
         }
     }
 
@@ -388,10 +384,10 @@ class SM_System_Manager {
     }
 
     public static function ajax_get_branch_details() {
-        if (!is_user_logged_in()) wp_send_json_error('Unauthorized');
+        if (!is_user_logged_in()) wp_send_json_error(['message' => 'Unauthorized']);
         $id = intval($_GET['id']);
         $branch = SM_DB::get_branch_by_id($id);
-        if (!$branch) wp_send_json_error('Branch not found');
+        if (!$branch) wp_send_json_error(['message' => 'Branch not found']);
 
         $stats = SM_DB_Finance::get_statistics(['governorate' => $branch->slug]);
         wp_send_json_success([
@@ -401,7 +397,7 @@ class SM_System_Manager {
     }
 
     public static function ajax_download_backup() {
-        if (!current_user_can('manage_options')) wp_send_json_error('Unauthorized');
+        if (!current_user_can('manage_options')) wp_send_json_error(['message' => 'Unauthorized']);
         check_ajax_referer('sm_admin_action', 'nonce');
 
         $modules = $_POST['modules'] ?? 'all';
@@ -414,11 +410,11 @@ class SM_System_Manager {
     }
 
     public static function ajax_restore_backup() {
-        if (!current_user_can('manage_options')) wp_send_json_error('Unauthorized');
+        if (!current_user_can('manage_options')) wp_send_json_error(['message' => 'Unauthorized']);
         check_ajax_referer('sm_admin_action', 'nonce');
 
         if (empty($_FILES['backup_file']['tmp_name'])) {
-            wp_send_json_error('لم يتم رفع أي ملف.');
+            wp_send_json_error(['message' => 'لم يتم رفع أي ملف.']);
         }
 
         $payload = file_get_contents($_FILES['backup_file']['tmp_name']);
@@ -427,14 +423,14 @@ class SM_System_Manager {
         $res = SM_Backup_Manager::restore_backup($payload, $selective);
 
         if (is_wp_error($res)) {
-            wp_send_json_error($res->get_error_message());
+            wp_send_json_error(['message' => $res->get_error_message()]);
         } else {
-            wp_send_json_success();
+            wp_send_json_success('Backup restored');
         }
     }
 
     public static function ajax_get_backup_history() {
-        if (!current_user_can('manage_options')) wp_send_json_error('Unauthorized');
+        if (!current_user_can('manage_options')) wp_send_json_error(['message' => 'Unauthorized']);
 
         $upload_dir = wp_upload_dir();
         $dir = $upload_dir['basedir'] . '/sm-backups';
@@ -454,15 +450,15 @@ class SM_System_Manager {
     }
 
     public static function ajax_download_stored_backup() {
-        if (!current_user_can('manage_options')) wp_send_json_error('Unauthorized');
+        if (!current_user_can('manage_options')) wp_send_json_error(['message' => 'Unauthorized']);
 
         $filename = sanitize_file_name($_GET['filename'] ?? '');
-        if (empty($filename)) wp_send_json_error('Invalid file');
+        if (empty($filename)) wp_send_json_error(['message' => 'Invalid file']);
 
         $upload_dir = wp_upload_dir();
         $path = $upload_dir['basedir'] . '/sm-backups/' . $filename;
 
-        if (!file_exists($path)) wp_send_json_error('File not found');
+        if (!file_exists($path)) wp_send_json_error(['message' => 'File not found']);
 
         header('Content-Type: application/octet-stream');
         header('Content-Disposition: attachment; filename="' . $filename . '"');
@@ -471,7 +467,7 @@ class SM_System_Manager {
     }
 
     public static function ajax_update_backup_freq() {
-        if (!current_user_can('manage_options')) wp_send_json_error('Unauthorized');
+        if (!current_user_can('manage_options')) wp_send_json_error(['message' => 'Unauthorized']);
         check_ajax_referer('sm_admin_action', 'nonce');
 
         $freq = sanitize_text_field($_POST['frequency'] ?? 'weekly');
@@ -480,6 +476,6 @@ class SM_System_Manager {
         wp_clear_scheduled_hook('sm_scheduled_backup');
         SM_Backup_Manager::schedule_automated_backup();
 
-        wp_send_json_success();
+        wp_send_json_success('Backup frequency updated');
     }
 }

@@ -1,6 +1,5 @@
 <?php if (!defined('ABSPATH')) exit;
 
-global $wpdb;
 $members = SM_DB::get_members(['limit' => -1]);
 
 $stats = [

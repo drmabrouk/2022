@@ -1,19 +1,19 @@
 <?php
 if (!defined('ABSPATH')) exit;
-global $wpdb;
 $is_officer = current_user_can('sm_manage_members') || current_user_can('manage_options');
 
 // Check for active surveys for current user role
 $user_role = !empty(wp_get_current_user()->roles) ? wp_get_current_user()->roles[0] : '';
 $member_specialty = '';
 if (in_array('sm_syndicate_member', (array)wp_get_current_user()->roles)) {
-    $member_specialty = $wpdb->get_var($wpdb->prepare("SELECT specialization FROM {$wpdb->prefix}sm_members WHERE wp_user_id = %d", get_current_user_id()));
+    $current_mem = SM_DB_Members::get_member_by_wp_user_id(get_current_user_id());
+    if ($current_mem) $member_specialty = $current_mem->specialization;
 }
 $active_surveys = SM_DB::get_surveys(get_current_user_id(), $user_role, $member_specialty);
 
 foreach ($active_surveys as $survey):
     // Check if already responded
-    $responded = $wpdb->get_var($wpdb->prepare("SELECT id FROM {$wpdb->prefix}sm_survey_responses WHERE survey_id = %d AND user_id = %d", $survey->id, get_current_user_id()));
+    $responded = SM_DB_Education::get_user_survey_response_id($survey->id, get_current_user_id());
     if ($responded) continue;
 
     $is_test = $survey->test_type !== 'survey';
@@ -44,7 +44,7 @@ foreach ($active_surveys as $survey):
             <span class="dashicons dashicons-no-alt"></span> لقد استنفدت كافة المحاولات المتاحة لهذا الاختبار.
         </div>
     <?php else: ?>
-        <button class="sm-btn" style="background: <?php echo $is_test ? '#2b6cb0' : '#d97706'; ?>; width: auto;" onclick='smStartProfessionalTest(<?php echo json_encode($survey); ?>)'>
+        <button class="sm-btn" style="background: <?php echo $is_test ? '#2b6cb0' : '#d97706'; ?>; width: auto;" onclick='smStartProfessionalTest(<?php echo esc_attr(json_encode($survey)); ?>)'>
             <?php echo $is_test ? 'بدء الاختبار الآن' : 'المشاركة الآن'; ?>
         </button>
     <?php endif; ?>

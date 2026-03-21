@@ -10,6 +10,16 @@ class SM_DB_Finance {
         return $wpdb->query("DELETE FROM {$wpdb->prefix}sm_payments WHERE member_id IN ($ids_str)");
     }
 
+    public static function get_payment_by_id($id) {
+        global $wpdb;
+        return $wpdb->get_row($wpdb->prepare("SELECT * FROM {$wpdb->prefix}sm_payments WHERE id = %d", intval($id)));
+    }
+
+    public static function delete_payment($id) {
+        global $wpdb;
+        return $wpdb->delete("{$wpdb->prefix}sm_payments", ['id' => intval($id)]);
+    }
+
     public static function get_payments($args = []) {
         global $wpdb;
         $user = wp_get_current_user();
@@ -45,15 +55,19 @@ class SM_DB_Finance {
 
     public static function get_statistics($filters = array()) {
         global $wpdb;
-        $stats = array();
 
         $user = wp_get_current_user();
         $has_full_access = current_user_can('sm_full_access') || current_user_can('manage_options');
-        $is_officer = in_array('sm_syndicate_admin', (array)$user->roles);
         $my_gov = get_user_meta($user->ID, 'sm_governorate', true);
-
-        // Allow overriding governorate filter for branch management views
         $target_gov = $filters['governorate'] ?? null;
+
+        // Caching Logic
+        $cache_key = 'sm_stats_' . ($target_gov ?: ($has_full_access ? 'global' : $my_gov));
+        $cached = get_transient($cache_key);
+        if ($cached !== false && empty($filters['no_cache'])) return $cached;
+
+        $stats = array();
+        $is_officer = in_array('sm_syndicate_admin', (array)$user->roles);
 
         $where_member = "1=1";
         if ($target_gov) {
@@ -159,6 +173,7 @@ class SM_DB_Finance {
         // Work permits (assumed same as practice licenses in this context)
         $stats['total_work_permits'] = $stats['total_practice_licenses'];
 
+        set_transient($cache_key, $stats, HOUR_IN_SECONDS);
         return $stats;
     }
 }

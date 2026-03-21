@@ -4,8 +4,6 @@ $user = wp_get_current_user();
 $has_full_access = current_user_can('sm_full_access') || current_user_can('manage_options');
 $my_gov = get_user_meta($user->ID, 'sm_governorate', true);
 
-global $wpdb;
-
 $active_sub_tab = $_GET['sub_tab'] ?? 'documents';
 ?>
 

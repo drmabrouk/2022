@@ -2,7 +2,14 @@
 if (!defined('ABSPATH')) exit;
 
 class SM_Print_Manager {
+    private static function check_capability($cap) {
+        if (!current_user_can($cap)) {
+            wp_send_json_error(['message' => 'Unauthorized access.']);
+        }
+    }
+
     public static function ajax_get_custom_print() {
+        self::check_capability('sm_print_reports');
         check_ajax_referer('sm_admin_action', 'nonce');
 
         $module = sanitize_text_field($_POST['module']);
@@ -54,30 +61,20 @@ class SM_Print_Manager {
 
             case 'finance':
                 $title = 'تقرير العمليات المالية';
-                // Note: Finance module requested "Amounts collected, penalties, fees, claims"
-                // This typically means the member list with balances OR transaction logs.
-                // Request says "Invoice numbers, Payment status, Member or branch details"
-                // This sounds like a transaction list.
-                global $wpdb;
-                $query = "SELECT p.*, m.name as member_name, m.governorate as member_gov FROM {$wpdb->prefix}sm_payments p JOIN {$wpdb->prefix}sm_members m ON p.member_id = m.id WHERE 1=1";
-                if (!$is_admin && $my_gov) $query .= $wpdb->prepare(" AND m.governorate = %s", $my_gov);
-                if (!$all_records && !empty($ids)) {
-                    $ids_str = implode(',', $ids);
-                    $query .= " AND p.id IN ($ids_str)";
-                }
-                $query .= " ORDER BY p.payment_date DESC";
-                $results = $wpdb->get_results($query);
+                $results = SM_DB::get_payments(['limit' => $all_records ? -1 : 500]);
 
                 foreach ($results as $row) {
+                    if (!$all_records && !empty($ids) && !in_array($row->id, $ids)) continue;
+                    $member = SM_DB::get_member_by_id($row->member_id);
                     $item = [];
                     foreach ($fields as $f) {
                         switch ($f) {
                             case 'invoice_code': $item['رقم الفاتورة'] = $row->digital_invoice_code; break;
-                            case 'member_name': $item['اسم العضو'] = $row->member_name; break;
+                            case 'member_name': $item['اسم العضو'] = $member ? $member->name : 'N/A'; break;
                             case 'amount': $item['المبلغ'] = number_format($row->amount, 2); break;
                             case 'payment_type': $item['النوع'] = $row->payment_type; break;
                             case 'payment_date': $item['التاريخ'] = $row->payment_date; break;
-                            case 'governorate': $item['الفرع'] = SM_Settings::get_branch_name($row->member_gov); break;
+                            case 'governorate': $item['الفرع'] = $member ? SM_Settings::get_branch_name($member->governorate) : 'N/A'; break;
                         }
                     }
                     $data[] = $item;

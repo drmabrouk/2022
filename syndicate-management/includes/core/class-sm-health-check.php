@@ -4,10 +4,43 @@ if (!defined('ABSPATH')) exit;
 class SM_Health_Check {
     public static function run_all_checks() {
         return [
+            'schema_integrity' => self::check_schema_integrity(),
             'members_vs_users' => self::check_members_vs_users(),
             'orphaned_payments' => self::check_orphaned_payments(),
             'governorate_consistency' => self::check_governorate_consistency(),
-            'broken_documents' => self::check_broken_documents()
+            'broken_documents' => self::check_broken_documents(),
+            'performance_metrics' => self::get_performance_metrics()
+        ];
+    }
+
+    private static function check_schema_integrity() {
+        global $wpdb;
+        $tables = [
+            'sm_members', 'sm_payments', 'sm_logs', 'sm_branches_data',
+            'sm_notification_templates', 'sm_notification_logs',
+            'sm_service_requests', 'sm_services', 'sm_membership_requests'
+        ];
+        $missing = [];
+        foreach ($tables as $t) {
+            if ($wpdb->get_var("SHOW TABLES LIKE '{$wpdb->prefix}$t'") != $wpdb->prefix . $t) {
+                $missing[] = $t;
+            }
+        }
+        return [
+            'label' => 'سلامة هيكل قاعدة البيانات',
+            'count' => count($missing),
+            'items' => $missing,
+            'status' => count($missing) === 0 ? 'success' : 'danger'
+        ];
+    }
+
+    private static function get_performance_metrics() {
+        $slow_queries = get_option('sm_slow_queries', []);
+        return [
+            'label' => 'مؤشرات أداء الاستعلامات',
+            'count' => count($slow_queries),
+            'items' => $slow_queries,
+            'status' => count($slow_queries) < 5 ? 'success' : 'warning'
         ];
     }
 

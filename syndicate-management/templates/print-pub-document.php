@@ -2,8 +2,7 @@
 if (!defined('ABSPATH')) exit;
 
 $id = intval($_GET['id']);
-global $wpdb;
-$doc = $wpdb->get_row($wpdb->prepare("SELECT * FROM {$wpdb->prefix}sm_pub_documents WHERE id = %d", $id));
+$doc = SM_DB_System::get_pub_document_by_id($id);
 
 if (!$doc) wp_die('المستند غير موجود');
 
