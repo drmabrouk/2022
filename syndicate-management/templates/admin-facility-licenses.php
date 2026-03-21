@@ -28,12 +28,13 @@ foreach ($members as $m) {
 }
 
 $search = isset($_GET['facility_search']) ? sanitize_text_field($_GET['facility_search']) : '';
-$registry = $wpdb->get_results($wpdb->prepare(
-    "SELECT * FROM {$wpdb->prefix}sm_members WHERE facility_number != '' AND (facility_name LIKE %s OR national_id LIKE %s OR facility_number LIKE %s) ORDER BY facility_license_expiration_date ASC",
-    '%' . $wpdb->esc_like($search) . '%',
-    '%' . $wpdb->esc_like($search) . '%',
-    '%' . $wpdb->esc_like($search) . '%'
-));
+$registry = SM_DB::get_members([
+    'search' => $search,
+    'search_facilities' => true,
+    'only_with_facility' => true,
+    'orderby' => 'facility_license_expiration_date ASC',
+    'limit' => -1
+]);
 ?>
 
 <div class="sm-facility-licenses" dir="rtl">

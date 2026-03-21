@@ -59,23 +59,12 @@
             </thead>
             <tbody>
                 <?php
-                $query = "SELECT * FROM {$wpdb->prefix}sm_surveys WHERE 1=1";
-                if (!$is_sys_admin && $is_syndicate_admin && $my_gov) {
-                    $query .= $wpdb->prepare(" AND (branch = %s OR branch = 'all')", $my_gov);
-                }
-                $surveys = $wpdb->get_results($query . " ORDER BY created_at DESC");
+                $surveys = SM_DB::get_surveys_admin();
 
                 $specs_labels = SM_Settings::get_specializations();
                 foreach ($surveys as $s):
-                    $resp_where = $wpdb->prepare("survey_id = %d", $s->id);
-                    if ($is_syndicate_admin && $my_gov) {
-                        $resp_where .= $wpdb->prepare(" AND (
-                            EXISTS (SELECT 1 FROM {$wpdb->prefix}usermeta um WHERE um.user_id = user_id AND um.meta_key = 'sm_governorate' AND um.meta_value = %s)
-                            OR EXISTS (SELECT 1 FROM {$wpdb->prefix}sm_members m WHERE m.wp_user_id = user_id AND m.governorate = %s)
-                        )", $my_gov, $my_gov);
-                    }
-                    $responses_count = $wpdb->get_var("SELECT COUNT(*) FROM {$wpdb->prefix}sm_survey_responses WHERE $resp_where");
-                    $questions_count = $wpdb->get_var($wpdb->prepare("SELECT COUNT(*) FROM {$wpdb->prefix}sm_test_questions WHERE test_id = %d", $s->id));
+                    $responses_count = count(SM_DB::get_survey_responses($s->id));
+                    $questions_count = count(SM_DB::get_test_questions($s->id));
                     $branch_label = ($s->branch === 'all') ? 'كل الفروع' : (SM_Settings::get_branch_name($s->branch) ?: $s->branch);
                 ?>
                 <tr class="sm-test-row"

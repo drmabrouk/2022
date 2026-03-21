@@ -7,44 +7,12 @@ $status_filter = $_GET['status_filter'] ?? '';
 $branch_filter = $_GET['branch_filter'] ?? '';
 $search_query = $_GET['search'] ?? '';
 
-$query = "SELECT * FROM {$wpdb->prefix}sm_membership_requests WHERE 1=1";
-$params = [];
-
-if ($status_filter) {
-    $query .= " AND status = %s";
-    $params[] = $status_filter;
-} else {
-    $query .= " AND status NOT IN ('approved', 'rejected')";
-}
-
-if ($branch_filter) {
-    $query .= " AND governorate = %s";
-    $params[] = $branch_filter;
-}
-
-// Union Officer filtering
-$user = wp_get_current_user();
-if (in_array('sm_syndicate_admin', (array)$user->roles) && !current_user_can('manage_options')) {
-    $my_gov = get_user_meta($user->ID, 'sm_governorate', true);
-    if ($my_gov) {
-        $query .= " AND governorate = %s";
-        $params[] = $my_gov;
-    }
-}
-
-if ($search_query) {
-    $query .= " AND (name LIKE %s OR national_id LIKE %s)";
-    $params[] = '%' . $wpdb->esc_like($search_query) . '%';
-    $params[] = '%' . $wpdb->esc_like($search_query) . '%';
-}
-
-$query .= " ORDER BY created_at DESC";
-
-if (!empty($params)) {
-    $requests = $wpdb->get_results($wpdb->prepare($query, $params));
-} else {
-    $requests = $wpdb->get_results($query);
-}
+$requests = SM_DB::get_membership_requests([
+    'status' => $status_filter,
+    'branch' => $branch_filter,
+    'search' => $search_query,
+    'exclude_final' => empty($status_filter)
+]);
 
 $govs = SM_Settings::get_governorates();
 $univs = SM_Settings::get_universities();

@@ -10,6 +10,39 @@ class SM_DB_Finance {
         return $wpdb->query("DELETE FROM {$wpdb->prefix}sm_payments WHERE member_id IN ($ids_str)");
     }
 
+    public static function get_payments($args = []) {
+        global $wpdb;
+        $user = wp_get_current_user();
+        $has_full_access = current_user_can('sm_full_access') || current_user_can('manage_options');
+        $my_gov = get_user_meta($user->ID, 'sm_governorate', true);
+
+        $where = "1=1";
+        $params = [];
+
+        if (!$has_full_access && $my_gov) {
+            $where .= " AND EXISTS (SELECT 1 FROM {$wpdb->prefix}sm_members m WHERE m.id = p.member_id AND m.governorate = %s)";
+            $params[] = $my_gov;
+        }
+
+        if (!empty($args['day'])) { $where .= " AND DAY(p.payment_date) = %d"; $params[] = intval($args['day']); }
+        if (!empty($args['month'])) { $where .= " AND MONTH(p.payment_date) = %d"; $params[] = intval($args['month']); }
+        if (!empty($args['year'])) { $where .= " AND YEAR(p.payment_date) = %d"; $params[] = intval($args['year']); }
+
+        if (!empty($args['search'])) {
+            $where .= " AND EXISTS (SELECT 1 FROM {$wpdb->prefix}sm_members m WHERE m.id = p.member_id AND (m.name LIKE %s OR m.national_id LIKE %s))";
+            $s = '%' . $wpdb->esc_like($args['search']) . '%';
+            $params[] = $s; $params[] = $s;
+        }
+
+        $limit = isset($args['limit']) ? intval($args['limit']) : 500;
+        $query = "SELECT p.*, u.display_name as staff_name FROM {$wpdb->prefix}sm_payments p LEFT JOIN {$wpdb->base_prefix}users u ON p.created_by = u.ID WHERE $where ORDER BY p.created_at DESC LIMIT $limit";
+
+        if (!empty($params)) {
+            return $wpdb->get_results($wpdb->prepare($query, $params));
+        }
+        return $wpdb->get_results($query);
+    }
+
     public static function get_statistics($filters = array()) {
         global $wpdb;
         $stats = array();
@@ -25,7 +58,7 @@ class SM_DB_Finance {
         $where_member = "1=1";
         if ($target_gov) {
             $where_member = $wpdb->prepare("governorate = %s", $target_gov);
-        } elseif ($is_officer || !$has_full_access) {
+        } elseif (!$has_full_access) {
             if ($my_gov) {
                 $where_member = $wpdb->prepare("governorate = %s", $my_gov);
             } else {

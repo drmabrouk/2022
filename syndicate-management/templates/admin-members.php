@@ -174,7 +174,7 @@ if ($import_results) {
 
     <!-- Pagination -->
     <?php
-    $total_members = $wpdb->get_var("SELECT COUNT(*) FROM {$wpdb->prefix}sm_members"); // Simplified count for now
+    $total_members = SM_DB::count_members(['search' => $_GET['member_search'] ?? '', 'governorate' => $_GET['gov_filter'] ?? '']);
     $limit = 20;
     $total_pages = ceil($total_members / $limit);
     $current_page = isset($_GET['paged']) ? max(1, intval($_GET['paged'])) : 1;

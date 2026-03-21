@@ -304,19 +304,31 @@ class SM_Finance {
         if ($cached !== false) return $cached;
 
         $w_m = "1=1";
-        if (!$has_full && $gov) {
-            $w_m = $wpdb->prepare("governorate = %s", $gov);
+        $p_m = [];
+        if (!$has_full) {
+            if ($gov) {
+                $w_m = "governorate = %s";
+                $p_m[] = $gov;
+            } else {
+                return ['total_owed' => 0, 'total_paid' => 0, 'total_balance' => 0, 'total_penalty' => 0];
+            }
         }
 
         $j_p = "";
         $w_p = "1=1";
-        if (!$has_full && $gov) {
-            $j_p = "JOIN {$wpdb->prefix}sm_members m ON p.member_id = m.id";
-            $w_p = $wpdb->prepare("m.governorate = %s", $gov);
+        $p_p = [];
+        if (!$has_full) {
+            if ($gov) {
+                $j_p = "JOIN {$wpdb->prefix}sm_members m ON p.member_id = m.id";
+                $w_p = "m.governorate = %s";
+                $p_p[] = $gov;
+            } else {
+                $w_p = "1=0";
+            }
         }
 
-        $paid = $wpdb->get_var("SELECT SUM(p.amount) FROM {$wpdb->prefix}sm_payments p $j_p WHERE $w_p") ?: 0;
-        $members = $wpdb->get_results("SELECT id FROM {$wpdb->prefix}sm_members WHERE $w_m");
+        $paid = $wpdb->get_var($wpdb->prepare("SELECT SUM(p.amount) FROM {$wpdb->prefix}sm_payments p $j_p WHERE $w_p", ...$p_p)) ?: 0;
+        $members = $wpdb->get_results($wpdb->prepare("SELECT id FROM {$wpdb->prefix}sm_members WHERE $w_m", ...$p_m));
 
         $owed = 0;
         $penalty = 0;
@@ -353,9 +365,13 @@ class SM_Finance {
         $cy = (int)date('Y');
         $w_m = "last_paid_membership_year < %d";
         $params = [$cy];
-        if (!$has_full && $gov) {
-            $w_m .= " AND governorate = %s";
-            $params[] = $gov;
+        if (!$has_full) {
+            if ($gov) {
+                $w_m .= " AND governorate = %s";
+                $params[] = $gov;
+            } else {
+                return [];
+            }
         }
 
         $ms = $wpdb->get_results($wpdb->prepare("SELECT * FROM {$wpdb->prefix}sm_members WHERE $w_m LIMIT 200", ...$params));

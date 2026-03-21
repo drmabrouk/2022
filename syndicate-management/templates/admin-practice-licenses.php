@@ -27,12 +27,13 @@ foreach ($members as $m) {
 }
 
 $search = isset($_GET['license_search']) ? sanitize_text_field($_GET['license_search']) : '';
-$registry = $wpdb->get_results($wpdb->prepare(
-    "SELECT * FROM {$wpdb->prefix}sm_members WHERE license_number != '' AND (name LIKE %s OR national_id LIKE %s OR license_number LIKE %s) ORDER BY license_expiration_date ASC",
-    '%' . $wpdb->esc_like($search) . '%',
-    '%' . $wpdb->esc_like($search) . '%',
-    '%' . $wpdb->esc_like($search) . '%'
-));
+$registry = SM_DB::get_members([
+    'search' => $search,
+    'search_licenses' => true,
+    'only_with_license' => true,
+    'orderby' => 'license_expiration_date ASC',
+    'limit' => -1
+]);
 ?>
 
 <div class="sm-practice-licenses" dir="rtl">
