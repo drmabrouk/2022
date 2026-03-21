@@ -9,12 +9,18 @@ if (!$member) {
 }
 
 $user = wp_get_current_user();
-$is_sys_manager = in_array('sm_system_admin', (array)$user->roles);
+$is_admin = in_array('administrator', (array)$user->roles) || current_user_can('manage_options');
+$is_sys_manager = in_array('sm_system_admin', (array)$user->roles) || $is_admin;
 $is_syndicate_admin = in_array('sm_syndicate_admin', (array)$user->roles);
-$is_syndicate_staff = in_array('sm_syndicate_member', (array)$user->roles);
+$is_syndicate_member = in_array('sm_syndicate_member', (array)$user->roles);
+$is_member = in_array('sm_member', (array)$user->roles);
+$is_syndicate_staff = $is_syndicate_member;
+$is_restricted = ($is_member || $is_syndicate_member) && !current_user_can('sm_manage_members');
+
+$db_branches = SM_DB::get_branches_data();
 
 // IDOR CHECK: Restricted users can only see their own profile
-if ($is_syndicate_staff && !current_user_can('sm_manage_members')) {
+if ($is_restricted) {
     if ($member->wp_user_id != $user->ID) {
         echo '<div class="error" style="padding: 20px; background:#fff5f5; color:#c53030; border-radius:8px; border:1px solid #feb2b2;"><h4>⚠️ عذراً، لا تملك صلاحية الوصول لهذا الملف.</h4><p>لا يمكنك استعراض بيانات الأعضاء الآخرين.</p></div>';
         return;
@@ -38,7 +44,7 @@ $finance = SM_Finance::calculate_member_dues($member->id);
 $acc_status = SM_Finance::get_member_status($member->id);
 ?>
 
-<div class="sm-member-profile-view" dir="rtl">
+<div class="sm-member-profile-view <?php echo $is_restricted ? 'sm-portal-layout' : ''; ?>" dir="rtl">
     <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; background: #fff; padding: 30px; border-radius: 12px; border: 1px solid var(--sm-border-color); box-shadow: var(--sm-shadow);">
         <div style="display: flex; align-items: center; gap: 20px;">
             <div style="position: relative;">
@@ -63,9 +69,9 @@ $acc_status = SM_Finance::get_member_status($member->id);
             </div>
         </div>
         <div style="display: flex; gap: 10px; align-items: center;">
-            <?php if ($is_member || $is_syndicate_member): ?>
+            <?php if ($is_restricted): ?>
                 <button onclick="smOpenUpdateMemberRequestModal()" class="sm-btn" style="background: #3182ce; width: auto;"><span class="dashicons dashicons-edit"></span> طلب تحديث بياناتي</button>
-            <?php elseif (!$is_member): ?>
+            <?php elseif (current_user_can('sm_manage_members')): ?>
                 <button onclick="editSmMember(JSON.parse(this.dataset.member))" data-member='<?php echo esc_attr(wp_json_encode($member)); ?>' class="sm-btn" style="background: #3182ce; width: auto;"><span class="dashicons dashicons-edit"></span> تعديل البيانات</button>
             <?php endif; ?>
 
@@ -88,18 +94,67 @@ $acc_status = SM_Finance::get_member_status($member->id);
         </div>
     </div>
 
-    <!-- Profile Tabs (9-Tab Layout) -->
-    <div class="sm-tabs-wrapper" style="display: flex; gap: 5px; margin-bottom: 30px; border-bottom: 2px solid #eee; padding-bottom: 10px; overflow-x: auto; white-space: nowrap;">
-        <button class="sm-tab-btn sm-active" onclick="smOpenInternalTab('profile-info', this)"><span class="dashicons dashicons-admin-users"></span> بيانات العضوية</button>
-        <button class="sm-tab-btn" onclick="smOpenInternalTab('professional-requests-tab', this)"><span class="dashicons dashicons-awards"></span> الطلبات المهنية</button>
-        <button class="sm-tab-btn" onclick="smOpenInternalTab('license-status-tab', this)"><span class="dashicons dashicons-id-alt"></span> حالة التراخيص</button>
-        <button class="sm-tab-btn" onclick="smOpenInternalTab('finance-management', this)"><span class="dashicons dashicons-money-alt"></span> المالية والاستحقاقات</button>
-        <button class="sm-tab-btn" onclick="smOpenInternalTab('document-vault', this); smLoadDocuments();"><span class="dashicons dashicons-portfolio"></span> الأرشيف الرقمي</button>
-        <button class="sm-tab-btn" onclick="smOpenInternalTab('member-correspondence', this); setTimeout(() => smSwitchMessagingTab('direct-comm', $('.sm-messaging-center .sm-tab-btn')[1]), 100);"><span class="dashicons dashicons-email"></span> المراسلات</button>
-        <button class="sm-tab-btn" onclick="smOpenInternalTab('member-complaints', this); setTimeout(() => smSwitchMessagingTab('tickets', $('.sm-messaging-center .sm-tab-btn')[0]), 100);"><span class="dashicons dashicons-megaphone"></span> الشكاوى والدعم</button>
-        <button class="sm-tab-btn" onclick="smOpenInternalTab('digital-services-tab', this)"><span class="dashicons dashicons-cloud"></span> الخدمات الرقمية</button>
-        <button class="sm-tab-btn" onclick="smOpenInternalTab('exams-tab', this)"><span class="dashicons dashicons-welcome-learn-more"></span> الاختبارات المهنية</button>
-    </div>
+    <?php if ($is_restricted): ?>
+    <div class="sm-portal-grid" style="display: flex; gap: 30px;">
+        <!-- Right Sidebar Navigation -->
+        <div class="sm-portal-sidebar" style="width: 300px; flex-shrink: 0;">
+            <div style="background: #fff; border: 1px solid var(--sm-border-color); border-radius: 16px; padding: 15px; position: sticky; top: 20px; box-shadow: var(--sm-shadow);">
+                <div style="padding: 15px 10px 25px; border-bottom: 1px solid #f1f5f9; margin-bottom: 15px; text-align: center;">
+                    <div style="width: 80px; height: 80px; margin: 0 auto 15px; background: #f8fafc; border-radius: 50%; border: 3px solid var(--sm-primary-color); padding: 3px;">
+                        <img src="<?php echo esc_url($member->photo_url ?: get_avatar_url($user->ID)); ?>" style="width: 100%; height: 100%; border-radius: 50%; object-fit: cover;">
+                    </div>
+                    <h4 style="margin: 0; font-weight: 900; color: var(--sm-dark-color);"><?php echo esc_html($member->name); ?></h4>
+                    <div style="font-size: 11px; color: #64748b; margin-top: 5px;">رقم القيد: <?php echo esc_html($member->membership_number); ?></div>
+                </div>
+
+                <nav class="sm-portal-nav" style="display: flex; flex-direction: column; gap: 5px;">
+                    <button class="sm-portal-nav-btn sm-active" onclick="smOpenInternalTab('profile-info', this)">
+                        <span class="dashicons dashicons-admin-users"></span> <span>بيانات العضوية</span>
+                    </button>
+                    <button class="sm-portal-nav-btn" onclick="smOpenInternalTab('professional-requests-tab', this)">
+                        <span class="dashicons dashicons-awards"></span> <span>الطلبات المهنية</span>
+                    </button>
+                    <button class="sm-portal-nav-btn" onclick="smOpenInternalTab('license-status-tab', this)">
+                        <span class="dashicons dashicons-id-alt"></span> <span>حالة التراخيص</span>
+                    </button>
+                    <button class="sm-portal-nav-btn" onclick="smOpenInternalTab('finance-management', this)">
+                        <span class="dashicons dashicons-money-alt"></span> <span>المالية والاستحقاقات</span>
+                    </button>
+                    <button class="sm-portal-nav-btn" onclick="smOpenInternalTab('document-vault', this); smLoadDocuments();">
+                        <span class="dashicons dashicons-portfolio"></span> <span>الأرشيف الرقمي</span>
+                    </button>
+                    <button class="sm-portal-nav-btn" onclick="smOpenInternalTab('messaging-hub-tab', this); setTimeout(() => smSwitchMessagingTab('direct-comm', $('.sm-messaging-center .sm-tab-btn')[1]), 100);">
+                        <span class="dashicons dashicons-email"></span> <span>المراسلات</span>
+                    </button>
+                    <button class="sm-portal-nav-btn" onclick="smOpenInternalTab('messaging-hub-tab', this); setTimeout(() => smSwitchMessagingTab('tickets', $('.sm-messaging-center .sm-tab-btn')[0]), 100);">
+                        <span class="dashicons dashicons-megaphone"></span> <span>الشكاوى والدعم</span>
+                    </button>
+                    <button class="sm-portal-nav-btn" onclick="smOpenInternalTab('digital-services-tab', this)">
+                        <span class="dashicons dashicons-cloud"></span> <span>الخدمات الرقمية</span>
+                    </button>
+                    <button class="sm-portal-nav-btn" onclick="smOpenInternalTab('exams-tab', this)">
+                        <span class="dashicons dashicons-welcome-learn-more"></span> <span>الاختبارات المهنية</span>
+                    </button>
+                </nav>
+            </div>
+        </div>
+
+        <!-- Main Content Area -->
+        <div class="sm-portal-content" style="flex: 1; min-width: 0;">
+    <?php else: ?>
+        <!-- Profile Tabs (Management View - Standard Tabs) -->
+        <div class="sm-tabs-wrapper" style="display: flex; gap: 5px; margin-bottom: 30px; border-bottom: 2px solid #eee; padding-bottom: 10px; overflow-x: auto; white-space: nowrap;">
+            <button class="sm-tab-btn sm-active" onclick="smOpenInternalTab('profile-info', this)"><span class="dashicons dashicons-admin-users"></span> بيانات العضوية</button>
+            <button class="sm-tab-btn" onclick="smOpenInternalTab('professional-requests-tab', this)"><span class="dashicons dashicons-awards"></span> الطلبات المهنية</button>
+            <button class="sm-tab-btn" onclick="smOpenInternalTab('license-status-tab', this)"><span class="dashicons dashicons-id-alt"></span> حالة التراخيص</button>
+            <button class="sm-tab-btn" onclick="smOpenInternalTab('finance-management', this)"><span class="dashicons dashicons-money-alt"></span> المالية والاستحقاقات</button>
+            <button class="sm-tab-btn" onclick="smOpenInternalTab('document-vault', this); smLoadDocuments();"><span class="dashicons dashicons-portfolio"></span> الأرشيف الرقمي</button>
+            <button class="sm-tab-btn" onclick="smOpenInternalTab('messaging-hub-tab', this); setTimeout(() => smSwitchMessagingTab('direct-comm', $('.sm-messaging-center .sm-tab-btn')[1]), 100);"><span class="dashicons dashicons-email"></span> المراسلات</button>
+            <button class="sm-tab-btn" onclick="smOpenInternalTab('messaging-hub-tab', this); setTimeout(() => smSwitchMessagingTab('tickets', $('.sm-messaging-center .sm-tab-btn')[0]), 100);"><span class="dashicons dashicons-megaphone"></span> الشكاوى والدعم</button>
+            <button class="sm-tab-btn" onclick="smOpenInternalTab('digital-services-tab', this)"><span class="dashicons dashicons-cloud"></span> الخدمات الرقمية</button>
+            <button class="sm-tab-btn" onclick="smOpenInternalTab('exams-tab', this)"><span class="dashicons dashicons-welcome-learn-more"></span> الاختبارات المهنية</button>
+        </div>
+    <?php endif; ?>
 
     <div id="profile-info" class="sm-internal-tab">
         <div style="display: grid; grid-template-columns: 2fr 1fr; gap: 30px;">
@@ -171,7 +226,7 @@ $acc_status = SM_Finance::get_member_status($member->id);
                     <div style="display: flex; justify-content: space-between;"><span>إجمالي ما تم سداده:</span> <strong style="color:#38a169;"><?php echo number_format($finance['total_paid'], 2); ?></strong></div>
                 </div>
                     <button onclick="smOpenFinanceModal(<?php echo $member->id; ?>)" class="sm-btn" style="margin-top: 20px; background: var(--sm-dark-color);">
-                        <?php echo ($is_syndicate_staff && !current_user_can('sm_manage_finance')) ? 'عرض كشف الحساب' : 'إدارة المدفوعات والفواتير'; ?>
+                        <?php echo (current_user_can('sm_manage_finance')) ? 'إدارة المدفوعات والفواتير' : 'عرض كشف الحساب'; ?>
                     </button>
                 </div>
             </div>
@@ -201,18 +256,10 @@ $acc_status = SM_Finance::get_member_status($member->id);
         <?php include SM_PLUGIN_DIR . 'templates/member-document-vault.php'; ?>
     </div>
 
-    <!-- Correspondence Tab -->
-    <div id="member-correspondence" class="sm-internal-tab" style="display: none;">
+    <!-- Messaging Hub Tab (Consolidated) -->
+    <div id="messaging-hub-tab" class="sm-internal-tab" style="display: none;">
         <div style="min-height: 600px; border: 1px solid #eee; border-radius: 12px; overflow: hidden; background: #fff;">
             <?php include SM_PLUGIN_DIR . 'templates/messaging-center.php'; ?>
-        </div>
-    </div>
-
-    <!-- Complaints Tab -->
-    <div id="member-complaints" class="sm-internal-tab" style="display: none;">
-        <div style="min-height: 600px; border: 1px solid #eee; border-radius: 12px; overflow: hidden; background: #fff;">
-            <?php /* Messaging center is already included above, but we reuse the component logic */ ?>
-            <p style="padding: 20px; text-align: center; color: #64748b;">يتم عرض نظام التذاكر والشكاوى في هذا التبويب.</p>
         </div>
     </div>
 
@@ -229,6 +276,11 @@ $acc_status = SM_Finance::get_member_status($member->id);
             <?php include SM_PLUGIN_DIR . 'templates/public-dashboard-summary.php'; ?>
         </div>
     </div>
+
+    <?php if ($is_restricted): ?>
+        </div> <!-- End sm-portal-content -->
+    </div> <!-- End sm-portal-grid -->
+    <?php endif; ?>
 
     <!-- Edit Member Modal -->
     <div id="edit-member-modal" class="sm-modal-overlay">
@@ -349,8 +401,8 @@ window.addEventListener('load', function() {
             'licenses': 'license-status-tab',
             'finance': 'finance-management',
             'archive': 'document-vault',
-            'correspondence': 'member-correspondence',
-            'complaints': 'member-complaints',
+            'correspondence': 'messaging-hub-tab',
+            'complaints': 'messaging-hub-tab',
             'services': 'digital-services-tab',
             'exams': 'exams-tab'
         };

@@ -16,16 +16,16 @@
         },
 
         openInternalTab: function(tabId, element) {
-            console.log('Opening tab:', tabId);
             const target = document.getElementById(tabId);
-            if (!target || !element) {
-                console.error('Target or element not found:', tabId, element);
-                return;
-            }
+            if (!target || !element) return;
+
             const container = target.parentElement;
             container.querySelectorAll('.sm-internal-tab').forEach(p => p.style.setProperty('display', 'none', 'important'));
             target.style.setProperty('display', 'block', 'important');
-            element.parentElement.querySelectorAll('.sm-tab-btn').forEach(b => b.classList.remove('sm-active'));
+
+            // Handle both standard tabs and portal sidebar buttons
+            const parent = element.parentElement;
+            parent.querySelectorAll('.sm-tab-btn, .sm-portal-nav-btn').forEach(b => b.classList.remove('sm-active'));
             element.classList.add('sm-active');
         }
     };
@@ -430,11 +430,11 @@ $is_syndicate_member = in_array('sm_syndicate_member', $roles);
 $is_member = in_array('sm_member', $roles);
 $is_officer = $is_syndicate_admin || $is_syndicate_member;
 
-$is_restricted = $is_member || $is_syndicate_member;
+$is_restricted = ($is_member || $is_syndicate_member) && !current_user_can('sm_manage_members');
 $default_tab = $is_restricted ? 'my-profile' : 'summary';
 $active_tab = isset($_GET['sm_tab']) ? sanitize_text_field($_GET['sm_tab']) : $default_tab;
 
-if ($is_restricted && !in_array($active_tab, ['my-profile', 'member-profile'])) {
+if ($is_restricted && !in_array($active_tab, ['my-profile', 'member-profile', 'digital-services', 'surveys'])) {
     $active_tab = 'my-profile';
 }
 

@@ -46,7 +46,7 @@
     font-family: 'Rubik', sans-serif !important;
 }
 
-/* Unified Table Design */
+/* Unified Table Design - Scoped Margins/Paddings as requested */
 .sm-table-container {
     background: var(--sm-white-color);
     border-radius: var(--sm-radius);
@@ -60,22 +60,21 @@
     width: 100%;
     border-collapse: collapse;
     text-align: right;
-    font-size: 10.5px;
+    font-size: 13px;
 }
 
 .sm-table th {
     background: var(--sm-bg-light);
-    padding: 4px 6px !important;
+    padding: 12px 15px;
     font-weight: 700;
     color: var(--sm-dark-color);
     border-bottom: 2px solid var(--sm-border-color);
 }
 
 .sm-table td {
-    padding: 4px 6px !important;
+    padding: 12px 15px;
     border-bottom: 1px solid var(--sm-border-color);
     vertical-align: middle;
-    line-height: 1.15;
 }
 
 .sm-table tr:last-child td {
@@ -86,18 +85,16 @@
     background-color: var(--sm-pastel-red);
 }
 
-.sm-table .sm-btn {
-    height: 24px !important;
-    padding: 0 6px !important;
-    font-size: 10px !important;
-    border-radius: 4px;
-    line-height: 24px !important;
+/* Reduced density ONLY for specific data tables if needed, otherwise keeping standard professional spacing */
+.sm-table-dense td, .sm-table-dense th {
+    padding: 6px 10px !important;
+    font-size: 11px;
 }
 
-.sm-table .dashicons {
-    font-size: 14px !important;
-    width: 14px !important;
-    height: 14px !important;
+.sm-table .sm-btn {
+    height: 28px;
+    padding: 0 10px;
+    font-size: 11px;
 }
 
 /* Unified Button Design */
@@ -708,6 +705,60 @@
     font-size: 13px;
     display: inline-block;
     margin-top: 15px;
+}
+
+/* Portal Layout (Member Account Sidebar) */
+.sm-portal-layout .sm-portal-grid {
+    display: grid !important;
+    grid-template-columns: 300px 1fr;
+    gap: 30px;
+    align-items: start;
+}
+
+.sm-portal-nav-btn {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 14px 20px;
+    background: transparent;
+    border: none;
+    border-radius: 12px;
+    cursor: pointer;
+    font-family: 'Rubik', sans-serif;
+    font-weight: 600;
+    color: #64748b;
+    transition: all 0.3s ease;
+    width: 100%;
+    text-align: right;
+}
+
+.sm-portal-nav-btn:hover {
+    background: #f8fafc;
+    color: var(--sm-primary-color);
+}
+
+.sm-portal-nav-btn.sm-active {
+    background: var(--sm-primary-color);
+    color: #fff !important;
+    box-shadow: 0 4px 12px rgba(246, 48, 73, 0.2);
+}
+
+.sm-portal-nav-btn .dashicons {
+    font-size: 20px;
+    width: 20px;
+    height: 20px;
+}
+
+@media (max-width: 992px) {
+    .sm-portal-layout .sm-portal-grid {
+        grid-template-columns: 1fr !important;
+    }
+    .sm-portal-sidebar {
+        width: 100% !important;
+    }
+    .sm-portal-sidebar > div {
+        position: static !important;
+    }
 }
 
 @media (max-width: 768px) {
