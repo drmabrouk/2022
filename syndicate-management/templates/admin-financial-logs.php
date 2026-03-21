@@ -10,30 +10,19 @@ if (!$is_sys_manager) {
     return;
 }
 
-$where = "1=1";
-
-// Governorate filtering for non-global admins
-if (!current_user_can('sm_full_access') && !current_user_can('manage_options')) {
-    $my_gov = get_user_meta($user->ID, 'sm_governorate', true);
-    if ($my_gov) {
-        $where .= $wpdb->prepare(" AND EXISTS (SELECT 1 FROM {$wpdb->prefix}sm_members m WHERE m.id = p.member_id AND m.governorate = %s)", $my_gov);
-    }
-}
-
 $day = isset($_GET['log_day']) ? intval($_GET['log_day']) : '';
 $month = isset($_GET['log_month']) ? intval($_GET['log_month']) : '';
 $year = isset($_GET['log_year']) ? intval($_GET['log_year']) : '';
-
-if ($day) $where .= $wpdb->prepare(" AND DAY(p.payment_date) = %d", $day);
-if ($month) $where .= $wpdb->prepare(" AND MONTH(p.payment_date) = %d", $month);
-if ($year) $where .= $wpdb->prepare(" AND YEAR(p.payment_date) = %d", $year);
-
 $search = isset($_GET['member_search']) ? sanitize_text_field($_GET['member_search']) : '';
-if ($search) {
-    $where .= $wpdb->prepare(" AND EXISTS (SELECT 1 FROM {$wpdb->prefix}sm_members m WHERE m.id = p.member_id AND (m.name LIKE %s OR m.national_id LIKE %s))", '%' . $wpdb->esc_like($search) . '%', '%' . $wpdb->esc_like($search) . '%');
-}
 
-$payments = $wpdb->get_results("SELECT p.*, u.display_name as staff_name FROM {$wpdb->prefix}sm_payments p LEFT JOIN {$wpdb->base_prefix}users u ON p.created_by = u.ID WHERE $where ORDER BY p.created_at DESC LIMIT 500");
+$payments = SM_DB::get_payments([
+    'search' => $search,
+    'day' => $day,
+    'month' => $month,
+    'year' => $year,
+    'limit' => 500
+]);
+
 $total_period_amount = array_reduce($payments, function($carry, $item) { return $carry + $item->amount; }, 0);
 ?>
 

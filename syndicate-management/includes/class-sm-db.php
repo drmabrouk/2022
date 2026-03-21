@@ -104,6 +104,10 @@ class SM_DB {
         return SM_DB_Members::get_membership_requests($status);
     }
 
+    public static function count_members($args = []) {
+        return SM_DB_Members::count_members($args);
+    }
+
     public static function add_update_request($mid, $data) {
         return SM_DB_Members::add_update_request($mid, $data);
     }
@@ -168,6 +172,10 @@ class SM_DB {
 
     public static function delete_payments_by_member_ids($ids) {
         return SM_DB_Finance::delete_payments_by_member_ids($ids);
+    }
+
+    public static function get_payments($args = []) {
+        return SM_DB_Finance::get_payments($args);
     }
 
     // Communications Delegation
@@ -282,6 +290,10 @@ class SM_DB {
 
     public static function get_user_attempts_count($tid, $uid) {
         return SM_DB_Education::get_user_attempts_count($tid, $uid);
+    }
+
+    public static function get_surveys_admin($args = []) {
+        return SM_DB_Education::get_surveys_admin($args);
     }
 
     public static function update_survey_data($id, $data) {

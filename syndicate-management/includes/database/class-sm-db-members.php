@@ -85,13 +85,35 @@ class SM_DB_Members {
         }
 
         if (isset($args['search']) && !empty($args['search'])) {
-            $query .= " AND (name LIKE %s OR national_id LIKE %s OR membership_number LIKE %s)";
-            $params[] = '%' . $wpdb->esc_like($args['search']) . '%';
-            $params[] = '%' . $wpdb->esc_like($args['search']) . '%';
-            $params[] = '%' . $wpdb->esc_like($args['search']) . '%';
+            $s = '%' . $wpdb->esc_like($args['search']) . '%';
+            $search_conds = ["name LIKE %s", "national_id LIKE %s", "membership_number LIKE %s"];
+            $search_params = [$s, $s, $s];
+
+            if (!empty($args['search_licenses'])) {
+                $search_conds[] = "license_number LIKE %s";
+                $search_params[] = $s;
+            }
+            if (!empty($args['search_facilities'])) {
+                $search_conds[] = "facility_name LIKE %s";
+                $search_conds[] = "facility_number LIKE %s";
+                $search_params[] = $s;
+                $search_params[] = $s;
+            }
+
+            $query .= " AND (" . implode(" OR ", $search_conds) . ")";
+            $params = array_merge($params, $search_params);
         }
 
-        $query .= " ORDER BY sort_order ASC, name ASC";
+        if (!empty($args['only_with_license'])) {
+            $query .= " AND license_number != ''";
+        }
+
+        if (!empty($args['only_with_facility'])) {
+            $query .= " AND facility_number != ''";
+        }
+
+        $orderby = $args['orderby'] ?? 'sort_order ASC, name ASC';
+        $query .= " ORDER BY $orderby";
 
         if ($limit != -1) {
             $query .= " LIMIT %d OFFSET %d";
@@ -142,6 +164,42 @@ class SM_DB_Members {
         }
         global $wpdb;
         return $wpdb->get_row($wpdb->prepare("SELECT * FROM {$wpdb->prefix}sm_members WHERE wp_user_id = %d", $user->ID));
+    }
+
+    public static function count_members($args = []) {
+        global $wpdb;
+        $user = wp_get_current_user();
+        $has_full_access = current_user_can('manage_options') || current_user_can('sm_full_access');
+
+        $where = "1=1";
+        $params = [];
+
+        if (!$has_full_access) {
+            $gov = get_user_meta($user->ID, 'sm_governorate', true);
+            if ($gov) {
+                $where .= " AND governorate = %s";
+                $params[] = $gov;
+            } else {
+                return 0;
+            }
+        }
+
+        if (!empty($args['search'])) {
+            $s = '%' . $wpdb->esc_like($args['search']) . '%';
+            $where .= " AND (name LIKE %s OR national_id LIKE %s OR membership_number LIKE %s)";
+            $params[] = $s; $params[] = $s; $params[] = $s;
+        }
+
+        if (!empty($args['governorate'])) {
+            $where .= " AND governorate = %s";
+            $params[] = $args['governorate'];
+        }
+
+        $query = "SELECT COUNT(*) FROM {$wpdb->prefix}sm_members WHERE $where";
+        if (!empty($params)) {
+            return (int)$wpdb->get_var($wpdb->prepare($query, $params));
+        }
+        return (int)$wpdb->get_var($query);
     }
 
     public static function add_member($data) {
@@ -436,13 +494,44 @@ class SM_DB_Members {
         return $wpdb->get_row($wpdb->prepare("SELECT * FROM {$wpdb->prefix}sm_membership_requests WHERE national_id = %s", $national_id));
     }
 
-    public static function get_membership_requests($status = null) {
+    public static function get_membership_requests($args = []) {
         global $wpdb;
-        $query = "SELECT * FROM {$wpdb->prefix}sm_membership_requests";
-        if ($status) {
-            return $wpdb->get_results($wpdb->prepare($query . " WHERE status = %s ORDER BY created_at DESC", $status));
+        $user = wp_get_current_user();
+        $has_full_access = current_user_can('sm_full_access') || current_user_can('manage_options');
+        $my_gov = get_user_meta($user->ID, 'sm_governorate', true);
+
+        $where = "1=1";
+        $params = [];
+
+        if (!$has_full_access && $my_gov) {
+            $where .= " AND governorate = %s";
+            $params[] = $my_gov;
         }
-        return $wpdb->get_results($query . " ORDER BY created_at DESC");
+
+        if (!empty($args['status'])) {
+            $where .= " AND status = %s";
+            $params[] = $args['status'];
+        } elseif (!empty($args['exclude_final'])) {
+            $where .= " AND status NOT IN ('approved', 'rejected')";
+        }
+
+        if (!empty($args['branch'])) {
+            $where .= " AND governorate = %s";
+            $params[] = $args['branch'];
+        }
+
+        if (!empty($args['search'])) {
+            $s = '%' . $wpdb->esc_like($args['search']) . '%';
+            $where .= " AND (name LIKE %s OR national_id LIKE %s)";
+            $params[] = $s; $params[] = $s;
+        }
+
+        $query = "SELECT * FROM {$wpdb->prefix}sm_membership_requests WHERE $where ORDER BY created_at DESC";
+
+        if (!empty($params)) {
+            return $wpdb->get_results($wpdb->prepare($query, $params));
+        }
+        return $wpdb->get_results($query);
     }
 
     public static function add_update_request($member_id, $data) {

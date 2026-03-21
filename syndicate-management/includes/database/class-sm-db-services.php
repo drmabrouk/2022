@@ -187,10 +187,19 @@ class SM_DB_Services {
 
     public static function get_professional_requests($args = []) {
         global $wpdb;
+        $user = wp_get_current_user();
+        $has_full_access = current_user_can('sm_full_access') || current_user_can('manage_options');
+        $my_gov = get_user_meta($user->ID, 'sm_governorate', true);
+
         $query = "SELECT r.*, m.name as member_name, m.national_id, m.governorate
                  FROM {$wpdb->prefix}sm_professional_requests r
                  JOIN {$wpdb->prefix}sm_members m ON r.member_id = m.id WHERE 1=1";
         $params = [];
+
+        if (!$has_full_access && $my_gov) {
+            $query .= " AND m.governorate = %s";
+            $params[] = $my_gov;
+        }
 
         if (!empty($args['member_id'])) {
             $query .= " AND r.member_id = %d";
@@ -204,7 +213,7 @@ class SM_DB_Services {
             $query .= " AND r.request_type = %s";
             $params[] = $args['type'];
         }
-        if (!empty($args['governorate'])) {
+        if (!empty($args['governorate']) && $has_full_access) {
             $query .= " AND m.governorate = %s";
             $params[] = $args['governorate'];
         }

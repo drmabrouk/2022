@@ -34,24 +34,18 @@ $active_sub_tab = $_GET['sub_tab'] ?? 'documents';
         <?php
         $search = sanitize_text_field($_GET['doc_search'] ?? '');
         $category = sanitize_text_field($_GET['doc_category'] ?? '');
-        $where = "1=1";
-        $params = [];
-        if (!empty($search)) {
-            $where .= " AND (d.title LIKE %s OR m.name LIKE %s OR m.national_id LIKE %s)";
-            $params[] = '%' . $wpdb->esc_like($search) . '%';
-            $params[] = '%' . $wpdb->esc_like($search) . '%';
-            $params[] = '%' . $wpdb->esc_like($search) . '%';
+
+        $documents = SM_DB::get_member_documents(0, [
+            'search' => $search,
+            'category' => $category
+        ]);
+
+        // Enhance with member info (this logic should ideally be in SM_DB_System, but for now we follow the existing template pattern)
+        foreach ($documents as &$d) {
+            $m = SM_DB::get_member_by_id($d->member_id);
+            $d->member_name = $m->name ?? 'غير معروف';
+            $d->member_nid = $m->national_id ?? '';
         }
-        if (!empty($category)) {
-            $where .= " AND d.category = %s";
-            $params[] = $category;
-        }
-        if (!$has_full_access && $my_gov) {
-            $where .= " AND m.governorate = %s";
-            $params[] = $my_gov;
-        }
-        $query = "SELECT d.*, m.name as member_name, m.national_id as member_nid FROM {$wpdb->prefix}sm_documents d JOIN {$wpdb->prefix}sm_members m ON d.member_id = m.id WHERE $where ORDER BY d.created_at DESC";
-        $documents = !empty($params) ? $wpdb->get_results($wpdb->prepare($query, $params)) : $wpdb->get_results($query);
         ?>
         <div style="background: #f8fafc; padding: 30px; border-radius: 12px; border: 1px solid #e2e8f0; margin-bottom: 30px;">
             <form method="get" style="display: flex; gap: 15px; align-items: flex-end; flex-wrap: wrap;">
@@ -181,15 +175,11 @@ $active_sub_tab = $_GET['sub_tab'] ?? 'documents';
 
     <?php else: ?>
         <?php
-        $where = "1=1";
-        if (!$has_full_access && $my_gov) {
-            $where .= $wpdb->prepare(" AND EXISTS (SELECT 1 FROM {$wpdb->prefix}sm_members m WHERE m.id = p.member_id AND m.governorate = %s)", $my_gov);
-        }
         $search = sanitize_text_field($_GET['fin_search'] ?? '');
-        if ($search) {
-            $where .= $wpdb->prepare(" AND EXISTS (SELECT 1 FROM {$wpdb->prefix}sm_members m WHERE m.id = p.member_id AND (m.name LIKE %s OR m.national_id LIKE %s))", '%' . $wpdb->esc_like($search) . '%', '%' . $wpdb->esc_like($search) . '%');
-        }
-        $payments = $wpdb->get_results("SELECT p.*, u.display_name as staff_name FROM {$wpdb->prefix}sm_payments p LEFT JOIN {$wpdb->base_prefix}users u ON p.created_by = u.ID WHERE $where ORDER BY p.created_at DESC LIMIT 500");
+        $payments = SM_DB::get_payments([
+            'search' => $search,
+            'limit' => 500
+        ]);
         ?>
         <div style="background: #f8fafc; padding: 30px; border-radius: 12px; border: 1px solid #e2e8f0; margin-bottom: 30px;">
             <form method="get" style="display: flex; gap: 15px; align-items: flex-end; flex-wrap: wrap;">

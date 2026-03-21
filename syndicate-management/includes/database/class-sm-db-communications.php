@@ -44,11 +44,19 @@ class SM_DB_Communications {
 
     public static function get_governorate_conversations($governorate = null) {
         global $wpdb;
+        $user = wp_get_current_user();
+        $has_full_access = current_user_can('sm_full_access') || current_user_can('manage_options');
+        $my_gov = get_user_meta($user->ID, 'sm_governorate', true);
+
         $table = $wpdb->prefix . 'sm_messages';
 
         $where = "1=1";
         $params = [];
-        if (!empty($governorate)) {
+
+        if (!$has_full_access && $my_gov) {
+            $where = "governorate = %s";
+            $params[] = $my_gov;
+        } elseif (!empty($governorate)) {
             $where = "governorate = %s";
             $params[] = $governorate;
         }

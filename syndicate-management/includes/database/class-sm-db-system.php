@@ -25,8 +25,37 @@ class SM_DB_System {
 
     public static function get_member_documents($member_id, $args = []) {
         global $wpdb;
-        $query = "SELECT * FROM {$wpdb->prefix}sm_documents WHERE member_id = %d";
-        $params = [intval($member_id)];
+        $query = "SELECT d.* FROM {$wpdb->prefix}sm_documents d";
+
+        $user = wp_get_current_user();
+        $has_full_access = current_user_can('sm_full_access') || current_user_can('manage_options');
+        $my_gov = get_user_meta($user->ID, 'sm_governorate', true);
+
+        if (!$has_full_access && $my_gov) {
+            $query .= " JOIN {$wpdb->prefix}sm_members m ON d.member_id = m.id";
+        }
+
+        $query .= " WHERE 1=1";
+        $params = [];
+
+        if ($member_id) {
+            $query .= " AND d.member_id = %d";
+            $params[] = intval($member_id);
+        }
+
+        if (!$has_full_access && $my_gov) {
+            $query .= " AND m.governorate = %s";
+            $params[] = $my_gov;
+        }
+
+        if (!empty($args['search'])) {
+            if (strpos($query, 'sm_members') === false) {
+                 $query = str_replace('WHERE', "JOIN {$wpdb->prefix}sm_members m ON d.member_id = m.id WHERE", $query);
+            }
+            $query .= " AND (d.title LIKE %s OR m.name LIKE %s OR m.national_id LIKE %s)";
+            $s = '%' . $wpdb->esc_like($args['search']) . '%';
+            $params[] = $s; $params[] = $s; $params[] = $s;
+        }
 
         if (!empty($args['category'])) {
             $query .= " AND category = %s";
@@ -267,8 +296,17 @@ class SM_DB_System {
 
     public static function get_branches_data($args = []) {
         global $wpdb;
+        $user = wp_get_current_user();
+        $has_full_access = current_user_can('sm_full_access') || current_user_can('manage_options');
+        $my_gov = get_user_meta($user->ID, 'sm_governorate', true);
+
         $where = "1=1";
         $params = [];
+
+        if (!$has_full_access && $my_gov) {
+            $where .= " AND slug = %s";
+            $params[] = $my_gov;
+        }
 
         if (!empty($args['search'])) {
             $where .= " AND (name LIKE %s OR manager LIKE %s OR address LIKE %s OR committees LIKE %s)";
@@ -348,11 +386,29 @@ class SM_DB_System {
 
     public static function get_branch_management_stats() {
         global $wpdb;
+        $user = wp_get_current_user();
+        $has_full_access = current_user_can('sm_full_access') || current_user_can('manage_options');
+        $my_gov = get_user_meta($user->ID, 'sm_governorate', true);
+
         $stats = [];
-        $stats['total_branches'] = $wpdb->get_var("SELECT COUNT(*) FROM {$wpdb->prefix}sm_branches_data");
-        $stats['total_members'] = $wpdb->get_var("SELECT COUNT(*) FROM {$wpdb->prefix}sm_members");
-        $stats['total_practice_licenses'] = $wpdb->get_var("SELECT COUNT(*) FROM {$wpdb->prefix}sm_members WHERE license_number != ''");
-        $stats['total_facility_licenses'] = $wpdb->get_var("SELECT COUNT(*) FROM {$wpdb->prefix}sm_members WHERE facility_number != ''");
+
+        $where_branch = "1=1";
+        $where_member = "1=1";
+        $p_branch = [];
+        $p_member = [];
+
+        if (!$has_full_access && $my_gov) {
+            $where_branch = "slug = %s";
+            $where_member = "governorate = %s";
+            $p_branch[] = $my_gov;
+            $p_member[] = $my_gov;
+        }
+
+        $stats['total_branches'] = $wpdb->get_var($wpdb->prepare("SELECT COUNT(*) FROM {$wpdb->prefix}sm_branches_data WHERE $where_branch", ...$p_branch));
+        $stats['total_members'] = $wpdb->get_var($wpdb->prepare("SELECT COUNT(*) FROM {$wpdb->prefix}sm_members WHERE $where_member", ...$p_member));
+        $stats['total_practice_licenses'] = $wpdb->get_var($wpdb->prepare("SELECT COUNT(*) FROM {$wpdb->prefix}sm_members WHERE license_number != '' AND $where_member", ...$p_member));
+        $stats['total_facility_licenses'] = $wpdb->get_var($wpdb->prepare("SELECT COUNT(*) FROM {$wpdb->prefix}sm_members WHERE facility_number != '' AND $where_member", ...$p_member));
+
         return $stats;
     }
 
