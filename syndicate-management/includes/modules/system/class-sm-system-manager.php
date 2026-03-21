@@ -386,4 +386,87 @@ class SM_System_Manager {
         include SM_PLUGIN_DIR . 'templates/print-pub-document.php';
         exit;
     }
+
+    public static function ajax_download_backup() {
+        if (!current_user_can('manage_options')) wp_send_json_error('Unauthorized');
+        check_ajax_referer('sm_admin_action', 'nonce');
+
+        $modules = $_POST['modules'] ?? 'all';
+        $payload = SM_Backup_Manager::generate_backup($modules);
+
+        header('Content-Type: application/octet-stream');
+        header('Content-Disposition: attachment; filename="syndicate-backup-' . date('Y-m-d') . '.smb"');
+        echo $payload;
+        exit;
+    }
+
+    public static function ajax_restore_backup() {
+        if (!current_user_can('manage_options')) wp_send_json_error('Unauthorized');
+        check_ajax_referer('sm_admin_action', 'nonce');
+
+        if (empty($_FILES['backup_file']['tmp_name'])) {
+            wp_send_json_error('لم يتم رفع أي ملف.');
+        }
+
+        $payload = file_get_contents($_FILES['backup_file']['tmp_name']);
+        $selective = $_POST['selective_tables'] ?? 'all';
+
+        $res = SM_Backup_Manager::restore_backup($payload, $selective);
+
+        if (is_wp_error($res)) {
+            wp_send_json_error($res->get_error_message());
+        } else {
+            wp_send_json_success();
+        }
+    }
+
+    public static function ajax_get_backup_history() {
+        if (!current_user_can('manage_options')) wp_send_json_error('Unauthorized');
+
+        $upload_dir = wp_upload_dir();
+        $dir = $upload_dir['basedir'] . '/sm-backups';
+        $files = glob($dir . '/*.smb');
+        $history = [];
+
+        foreach ($files as $f) {
+            $history[] = [
+                'filename' => basename($f),
+                'date' => date('Y-m-d H:i:s', filemtime($f)),
+                'size' => size_format(filesize($f))
+            ];
+        }
+
+        usort($history, function($a, $b) { return strcmp($b['date'], $a['date']); });
+        wp_send_json_success($history);
+    }
+
+    public static function ajax_download_stored_backup() {
+        if (!current_user_can('manage_options')) wp_send_json_error('Unauthorized');
+
+        $filename = sanitize_file_name($_GET['filename'] ?? '');
+        if (empty($filename)) wp_send_json_error('Invalid file');
+
+        $upload_dir = wp_upload_dir();
+        $path = $upload_dir['basedir'] . '/sm-backups/' . $filename;
+
+        if (!file_exists($path)) wp_send_json_error('File not found');
+
+        header('Content-Type: application/octet-stream');
+        header('Content-Disposition: attachment; filename="' . $filename . '"');
+        readfile($path);
+        exit;
+    }
+
+    public static function ajax_update_backup_freq() {
+        if (!current_user_can('manage_options')) wp_send_json_error('Unauthorized');
+        check_ajax_referer('sm_admin_action', 'nonce');
+
+        $freq = sanitize_text_field($_POST['frequency'] ?? 'weekly');
+        update_option('sm_backup_frequency', $freq);
+
+        wp_clear_scheduled_hook('sm_scheduled_backup');
+        SM_Backup_Manager::schedule_automated_backup();
+
+        wp_send_json_success();
+    }
 }
