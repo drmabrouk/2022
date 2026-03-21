@@ -4,9 +4,13 @@ $stats = SM_Finance::get_financial_stats();
 $search = isset($_GET['member_search']) ? sanitize_text_field($_GET['member_search']) : '';
 $members = SM_DB::get_members(['search' => $search]);
 
+if (!empty($members)) {
+    SM_Finance::prefetch_data(array_map(fn($m) => $m->id, $members));
+}
+
 $members_with_balance = [];
 foreach ($members as $m) {
-    $dues = SM_Finance::calculate_member_dues($m->id);
+    $dues = SM_Finance::calculate_member_dues($m);
     if ($dues['balance'] > 0 || !empty($search)) {
         $m->finance = $dues;
         $members_with_balance[] = $m;

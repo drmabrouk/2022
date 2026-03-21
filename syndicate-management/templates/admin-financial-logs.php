@@ -131,10 +131,10 @@ function smDeleteTransaction(id) {
     .then(res => {
         if (res.success) {
             smShowNotification('تم حذف العملية بنجاح');
-            location.reload();
+            setTimeout(() => location.reload(), 1000);
         } else {
-            alert('خطأ: ' + res.data);
+            smHandleAjaxError(res);
         }
-    });
+    }).catch(err => smHandleAjaxError(err));
 }
 </script>

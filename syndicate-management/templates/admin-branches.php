@@ -379,20 +379,20 @@ window.smViewBranchDetailedPage = function(id) {
     fetch(ajaxurl + '?action=sm_get_branch_details&id=' + id)
     .then(r => r.json())
     .then(res => {
-        if (res.success) {
+        if (res.success && res.data && res.data.branch) {
             const b = res.data.branch;
-            const s = res.data.stats;
+            const s = res.data.stats || { total_members: 0, total_revenue: 0 };
             let html = `
                 <div style="display:grid; grid-template-columns: 280px 1fr; gap:40px;">
                     <div style="text-align:center;">
                         <img src="${b.logo_url || ''}" style="width:100%; border-radius:20px; border:1px solid #eee; margin-bottom:20px; padding:20px; background:#f9fafb;">
-                        <h2 style="margin:0; font-weight:900;">${b.name}</h2>
+                        <h2 style="margin:0; font-weight:900;">${b.name || 'بدون اسم'}</h2>
                         <span class="sm-badge sm-badge-high" style="margin-top:10px;">فرع رسمي معتمد</span>
                     </div>
                     <div>
                         <div class="sm-card-grid" style="grid-template-columns: repeat(2, 1fr); margin-bottom:30px;">
-                            <div class="sm-stat-card-modern"><div class="sm-stat-card-info"><div class="sm-stat-card-label">الأعضاء المسجلين</div><div class="sm-stat-card-value">${s.total_members}</div></div></div>
-                            <div class="sm-stat-card-modern"><div class="sm-stat-card-info"><div class="sm-stat-card-label">إيرادات المحافظة</div><div class="sm-stat-card-value">${s.total_revenue} ج.م</div></div></div>
+                            <div class="sm-stat-card-modern"><div class="sm-stat-card-info"><div class="sm-stat-card-label">الأعضاء المسجلين</div><div class="sm-stat-card-value">${s.total_members || 0}</div></div></div>
+                            <div class="sm-stat-card-modern"><div class="sm-stat-card-info"><div class="sm-stat-card-label">إيرادات المحافظة</div><div class="sm-stat-card-value">${s.total_revenue || 0} ج.م</div></div></div>
                         </div>
                         <h4 style="border-bottom:2px solid #f1f5f9; padding-bottom:10px; margin-bottom:20px;">معلومات التواصل والمقر</h4>
                         <div style="display:grid; gap:12px; font-size:14px;">
@@ -406,14 +406,25 @@ window.smViewBranchDetailedPage = function(id) {
                 </div>
             `;
             body.innerHTML = html;
-            if (b.latitude) {
+            if (b.latitude && b.longitude) {
                 setTimeout(() => {
-                    const map = L.map('branch-static-map', {zoomControl: false, dragging: false}).setView([b.latitude, b.longitude], 14);
-                    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png').addTo(map);
-                    L.marker([b.latitude, b.longitude]).addTo(map);
+                    const mapContainer = document.getElementById('branch-static-map');
+                    if (mapContainer) {
+                        try {
+                            const map = L.map('branch-static-map', {zoomControl: false, dragging: false}).setView([b.latitude, b.longitude], 14);
+                            L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png').addTo(map);
+                            L.marker([b.latitude, b.longitude]).addTo(map);
+                        } catch(e) { console.error('Leaflet Error:', e); }
+                    }
                 }, 100);
             }
+        } else {
+            smHandleAjaxError(res);
+            body.innerHTML = '<p style="text-align:center; color:red;">فشل تحميل بيانات الفرع.</p>';
         }
+    }).catch(err => {
+        smHandleAjaxError(err);
+        body.innerHTML = '<p style="text-align:center; color:red;">حدث خطأ في الاتصال.</p>';
     });
 };
 
@@ -446,8 +457,18 @@ document.getElementById('sm-branch-form')?.addEventListener('submit', function(e
     btn.disabled = true; btn.innerText = 'جاري الحفظ...';
 
     fetch(ajaxurl, { method: 'POST', body: fd }).then(r => r.json()).then(res => {
-        if (res.success) location.reload();
-        else { alert('خطأ: ' + res.data); btn.disabled = false; btn.innerText = 'حفظ وتطبيق التغييرات'; }
+        if (res.success) {
+            smShowNotification('تم حفظ بيانات الفرع بنجاح');
+            setTimeout(() => location.reload(), 1000);
+        } else {
+            smHandleAjaxError(res);
+            btn.disabled = false;
+            btn.innerText = 'حفظ وتطبيق التغييرات';
+        }
+    }).catch(err => {
+        smHandleAjaxError(err);
+        btn.disabled = false;
+        btn.innerText = 'حفظ وتطبيق التغييرات';
     });
 });
 </script>

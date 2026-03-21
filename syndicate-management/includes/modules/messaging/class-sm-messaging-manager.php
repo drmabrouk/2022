@@ -340,12 +340,16 @@ class SM_Messaging_Manager {
         $channels = $_POST['channels'] ?? [];
         $template_type = sanitize_text_field($_POST['template_type'] ?? 'direct');
 
+        if (!empty($member_ids)) {
+            SM_Finance::prefetch_data($member_ids);
+        }
+
         $results = [];
         foreach ($member_ids as $mid) {
             $member = SM_DB::get_member_by_id($mid);
             if (!$member) continue;
 
-            $finance = SM_Finance::calculate_member_dues($mid);
+            $finance = SM_Finance::calculate_member_dues($member);
             $message = str_replace(
                 ['{member_name}', '{membership_number}', '{year}', '{amount}', '{balance}'],
                 [$member->name, $member->membership_number ?: '---', date('Y'), number_format($finance['balance'], 2), number_format($finance['balance'], 2)],

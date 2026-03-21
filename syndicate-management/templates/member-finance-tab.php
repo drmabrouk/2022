@@ -1,6 +1,6 @@
 <?php if (!defined('ABSPATH')) exit; ?>
 <?php
-$dues = SM_Finance::calculate_member_dues($member->id);
+$dues = SM_Finance::calculate_member_dues($member);
 $history = SM_Finance::get_payment_history($member->id);
 ?>
 

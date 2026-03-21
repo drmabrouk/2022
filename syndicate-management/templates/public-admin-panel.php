@@ -17,7 +17,17 @@
 
         handleAjaxError: function(err, customMsg = 'حدث خطأ أثناء تنفيذ العملية') {
             console.error('SM_AJAX_ERROR:', err);
-            this.showNotification(customMsg + ': ' + (err.message || err), true);
+            let msg = '';
+            if (typeof err === 'string') {
+                msg = err;
+            } else if (err && err.message) {
+                msg = err.message;
+            } else if (err && err.data) {
+                msg = typeof err.data === 'string' ? err.data : (err.data.message || JSON.stringify(err.data));
+            } else {
+                msg = JSON.stringify(err);
+            }
+            this.showNotification(customMsg + ': ' + msg, true);
         },
 
         openInternalTab: function(tabId, element) {
@@ -78,9 +88,9 @@
                 smShowNotification('تمت الاستعادة بنجاح');
                 setTimeout(() => location.reload(), 500);
             } else {
-                alert('خطأ: ' + res.data);
+                smHandleAjaxError(res.data, 'فشل استعادة البيانات');
             }
-        });
+        }).catch(err => smHandleAjaxError(err));
     };
 
     window.smDownloadStoredBackup = function(filename) {
@@ -89,6 +99,7 @@
 
     window.smSubmitPayment = function(btn) {
         const form = document.getElementById('record-payment-form');
+        if (!form) return;
         const formData = new FormData(form);
         formData.append('action', 'sm_record_payment_ajax');
         formData.append('nonce', '<?php echo wp_create_nonce("sm_finance_action"); ?>');
@@ -101,23 +112,32 @@
         .then(res => {
             if (res.success) {
                 smShowNotification('تم تسجيل الدفعة بنجاح');
-                if (typeof smOpenFinanceModal === 'function') {
-                    smOpenFinanceModal(form.querySelector('[name="member_id"]').value);
+                const midField = form.querySelector('[name="member_id"]');
+                if (typeof smOpenFinanceModal === 'function' && midField) {
+                    smOpenFinanceModal(midField.value);
                 } else {
                     location.reload();
                 }
             } else {
-                smShowNotification('خطأ: ' + res.data, true);
+                smHandleAjaxError(res.data, 'فشل تسجيل الدفعة');
                 btn.disabled = false;
                 btn.innerText = 'تأكيد استلام المبلغ';
             }
+        }).catch(err => {
+            smHandleAjaxError(err);
+            btn.disabled = false;
+            btn.innerText = 'تأكيد استلام المبلغ';
         });
     };
 
     // MEDIA UPLOADER FOR LOGO
     window.smDeleteGovData = function() {
-        const gov = document.getElementById('sm_gov_action_target').value;
-        if (!gov) return alert('يرجى اختيار الفرع أولاً');
+        const govEl = document.getElementById('sm_gov_action_target');
+        const gov = govEl ? govEl.value : '';
+        if (!gov) {
+            smShowNotification('يرجى اختيار الفرع أولاً', true);
+            return;
+        }
         if (!confirm('هل أنت متأكد من حذف كافة بيانات فرع ' + gov + '؟ لا يمكن التراجع عن هذا الإجراء.')) return;
 
         const fd = new FormData();
@@ -129,10 +149,12 @@
         .then(r => r.json())
         .then(res => {
             if (res.success) {
-                alert('تم حذف بيانات الفرع بنجاح.');
-                location.reload();
-            } else alert('خطأ: ' + res.data);
-        });
+                smShowNotification('تم حذف بيانات الفرع بنجاح');
+                setTimeout(() => location.reload(), 1000);
+            } else {
+                smHandleAjaxError(res.data, 'فشل حذف البيانات');
+            }
+        }).catch(err => smHandleAjaxError(err));
     };
 
     window.smSubmitProfRequest = function(type, memberId) {
@@ -152,14 +174,18 @@
                 const menus = document.querySelectorAll('.sm-dropdown-menu');
                 menus.forEach(m => m.style.display = 'none');
             } else {
-                alert('خطأ: ' + res.data);
+                smHandleAjaxError(res.data, 'فشل تقديم الطلب');
             }
-        });
+        }).catch(err => smHandleAjaxError(err));
     };
 
     window.smMergeGovData = function(input) {
-        const gov = document.getElementById('sm_gov_action_target').value;
-        if (!gov) return alert('يرجى اختيار الفرع أولاً لدمج البيانات إليها');
+        const govEl = document.getElementById('sm_gov_action_target');
+        const gov = govEl ? govEl.value : '';
+        if (!gov) {
+            smShowNotification('يرجى اختيار الفرع أولاً لدمج البيانات إليها', true);
+            return;
+        }
         if (!input.files.length) return;
 
         const fd = new FormData();
@@ -172,10 +198,12 @@
         .then(r => r.json())
         .then(res => {
             if (res.success) {
-                alert('تم دمج البيانات بنجاح. التفاصيل: ' + res.data);
-                location.reload();
-            } else alert('خطأ: ' + res.data);
-        });
+                smShowNotification('تم دمج البيانات بنجاح. التفاصيل: ' + (res.data && res.data.message ? res.data.message : res.data));
+                setTimeout(() => location.reload(), 1000);
+            } else {
+                smHandleAjaxError(res.data, 'فشل دمج البيانات');
+            }
+        }).catch(err => smHandleAjaxError(err));
     };
 
     window.smResetSystem = function() {
@@ -193,12 +221,12 @@
         .then(r => r.json())
         .then(res => {
             if (res.success) {
-                alert('تمت إعادة تهيئة النظام بنجاح.');
-                location.reload();
+                smShowNotification('تمت إعادة تهيئة النظام بنجاح');
+                setTimeout(() => location.reload(), 1000);
             } else {
-                alert('خطأ: ' + res.data);
+                smHandleAjaxError(res.data, 'فشل إعادة التهيئة');
             }
-        });
+        }).catch(err => smHandleAjaxError(err));
     };
 
 
@@ -209,7 +237,10 @@
         fd.append('log_id', logId);
         fd.append('nonce', '<?php echo wp_create_nonce("sm_admin_action"); ?>');
         fetch('<?php echo admin_url('admin-ajax.php'); ?>?_=' + Date.now(), { method: 'POST', body: fd })
-        .then(r => r.json()).then(res => { if (res.success) location.reload(); });
+        .then(r => r.json()).then(res => {
+            if (res.success) location.reload();
+            else smHandleAjaxError(res.data);
+        }).catch(err => smHandleAjaxError(err));
     };
 
     window.smDownloadBackupNow = function(modules = 'all') {
@@ -254,14 +285,19 @@
                         </td>
                     </tr>
                 `).join('');
+            } else {
+                smHandleAjaxError(res);
             }
-        });
+        }).catch(err => smHandleAjaxError(err));
     };
 
     window.smSubmitRestore = function(e) {
         e.preventDefault();
         const fileInput = document.getElementById('sm_restore_file');
-        if (!fileInput.files.length) return alert('يرجى اختيار ملف أولاً');
+        if (!fileInput || !fileInput.files.length) {
+            smShowNotification('يرجى اختيار ملف أولاً', true);
+            return;
+        }
 
         if (!confirm('تحذير: سيتم مسح كافة البيانات الحالية واستبدالها بالبيانات الموجودة في الملف. هل أنت متأكد؟')) return;
 
@@ -271,17 +307,27 @@
         fd.append('nonce', '<?php echo wp_create_nonce("sm_admin_action"); ?>');
 
         const btn = e.target.querySelector('button');
-        btn.disabled = true;
-        btn.innerText = 'جاري المعالجة والاستعادة...';
+        if (btn) {
+            btn.disabled = true;
+            btn.innerText = 'جاري المعالجة والاستعادة...';
+        }
 
         fetch('<?php echo admin_url('admin-ajax.php'); ?>', { method: 'POST', body: fd })
         .then(r => r.json())
         .then(res => {
             if (res.success) {
-                alert('تمت استعادة النظام بنجاح. سيتم تحديث الصفحة الآن.');
-                location.reload();
+                smShowNotification('تمت استعادة النظام بنجاح');
+                setTimeout(() => location.reload(), 1000);
             } else {
-                alert('خطأ: ' + res.data);
+                smHandleAjaxError(res.data, 'فشل استعادة النسخة الاحتياطية');
+                if (btn) {
+                    btn.disabled = false;
+                    btn.innerText = 'بدء عملية الاستعادة الآمنة';
+                }
+            }
+        }).catch(err => {
+            smHandleAjaxError(err);
+            if (btn) {
                 btn.disabled = false;
                 btn.innerText = 'بدء عملية الاستعادة الآمنة';
             }
@@ -326,8 +372,11 @@
                 }
                 results.innerHTML = html;
             } else {
-                smShowNotification('فشل إجراء الفحص: ' + res.data, true);
+                smHandleAjaxError(res);
             }
+        }).catch(err => {
+            btn.disabled = false; btn.innerText = 'بدء الفحص الشامل الآن';
+            smHandleAjaxError(err);
         });
     };
 
@@ -371,8 +420,10 @@
         .then(res => {
             if (res.success) {
                 smShowNotification('تم تحديث جدولة النسخ الاحتياطي');
+            } else {
+                smHandleAjaxError(res);
             }
-        });
+        }).catch(err => smHandleAjaxError(err));
     };
 
     window.smDeleteAllLogs = function() {
@@ -381,7 +432,10 @@
         fd.append('action', 'sm_clear_all_logs');
         fd.append('nonce', '<?php echo wp_create_nonce("sm_admin_action"); ?>');
         fetch('<?php echo admin_url('admin-ajax.php'); ?>?_=' + Date.now(), { method: 'POST', body: fd })
-        .then(r => r.json()).then(res => { if (res.success) location.reload(); });
+        .then(r => r.json()).then(res => {
+            if (res.success) location.reload();
+            else smHandleAjaxError(res.data);
+        }).catch(err => smHandleAjaxError(err));
     };
 
     window.smOpenMediaUploader = function(inputId) {
@@ -434,8 +488,12 @@
             if (res.success) {
                 body.innerHTML = res.data.html;
             } else {
-                body.innerHTML = '<div style="color:red; text-align:center; padding: 20px;">' + res.data + '</div>';
+                smHandleAjaxError(res);
+                body.innerHTML = '<div style="color:red; text-align:center; padding: 20px;">فشل تحميل البيانات المالية.</div>';
             }
+        }).catch(err => {
+            smHandleAjaxError(err);
+            body.innerHTML = '<div style="color:red; text-align:center; padding: 20px;">حدث خطأ في الاتصال.</div>';
         });
     };
 
@@ -464,9 +522,9 @@
                 smShowNotification('تم تحديث الملف الشخصي بنجاح');
                 setTimeout(() => location.reload(), 500);
             } else {
-                smShowNotification('خطأ: ' + res.data, true);
+                smHandleAjaxError(res);
             }
-        });
+        }).catch(err => smHandleAjaxError(err));
     };
 
     document.addEventListener('click', function(e) {
@@ -542,9 +600,11 @@
         .then(res => {
             if (res.success) {
                 smShowNotification('تم تحديث حالة الطلب');
-                location.reload();
-            } else alert('خطأ: ' + res.data);
-        });
+                setTimeout(() => location.reload(), 1000);
+            } else {
+                smHandleAjaxError(res.data, 'فشل معالجة الطلب');
+            }
+        }).catch(err => smHandleAjaxError(err));
     };
 
     window.smDeleteAlert = function(id) {
@@ -553,9 +613,16 @@
         fd.append('action', 'sm_delete_alert');
         fd.append('id', id);
         fd.append('nonce', '<?php echo wp_create_nonce("sm_admin_action"); ?>');
-        fetch('<?php echo admin_url('admin-ajax.php'); ?>', {method: 'POST', body: fd}).then(r=>r.json()).then(res=>{
-            if(res.success) location.reload();
-        });
+        fetch('<?php echo admin_url('admin-ajax.php'); ?>', {method: 'POST', body: fd})
+        .then(r=>r.json())
+        .then(res=>{
+            if(res.success) {
+                smShowNotification('تم حذف التنبيه بنجاح');
+                setTimeout(() => location.reload(), 500);
+            } else {
+                smHandleAjaxError(res.data, 'فشل حذف التنبيه');
+            }
+        }).catch(err => smHandleAjaxError(err));
     };
 
     const alertTemplates = {
@@ -580,12 +647,26 @@
 
     document.getElementById('sm-alert-form')?.addEventListener('submit', function(e) {
         e.preventDefault();
+        const btn = this.querySelector('button[type="submit"]');
+        if (btn) { btn.disabled = true; btn.innerText = 'جاري الحفظ...'; }
+
         const fd = new FormData(this);
         fd.append('action', 'sm_save_alert');
         fd.append('nonce', '<?php echo wp_create_nonce("sm_admin_action"); ?>');
-        fetch('<?php echo admin_url('admin-ajax.php'); ?>', {method: 'POST', body: fd}).then(r=>r.json()).then(res=>{
-            if(res.success) { smShowNotification('تم حفظ التنبيه'); location.reload(); }
-            else alert(res.data);
+
+        fetch('<?php echo admin_url('admin-ajax.php'); ?>', {method: 'POST', body: fd})
+        .then(r=>r.json())
+        .then(res=>{
+            if(res.success) {
+                smShowNotification('تم حفظ التنبيه');
+                setTimeout(() => location.reload(), 500);
+            } else {
+                smHandleAjaxError(res.data, 'فشل حفظ التنبيه');
+                if (btn) { btn.disabled = false; btn.innerText = 'حفظ ونشر التنبيه'; }
+            }
+        }).catch(err => {
+            smHandleAjaxError(err);
+            if (btn) { btn.disabled = false; btn.innerText = 'حفظ ونشر التنبيه'; }
         });
     });
 
@@ -650,13 +731,19 @@
         const selectedFields = Array.from(modal.querySelectorAll('input[name="fields[]"]:checked')).map(cb => cb.value);
         const recordMode = modal.querySelector('input[name="record_mode"]:checked').value;
 
-        if (selectedFields.length === 0) return alert('يرجى اختيار حقل واحد على الأقل للطباعة');
+        if (selectedFields.length === 0) {
+            smShowNotification('يرجى اختيار حقل واحد على الأقل للطباعة', true);
+            return;
+        }
 
         let ids = [];
         if (recordMode === 'selected') {
             const checkboxes = document.querySelectorAll('.member-checkbox:checked, .payment-checkbox:checked');
             ids = Array.from(checkboxes).map(cb => cb.value);
-            if (ids.length === 0) return alert('يرجى اختيار السجلات المراد طباعتها من الجدول أولاً');
+            if (ids.length === 0) {
+                smShowNotification('يرجى اختيار السجلات المراد طباعتها من الجدول أولاً', true);
+                return;
+            }
         }
 
         const fd = new FormData();
@@ -679,8 +766,11 @@
                 win.document.write(res.data.html);
                 win.document.close();
             } else {
-                alert('خطأ: ' + res.data);
+                smHandleAjaxError(res.data, 'فشل استخراج بيانات الطباعة');
             }
+        }).catch(err => {
+            btn.disabled = false; btn.innerText = 'استخراج للطباعة';
+            smHandleAjaxError(err);
         });
     };
 

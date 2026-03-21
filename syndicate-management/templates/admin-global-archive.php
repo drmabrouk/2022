@@ -269,7 +269,10 @@ function smDeleteArchiveDoc(id) {
     fd.append('action', 'sm_delete_document');
     fd.append('doc_id', id);
     fd.append('nonce', '<?php echo wp_create_nonce("sm_document_action"); ?>');
-    fetch(ajaxurl, { method: 'POST', body: fd }).then(r => r.json()).then(res => { if (res.success) location.reload(); });
+    fetch(ajaxurl, { method: 'POST', body: fd }).then(r => r.json()).then(res => {
+        if (res.success) location.reload();
+        else smHandleAjaxError(res);
+    }).catch(err => smHandleAjaxError(err));
 }
 
 function smDeleteArchivePayment(id) {
@@ -278,6 +281,9 @@ function smDeleteArchivePayment(id) {
     fd.append('action', 'sm_delete_transaction_ajax');
     fd.append('transaction_id', id);
     fd.append('nonce', '<?php echo wp_create_nonce("sm_admin_action"); ?>');
-    fetch(ajaxurl, { method: 'POST', body: fd }).then(r => r.json()).then(res => { if (res.success) location.reload(); });
+    fetch(ajaxurl, { method: 'POST', body: fd }).then(r => r.json()).then(res => {
+        if (res.success) location.reload();
+        else smHandleAjaxError(res);
+    }).catch(err => smHandleAjaxError(err));
 }
 </script>

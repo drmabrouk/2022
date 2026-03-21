@@ -231,18 +231,21 @@ function processMembership(requestId, status) {
     .then(r => r.json())
     .then(res => {
         if (res.success) {
-            alert('تم تحديث حالة الطلب بنجاح');
-            location.reload();
+            smShowNotification('تم تحديث حالة الطلب بنجاح');
+            setTimeout(() => location.reload(), 1000);
         } else {
-            alert('خطأ: ' + res.data);
+            smHandleAjaxError(res);
         }
-    });
+    }).catch(err => smHandleAjaxError(err));
 }
 
 function rejectMembership(requestId) {
     const reason = prompt("يرجى إدخال سبب الرفض ليتمكن المتقدم من رؤيته:");
     if (reason === null) return;
-    if (!reason) return alert("يجب إدخال سبب الرفض.");
+    if (!reason) {
+        smShowNotification("يجب إدخال سبب الرفض.", true);
+        return;
+    }
 
     const fd = new FormData();
     fd.append('action', 'sm_process_membership_request');
@@ -255,11 +258,11 @@ function rejectMembership(requestId) {
     .then(r => r.json())
     .then(res => {
         if (res.success) {
-            alert('تم رفض الطلب بنجاح');
-            location.reload();
+            smShowNotification('تم رفض الطلب بنجاح');
+            setTimeout(() => location.reload(), 1000);
         } else {
-            alert('خطأ: ' + res.data);
+            smHandleAjaxError(res);
         }
-    });
+    }).catch(err => smHandleAjaxError(err));
 }
 </script>

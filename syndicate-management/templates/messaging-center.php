@@ -325,7 +325,7 @@ $statuses = array(
             grid.css('opacity', '1').empty();
             let counts = { open: 0, 'in-progress': 0, closed: 0 };
 
-            if (res.success && res.data.length > 0) {
+            if (res.success && res.data && res.data.length > 0) {
                 res.data.forEach(t => {
                     counts[t.status]++;
                     const cat = categories[t.category] || categories['other'];
@@ -355,12 +355,16 @@ $statuses = array(
                     grid.append(card);
                 });
             } else {
+                if (!res.success) smHandleAjaxError(res);
                 grid.html('<div style="text-align: center; padding: 50px; background: #fff; border-radius: 10px; border: 1px dashed #cbd5e0; color: #94a3b8;">لا توجد تذاكر حالياً.</div>');
             }
 
             $('#stat-open-count').text(counts.open);
             $('#stat-progress-count').text(counts['in-progress']);
             $('#stat-closed-count').text(counts.closed);
+        }).catch(err => {
+            grid.css('opacity', '1');
+            smHandleAjaxError(err);
         });
     };
 
@@ -375,7 +379,7 @@ $statuses = array(
         fetch(ajaxurl + `?action=sm_get_ticket_details&id=${id}&nonce=${nonce}`)
         .then(r => r.json())
         .then(res => {
-            if (res.success) {
+            if (res.success && res.data) {
                 const t = res.data.ticket;
                 const thread = res.data.thread;
 
@@ -448,10 +452,16 @@ $statuses = array(
                     .then(r => r.json())
                     .then(res => {
                         if (res.success) smViewTicket(t.id);
-                        else { alert(res.data); btn.prop('disabled', false).text('إرسال الرد'); }
-                    });
+                        else { smHandleAjaxError(res); btn.prop('disabled', false).text('إرسال الرد'); }
+                    }).catch(err => { smHandleAjaxError(err); btn.prop('disabled', false).text('إرسال الرد'); });
                 });
+            } else {
+                smHandleAjaxError(res);
+                smBackToList();
             }
+        }).catch(err => {
+            smHandleAjaxError(err);
+            smBackToList();
         });
     };
 
@@ -490,7 +500,14 @@ $statuses = array(
         fd.append('action', 'sm_close_ticket');
         fd.append('id', id);
         fd.append('nonce', '<?php echo wp_create_nonce("sm_ticket_action"); ?>');
-        fetch(ajaxurl, { method: 'POST', body: fd }).then(r => r.json()).then(res => { if(res.success) smViewTicket(id); });
+        fetch(ajaxurl, { method: 'POST', body: fd }).then(r => r.json()).then(res => {
+            if(res.success) {
+                smShowNotification('تم إغلاق التذكرة');
+                smViewTicket(id);
+            } else {
+                smHandleAjaxError(res);
+            }
+        }).catch(err => smHandleAjaxError(err));
     };
 
     // DIRECT COMMUNICATION LOGIC
@@ -498,14 +515,16 @@ $statuses = array(
         fetch(ajaxurl + '?action=sm_get_comm_templates')
         .then(r => r.json())
         .then(res => {
-            if (res.success) {
+            if (res.success && res.data) {
                 commTemplates = res.data;
                 const select = $('#comm-template-select');
                 res.data.forEach(t => {
                     select.append(`<option value="${t.template_type}">${t.subject}</option>`);
                 });
+            } else {
+                smHandleAjaxError(res);
             }
-        });
+        }).catch(err => smHandleAjaxError(err));
     };
 
     window.smSearchMembersForComm = function() {
@@ -516,7 +535,7 @@ $statuses = array(
         .then(r => r.json())
         .then(res => {
             const results = $('#member-comm-results').empty();
-            if (res.success && res.data.length > 0) {
+            if (res.success && res.data && res.data.length > 0) {
                 lastSearchResults = res.data;
                 res.data.forEach(m => {
                     const isSelected = selectedMembers.has(m.id);
@@ -536,9 +555,12 @@ $statuses = array(
                     `);
                 });
             } else {
+                if (!res.success) smHandleAjaxError(res);
                 lastSearchResults = [];
                 results.html('<div style="text-align: center; padding: 20px; color: #94a3b8; font-size: 12px;">لم يتم العثور على نتائج.</div>');
             }
+        }).catch(err => {
+            smHandleAjaxError(err);
         });
     };
 
@@ -633,7 +655,7 @@ $statuses = array(
         e.preventDefault();
         const channels = $("input[name='channels[]']:checked").map(function(){return $(this).val();}).get();
         if (channels.length === 0) {
-            alert('يرجى اختيار قناة إرسال واحدة على الأقل');
+            smShowNotification('يرجى اختيار قناة إرسال واحدة على الأقل', true);
             return;
         }
 
@@ -656,11 +678,14 @@ $statuses = array(
                     const waUrl = `https://api.whatsapp.com/send?phone=${m.phone.replace(/^0/, '+20')}&text=${msg}`;
                     window.open(waUrl, '_blank');
                 }
-                alert('تمت العملية بنجاح لعدد (' + Object.keys(res.data).length + ') أعضاء. تم تسجيل المراسلات في السجل.');
+                smShowNotification('تم إرسال المراسلات بنجاح');
                 if (selectedMembers.size === 1) smShowCommHistory();
             } else {
-                alert('خطأ: ' + res.data);
+                smHandleAjaxError(res);
             }
+        }).catch(err => {
+            smHandleAjaxError(err);
+            btn.prop('disabled', false).html('<span class="dashicons dashicons-share-alt" style="margin-top: 4px;"></span> إرسال المراسلات الآن');
         });
     });
 
@@ -673,7 +698,7 @@ $statuses = array(
         fetch(ajaxurl + `?action=sm_get_member_comms_log&member_id=${m.id}`)
         .then(r => r.json())
         .then(res => {
-            if (res.success && res.data.length > 0) {
+            if (res.success && res.data && res.data.length > 0) {
                 body.empty();
                 res.data.forEach(l => {
                     const channelIcons = { whatsapp: 'whatsapp', email: 'email', ticket: 'megaphone' };
@@ -694,9 +719,10 @@ $statuses = array(
                     `);
                 });
             } else {
+                if (!res.success) smHandleAjaxError(res);
                 body.html('<div style="text-align: center; padding: 50px; color: #94a3b8;">لا يوجد سجل مراسلات لهذا العضو.</div>');
             }
-        });
+        }).catch(err => smHandleAjaxError(err));
     };
 
     $('#create-ticket-form').on('submit', function(e) {
@@ -705,9 +731,15 @@ $statuses = array(
         fd.append('action', 'sm_create_ticket');
         fd.append('nonce', '<?php echo wp_create_nonce("sm_ticket_action"); ?>');
         fetch(ajaxurl, { method: 'POST', body: fd }).then(r=>r.json()).then(res => {
-            if(res.success) { $('#create-ticket-modal').fadeOut(); smLoadTickets(); smViewTicket(res.data); }
-            else alert(res.data);
-        });
+            if(res.success) {
+                smShowNotification('تم فتح التذكرة بنجاح');
+                $('#create-ticket-modal').fadeOut();
+                smLoadTickets();
+                smViewTicket(res.data);
+            } else {
+                smHandleAjaxError(res);
+            }
+        }).catch(err => smHandleAjaxError(err));
     });
 
     // Initialize

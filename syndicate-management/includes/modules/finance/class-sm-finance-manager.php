@@ -60,7 +60,9 @@ class SM_Finance_Manager {
         }
         $mid = intval($_GET['member_id']);
         self::validate_member_access($mid);
-        $dues = SM_Finance::calculate_member_dues($mid);
+
+        $member = SM_DB::get_member_by_id($mid);
+        $dues = SM_Finance::calculate_member_dues($member);
         $history = SM_Finance::get_payment_history($mid);
         ob_start();
         include SM_PLUGIN_DIR . 'templates/modal-finance-details.php';
@@ -74,9 +76,14 @@ class SM_Finance_Manager {
         }
         $type = sanitize_text_field($_GET['type']);
         $members = SM_DB::get_members(['limit' => -1]);
+
+        if (!empty($members)) {
+            SM_Finance::prefetch_data(array_map(fn($m) => $m->id, $members));
+        }
+
         $data = [];
         foreach ($members as $m) {
-            $dues = SM_Finance::calculate_member_dues($m->id);
+            $dues = SM_Finance::calculate_member_dues($m);
             if ($type === 'overdue_membership' && $dues['membership_balance'] > 0) {
                 $data[] = [
                     'name' => $m->name,

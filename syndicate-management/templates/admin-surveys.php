@@ -326,7 +326,10 @@ function smOpenEditSurveyModal(s) {
 function smSaveSurvey() {
     const id = document.getElementById('survey_id').value;
     const title = document.getElementById('survey_title').value;
-    if (!title) return alert('يرجى إدخال عنوان الاختبار');
+    if (!title) {
+        smShowNotification('يرجى إدخال عنوان الاختبار', true);
+        return;
+    }
 
     const fd = new FormData();
     fd.append('action', id ? 'sm_update_survey' : 'sm_add_survey');
@@ -344,9 +347,11 @@ function smSaveSurvey() {
     fetch(ajaxurl, { method: 'POST', body: fd }).then(r=>r.json()).then(res => {
         if (res.success) {
             smShowNotification('تم حفظ بيانات الاختبار');
-            location.reload();
-        } else alert(res.data);
-    });
+            setTimeout(() => location.reload(), 1000);
+        } else {
+            smHandleAjaxError(res);
+        }
+    }).catch(err => smHandleAjaxError(err));
 }
 
 function smToggleQuestionOptions(type) {
@@ -364,11 +369,17 @@ window.smOpenQuestionBank = function(s) {
 
 function smLoadBankQuestions(testId) {
     const list = document.getElementById('bank-questions-list');
+    if (!list) return;
     list.innerHTML = '<p>جاري تحميل الأسئلة...</p>';
 
     fetch(ajaxurl + '?action=sm_get_test_questions&test_id=' + testId + '&nonce=<?php echo wp_create_nonce("sm_admin_action"); ?>')
     .then(r=>r.json()).then(res => {
-        if (!res.success || !res.data) {
+        if (!res.success) {
+            smHandleAjaxError(res);
+            list.innerHTML = '';
+            return;
+        }
+        if (!res.data || res.data.length === 0) {
             list.innerHTML = '<div style="text-align:center; padding:40px; color:#94a3b8;"><span class="dashicons dashicons-warning" style="font-size:40px; width:40px; height:40px;"></span><p>لا توجد أسئلة مضافة لهذا الاختبار بعد.</p></div>';
             return;
         }
@@ -423,8 +434,10 @@ document.getElementById('add-question-form').onsubmit = function(e) {
             smShowNotification('تم إضافة السؤال');
             this.reset();
             smLoadBankQuestions(testId);
-        } else alert(res.data);
-    });
+        } else {
+            smHandleAjaxError(res);
+        }
+    }).catch(err => smHandleAjaxError(err));
 };
 
 function smDeleteQuestion(id, testId) {
@@ -434,8 +447,13 @@ function smDeleteQuestion(id, testId) {
     fd.append('id', id);
     fd.append('nonce', '<?php echo wp_create_nonce("sm_admin_action"); ?>');
     fetch(ajaxurl, {method:'POST', body:fd}).then(r=>r.json()).then(res => {
-        if(res.success) smLoadBankQuestions(testId);
-    });
+        if(res.success) {
+            smShowNotification('تم حذف السؤال');
+            smLoadBankQuestions(testId);
+        } else {
+            smHandleAjaxError(res.data);
+        }
+    }).catch(err => smHandleAjaxError(err));
 }
 
 function smOpenAssignModal(id, title) {
@@ -450,7 +468,7 @@ function smSubmitAssignment() {
     const user_ids = Array.from(select.selectedOptions).map(option => option.value);
 
     if (user_ids.length === 0) {
-        alert('يرجى اختيار مستخدم واحد على الأقل');
+        smShowNotification('يرجى اختيار مستخدم واحد على الأقل', true);
         return;
     }
 
@@ -467,9 +485,9 @@ function smSubmitAssignment() {
             smShowNotification('تم تعيين الاختبار بنجاح');
             document.getElementById('assign-test-modal').style.display = 'none';
         } else {
-            alert('خطأ: ' + res.data);
+            smHandleAjaxError(res);
         }
-    });
+    }).catch(err => smHandleAjaxError(err));
 }
 
 function smCancelSurvey(id) {
@@ -485,9 +503,11 @@ function smCancelSurvey(id) {
     .then(res => {
         if (res.success) {
             smShowNotification('تم إلغاء الاستطلاع');
-            location.reload();
+            setTimeout(() => location.reload(), 1000);
+        } else {
+            smHandleAjaxError(res.data);
         }
-    });
+    }).catch(err => smHandleAjaxError(err));
 }
 
 function smApplyTestFilters() {
@@ -524,7 +544,7 @@ function smViewSurveyResults(id, title) {
     fetch('<?php echo admin_url('admin-ajax.php'); ?>?action=sm_get_survey_results&id=' + id)
     .then(r => r.json())
     .then(res => {
-        if (res.success) {
+        if (res.success && res.data) {
             const d = res.data;
             let html = `
                 <div style="display:grid; grid-template-columns:repeat(3, 1fr); gap:15px; margin-bottom: 30px;">
@@ -558,8 +578,12 @@ function smViewSurveyResults(id, title) {
             });
             body.innerHTML = html;
         } else {
+            smHandleAjaxError(res);
             body.innerHTML = '<p style="color:red;">فشل تحميل النتائج</p>';
         }
+    }).catch(err => {
+        smHandleAjaxError(err);
+        body.innerHTML = '<p style="color:red;">حدث خطأ أثناء تحميل البيانات</p>';
     });
 }
 </script>

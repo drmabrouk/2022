@@ -380,17 +380,17 @@
         .then(res => {
             if (res.success) {
                 smShowNotification('تم حذف المستخدم بنجاح');
-                setTimeout(() => location.reload(), 500);
+                setTimeout(() => location.reload(), 1000);
             } else {
-                alert('خطأ: ' + res.data);
+                smHandleAjaxError(res);
             }
-        });
+        }).catch(err => smHandleAjaxError(err));
     };
 
     function executeBulkDeleteUsers() {
         const ids = Array.from(document.querySelectorAll('.user-cb:checked')).map(cb => cb.value);
         if (ids.length === 0) {
-            alert('يرجى تحديد مستخدمين أولاً');
+            smShowNotification('يرجى تحديد مستخدمين أولاً', true);
             return;
         }
         if (!confirm('هل أنت متأكد من حذف ' + ids.length + ' مستخدم؟')) return;
@@ -405,9 +405,11 @@
         .then(res => {
             if (res.success) {
                 smShowNotification('تم حذف المستخدمين بنجاح');
-                setTimeout(() => location.reload(), 500);
+                setTimeout(() => location.reload(), 1000);
+            } else {
+                smHandleAjaxError(res);
             }
-        });
+        }).catch(err => smHandleAjaxError(err));
     }
 
     (function() {
@@ -435,12 +437,16 @@
             .then(res => {
                 if (res.success) {
                     smShowNotification('تم تحديث بيانات المستخدم بنجاح');
-                    setTimeout(() => location.reload(), 500);
+                    setTimeout(() => location.reload(), 1000);
                 } else {
-                    alert('خطأ: ' + res.data);
+                    smHandleAjaxError(res);
                     btn.disabled = false;
                     btn.innerText = 'حفظ التعديلات';
                 }
+            }).catch(err => {
+                smHandleAjaxError(err);
+                btn.disabled = false;
+                btn.innerText = 'حفظ التعديلات';
             });
         };
 
@@ -455,11 +461,11 @@
                 .then(res => {
                     if (res.success) {
                         smShowNotification('تمت إضافة المستخدم بنجاح');
-                        setTimeout(() => location.reload(), 500);
+                        setTimeout(() => location.reload(), 1000);
                     } else {
-                        smShowNotification('خطأ: ' + res.data, true);
+                        smHandleAjaxError(res);
                     }
-                });
+                }).catch(err => smHandleAjaxError(err));
             };
         }
     })();

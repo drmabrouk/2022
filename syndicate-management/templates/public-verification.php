@@ -166,12 +166,15 @@ $show_facility = get_option('sm_verify_show_facility', 1);
             fetch(`${ajaxurl}?action=sm_verify_suggest&query=${val}`)
             .then(r => r.json())
             .then(res => {
-                if (res.success && res.data.length > 0) {
+                if (res.success && res.data && res.data.length > 0) {
                     suggestions.empty().show();
                     res.data.forEach(item => {
                         suggestions.append(`<div class="sm-verify-suggestion-item" onclick="smSelectSuggestion('${item}')">${item}</div>`);
                     });
                 } else suggestions.hide();
+            }).catch(err => {
+                console.error(err);
+                suggestions.hide();
             });
         }, 300);
     });
@@ -203,17 +206,26 @@ $show_facility = get_option('sm_verify_show_facility', 1);
         .then(r => r.json())
         .then(res => {
             loading.hide();
-            if (res.success) {
+            if (res.success && res.data) {
                 renderResults(res.data, resultsArea);
             } else {
+                let errorMsg = '';
+                if (res.data) {
+                    errorMsg = typeof res.data === 'string' ? res.data : (res.data.message || '');
+                }
                 resultsArea.append(`
                     <div style="background: #fff; padding: 50px; border-radius: 20px; text-align: center; border: 2px dashed #feb2b2;">
                         <div style="font-size: 50px; margin-bottom: 20px;">🔍</div>
                         <h3 style="color: #c53030; font-weight: 900; font-size: 1.4em; margin-bottom: 10px;">عذراً، لا توجد بيانات مطابقة</h3>
                         <p style="color: var(--sm-text-gray); font-size: 14px;">يرجى التأكد من الرقم المدخل وإعادة المحاولة. قد لا يكون العضو مسجلاً في النظام الرقمي حالياً.</p>
+                        ${errorMsg ? `<p style="font-size:12px; color:#e53e3e;">${errorMsg}</p>` : ''}
                     </div>
                 `);
             }
+        }).catch(err => {
+            loading.hide();
+            console.error(err);
+            resultsArea.append('<div class="error">حدث خطأ تقني أثناء محاولة التحقق.</div>');
         });
     });
 
