@@ -42,6 +42,11 @@ class SM_DB_System {
         return $wpdb->get_results($wpdb->prepare($query, $params));
     }
 
+    public static function get_document_member_id($doc_id) {
+        global $wpdb;
+        return $wpdb->get_var($wpdb->prepare("SELECT member_id FROM {$wpdb->prefix}sm_documents WHERE id = %d", intval($doc_id)));
+    }
+
     public static function delete_document($doc_id) {
         global $wpdb;
         self::log_document_action($doc_id, 'delete');
@@ -138,6 +143,11 @@ class SM_DB_System {
         ");
     }
 
+    public static function get_pub_document_by_id($id) {
+        global $wpdb;
+        return $wpdb->get_row($wpdb->prepare("SELECT * FROM {$wpdb->prefix}sm_pub_documents WHERE id = %d", intval($id)));
+    }
+
     public static function get_pub_document_by_serial($serial) {
         global $wpdb;
         return $wpdb->get_row($wpdb->prepare("SELECT * FROM {$wpdb->prefix}sm_pub_documents WHERE serial_number = %s", $serial));
@@ -178,6 +188,21 @@ class SM_DB_System {
             $where .= $wpdb->prepare(" AND status = %s", $args['status']);
         }
         return $wpdb->get_results("SELECT * FROM {$wpdb->prefix}sm_alerts WHERE $where ORDER BY created_at DESC");
+    }
+
+    public static function get_log($id) {
+        global $wpdb;
+        return $wpdb->get_row($wpdb->prepare("SELECT * FROM {$wpdb->prefix}sm_logs WHERE id = %d", $id));
+    }
+
+    public static function delete_log($id) {
+        global $wpdb;
+        return $wpdb->delete("{$wpdb->prefix}sm_logs", ['id' => intval($id)]);
+    }
+
+    public static function truncate_logs() {
+        global $wpdb;
+        return $wpdb->query("TRUNCATE TABLE {$wpdb->prefix}sm_logs");
     }
 
     public static function delete_alert($id) {
@@ -233,6 +258,11 @@ class SM_DB_System {
             'acknowledged' => 1,
             'created_at' => current_time('mysql')
         ]);
+    }
+
+    public static function get_branch_by_slug($slug) {
+        global $wpdb;
+        return $wpdb->get_row($wpdb->prepare("SELECT * FROM {$wpdb->prefix}sm_branches_data WHERE slug = %s", $slug));
     }
 
     public static function get_branches_data($args = []) {
@@ -297,6 +327,13 @@ class SM_DB_System {
     public static function delete_branch($id) {
         global $wpdb;
         return $wpdb->delete("{$wpdb->prefix}sm_branches_data", ['id' => intval($id)]);
+    }
+
+    public static function truncate_tables($tables) {
+        global $wpdb;
+        foreach ($tables as $t) {
+            $wpdb->query("TRUNCATE TABLE {$wpdb->prefix}$t");
+        }
     }
 
     public static function get_backup_data() {

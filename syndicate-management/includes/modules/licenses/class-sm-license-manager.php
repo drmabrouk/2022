@@ -58,7 +58,6 @@ class SM_License_Manager {
     }
 
     public static function ajax_verify_document() {
-        global $wpdb;
         $val = trim(sanitize_text_field($_POST['search_value'] ?? ''));
         if (empty($val)) {
             wp_send_json_error('يرجى إدخال قيمة للبحث');
@@ -182,10 +181,8 @@ class SM_License_Manager {
 
         // 5. Fallback: Search by Name (Partial) -> Basic Info
         if (strlen($val) >= 3) {
-            $member = $wpdb->get_row($wpdb->prepare(
-                "SELECT * FROM {$wpdb->prefix}sm_members WHERE name LIKE %s LIMIT 1",
-                '%' . $wpdb->esc_like($val) . '%'
-            ));
+            $members = SM_DB::get_members(['search' => $val, 'limit' => 1]);
+            $member = !empty($members) ? $members[0] : null;
             if ($member) {
                 $results['type'] = 'search';
                 $results['owner'] = [
@@ -233,13 +230,11 @@ class SM_License_Manager {
     }
 
     public static function ajax_verify_suggest() {
-        global $wpdb;
         $q = sanitize_text_field($_GET['query'] ?? '');
         if (strlen($q) < 3) {
             wp_send_json_success([]);
         }
-        $s = '%' . $wpdb->esc_like($q) . '%';
-        $res = $wpdb->get_results($wpdb->prepare("SELECT name, national_id FROM {$wpdb->prefix}sm_members WHERE name LIKE %s OR national_id LIKE %s LIMIT 5", $s, $s));
+        $res = SM_DB::get_member_suggestions($q, 5);
         $sug = [];
         foreach ($res as $r) {
             $sug[] = $r->name;

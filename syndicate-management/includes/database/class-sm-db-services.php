@@ -162,7 +162,17 @@ class SM_DB_Services {
         );
         if ($fees_paid !== null) $data['fees_paid'] = floatval($fees_paid);
 
-        return $wpdb->update("{$wpdb->prefix}sm_service_requests", $data, array('id' => $request_id));
+        $res = $wpdb->update("{$wpdb->prefix}sm_service_requests", $data, array('id' => $request_id));
+
+        if ($res !== false) {
+            $req = $wpdb->get_row($wpdb->prepare("SELECT member_id FROM {$wpdb->prefix}sm_service_requests WHERE id = %d", $request_id));
+            if ($req) {
+                $member = SM_DB_Members::get_member_by_id($req->member_id);
+                SM_Finance::invalidate_financial_caches($member->governorate ?? null);
+            }
+        }
+
+        return $res;
     }
 
     public static function add_professional_request($member_id, $type) {

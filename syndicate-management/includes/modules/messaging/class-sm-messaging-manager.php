@@ -14,10 +14,9 @@ class SM_Messaging_Manager {
         $mid = intval($_POST['member_id'] ?? 0);
 
         if (!$mid) {
-            global $wpdb;
-            $m_wp = $wpdb->get_row($wpdb->prepare("SELECT id FROM {$wpdb->prefix}sm_members WHERE wp_user_id = %d", $sid));
-            if ($m_wp) {
-                $mid = $m_wp->id;
+            $member_wp = SM_DB_Members::get_member_by_username(wp_get_current_user()->user_login);
+            if ($member_wp) {
+                $mid = $member_wp->id;
             }
         }
 
@@ -56,10 +55,9 @@ class SM_Messaging_Manager {
 
         $mid = intval($_POST['member_id'] ?? 0);
         if (!$mid) {
-            global $wpdb;
-            $m_wp = $wpdb->get_row($wpdb->prepare("SELECT id FROM {$wpdb->prefix}sm_members WHERE wp_user_id = %d", get_current_user_id()));
-            if ($m_wp) {
-                $mid = $m_wp->id;
+            $member_wp = SM_DB_Members::get_member_by_username(wp_get_current_user()->user_login);
+            if ($member_wp) {
+                $mid = $member_wp->id;
             }
         }
 
@@ -79,30 +77,21 @@ class SM_Messaging_Manager {
         $subj = sanitize_text_field($_POST['subject']);
         $msg = sanitize_textarea_field($_POST['message']);
 
-        global $wpdb;
-        $member = $wpdb->get_row($wpdb->prepare("SELECT id, governorate FROM {$wpdb->prefix}sm_members WHERE email = %s", $email));
+        $member = SM_DB_Members::get_member_by_email($email);
         $mid = $member ? $member->id : 0;
         $prov = $member ? $member->governorate : 'HQ';
 
-        $ticket_data = [
+        $tid = SM_DB_Communications::create_ticket([
             'member_id' => $mid,
             'subject' => $subj,
             'category' => 'inquiry',
             'priority' => 'medium',
-            'status' => 'open',
+            'message' => "رسالة من نموذج التواصل:\n\nالاسم: $name\nالهاتف: $phone\nالبريد: $email\n\nالرسالة:\n$msg",
             'province' => $prov,
-            'created_at' => current_time('mysql'),
-            'updated_at' => current_time('mysql')
-        ];
+            'sender_id' => is_user_logged_in() ? get_current_user_id() : 0
+        ]);
 
-        if ($wpdb->insert("{$wpdb->prefix}sm_tickets", $ticket_data)) {
-            $tid = $wpdb->insert_id;
-            $wpdb->insert("{$wpdb->prefix}sm_ticket_thread", [
-                'ticket_id' => $tid,
-                'sender_id' => is_user_logged_in() ? get_current_user_id() : 0,
-                'message' => "رسالة من نموذج التواصل:\n\nالاسم: $name\nالهاتف: $phone\nالبريد: $email\n\nالرسالة:\n$msg",
-                'created_at' => current_time('mysql')
-            ]);
+        if ($tid) {
             wp_send_json_success();
         } else {
             wp_send_json_error('فشل تقديم تذكرة الدعم');
@@ -150,8 +139,7 @@ class SM_Messaging_Manager {
             wp_send_json_error('Unauthorized');
         }
         check_ajax_referer('sm_message_action', 'nonce');
-        global $wpdb;
-        $wpdb->update("{$wpdb->prefix}sm_messages", ['is_read' => 1], ['receiver_id' => get_current_user_id(), 'sender_id' => intval($_POST['other_user_id'])]);
+        SM_DB::mark_messages_read(get_current_user_id(), intval($_POST['other_user_id']));
         wp_send_json_success();
     }
 
@@ -168,9 +156,8 @@ class SM_Messaging_Manager {
             wp_send_json_error('Unauthorized');
         }
         check_ajax_referer('sm_ticket_action', 'nonce');
-        global $wpdb;
         $user = wp_get_current_user();
-        $member = $wpdb->get_row($wpdb->prepare("SELECT * FROM {$wpdb->prefix}sm_members WHERE wp_user_id = %d", $user->ID));
+        $member = SM_DB_Members::get_member_by_username($user->user_login);
         if (!$member) {
             wp_send_json_error('Member profile not found');
         }
@@ -228,9 +215,8 @@ class SM_Messaging_Manager {
                     wp_send_json_error('Access denied');
                 }
             } else {
-                global $wpdb;
-                $mid = $wpdb->get_var($wpdb->prepare("SELECT id FROM {$wpdb->prefix}sm_members WHERE wp_user_id = %d", $user->ID));
-                if ($ticket->member_id != $mid) {
+                $member = SM_DB_Members::get_member_by_username($user->user_login);
+                if (!$member || $ticket->member_id != $member->id) {
                     wp_send_json_error('Access denied');
                 }
             }
@@ -303,9 +289,7 @@ class SM_Messaging_Manager {
         if (!current_user_can('sm_manage_system')) {
             wp_send_json_error('Unauthorized');
         }
-        global $wpdb;
-        $templates = $wpdb->get_results("SELECT * FROM {$wpdb->prefix}sm_notification_templates WHERE is_enabled = 1");
-        wp_send_json_success($templates);
+        wp_send_json_success(SM_DB::get_notification_templates());
     }
 
     public static function ajax_send_direct_message() {
@@ -453,8 +437,7 @@ class SM_Messaging_Manager {
 
         $branch_details = '';
         if ($member && !empty($member->governorate)) {
-             global $wpdb;
-             $branch = $wpdb->get_row($wpdb->prepare("SELECT * FROM {$wpdb->prefix}sm_branches_data WHERE slug = %s", $member->governorate));
+             $branch = SM_DB::get_branch_by_slug($member->governorate);
              if ($branch) {
                  $branch_details = "<div style='margin-top: 30px; padding-top: 20px; border-top: 2px solid #f1f5f9; font-size: 13px; color: #475569;'>";
                  $branch_details .= "<strong style='color: {$dark_color};'>للتواصل مع فرعك النقابي ({$branch->name}):</strong><br>";

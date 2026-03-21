@@ -233,8 +233,20 @@ class SM_Finance {
                 'file_url' => admin_url('admin-ajax.php?action=sm_print_invoice&payment_id=' . $pid),
                 'file_type' => 'application/pdf'
             ]);
+
+            // Invalidate Caches
+            self::invalidate_financial_caches($gov);
         }
         return $ins;
+    }
+
+    public static function invalidate_financial_caches($gov = null) {
+        delete_transient('sm_fin_stats_global');
+        delete_transient('sm_top_delayed_global');
+        if ($gov) {
+            delete_transient('sm_fin_stats_' . $gov);
+            delete_transient('sm_top_delayed_' . $gov);
+        }
     }
 
     public static function deliver_invoice($pid) {
@@ -287,6 +299,10 @@ class SM_Finance {
         $has_full = current_user_can('sm_full_access') || current_user_can('manage_options');
         $gov = get_user_meta($u->ID, 'sm_governorate', true);
 
+        $cache_key = $has_full ? 'sm_fin_stats_global' : 'sm_fin_stats_' . $gov;
+        $cached = get_transient($cache_key);
+        if ($cached !== false) return $cached;
+
         $w_m = "1=1";
         if (!$has_full && $gov) {
             $w_m = $wpdb->prepare("governorate = %s", $gov);
@@ -313,18 +329,36 @@ class SM_Finance {
                 }
             }
         }
-        return [
+        $stats = [
             'total_owed' => (float)$owed,
             'total_paid' => (float)$paid,
             'total_balance' => max(0, (float)$owed - (float)$paid),
             'total_penalty' => (float)$penalty
         ];
+
+        set_transient($cache_key, $stats, HOUR_IN_SECONDS);
+        return $stats;
     }
 
     public static function get_top_delayed_members($limit = 10) {
         global $wpdb;
+        $u = wp_get_current_user();
+        $has_full = current_user_can('sm_full_access') || current_user_can('manage_options');
+        $gov = get_user_meta($u->ID, 'sm_governorate', true);
+
+        $cache_key = ($has_full ? 'sm_top_delayed_global' : 'sm_top_delayed_' . $gov) . '_' . $limit;
+        $cached = get_transient($cache_key);
+        if ($cached !== false) return $cached;
+
         $cy = (int)date('Y');
-        $ms = $wpdb->get_results($wpdb->prepare("SELECT * FROM {$wpdb->prefix}sm_members WHERE last_paid_membership_year < %d LIMIT 200", $cy));
+        $w_m = "last_paid_membership_year < %d";
+        $params = [$cy];
+        if (!$has_full && $gov) {
+            $w_m .= " AND governorate = %s";
+            $params[] = $gov;
+        }
+
+        $ms = $wpdb->get_results($wpdb->prepare("SELECT * FROM {$wpdb->prefix}sm_members WHERE $w_m LIMIT 200", ...$params));
         $delayed = [];
 
         foreach ($ms as $m) {
@@ -348,6 +382,8 @@ class SM_Finance {
             return $b['balance'] <=> $a['balance'];
         });
 
-        return array_slice($delayed, 0, $limit);
+        $results = array_slice($delayed, 0, $limit);
+        set_transient($cache_key, $results, HOUR_IN_SECONDS);
+        return $results;
     }
 }
