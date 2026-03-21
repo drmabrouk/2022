@@ -166,6 +166,7 @@ class Syndicate_Management {
             'sm_save_pub_identity' => ['SM_System_Manager', 'ajax_save_pub_identity'],
             'sm_save_pub_template' => ['SM_System_Manager', 'ajax_save_pub_template'],
             'sm_export_branches' => ['SM_System_Manager', 'ajax_export_branches'],
+            'sm_get_branch_details' => ['SM_System_Manager', 'ajax_get_branch_details'],
             'sm_download_backup' => ['SM_System_Manager', 'ajax_download_backup'],
             'sm_restore_backup_ajax' => ['SM_System_Manager', 'ajax_restore_backup'],
             'sm_get_backup_history' => ['SM_System_Manager', 'ajax_get_backup_history'],
