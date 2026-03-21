@@ -1,6 +1,5 @@
 <?php if (!defined('ABSPATH')) exit;
 
-global $wpdb;
 $members = SM_DB::get_members(['limit' => -1]);
 
 $stats = [
@@ -28,18 +27,22 @@ foreach ($members as $m) {
 }
 
 $search = isset($_GET['facility_search']) ? sanitize_text_field($_GET['facility_search']) : '';
-$registry = $wpdb->get_results($wpdb->prepare(
-    "SELECT * FROM {$wpdb->prefix}sm_members WHERE facility_number != '' AND (facility_name LIKE %s OR national_id LIKE %s OR facility_number LIKE %s) ORDER BY facility_license_expiration_date ASC",
-    '%' . $wpdb->esc_like($search) . '%',
-    '%' . $wpdb->esc_like($search) . '%',
-    '%' . $wpdb->esc_like($search) . '%'
-));
+$registry = SM_DB::get_members([
+    'search' => $search,
+    'search_facilities' => true,
+    'only_with_facility' => true,
+    'orderby' => 'facility_license_expiration_date ASC',
+    'limit' => -1
+]);
 ?>
 
 <div class="sm-facility-licenses" dir="rtl">
     <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 30px;">
         <h3 style="margin:0;">إدارة تراخيص المنشآت</h3>
-        <button onclick="smOpenFacilityModal()" class="sm-btn" style="width:auto;">+ تسجيل / تجديد منشأة</button>
+        <div style="display:flex; gap:10px;">
+            <button onclick="smOpenPrintCustomizer('facility_licenses')" class="sm-btn" style="background: #4a5568; width: auto;"><span class="dashicons dashicons-printer"></span> طباعة السجل</button>
+            <button onclick="smOpenFacilityModal()" class="sm-btn" style="width:auto;">+ تسجيل / تجديد منشأة</button>
+        </div>
     </div>
 
     <div class="sm-tabs-wrapper" style="display: flex; gap: 10px; margin-bottom: 30px; border-bottom: 2px solid #eee; padding-bottom: 10px;">
@@ -56,23 +59,24 @@ $registry = $wpdb->get_results($wpdb->prepare(
 
     <div id="facility-registry" class="sm-internal-tab">
 
-    <div class="sm-card-grid" style="margin-bottom: 20px;">
-        <div class="sm-stat-card" style="border-right: 5px solid var(--sm-dark-color);">
-            <div style="font-size: 0.85em; color: var(--sm-text-gray);">إجمالي المنشآت</div>
-            <div style="font-size: 2em; font-weight: 900;"><?php echo $stats['total']; ?></div>
-        </div>
-        <div class="sm-stat-card" style="border-right: 5px solid #27ae60;">
-            <div style="font-size: 0.85em; color: var(--sm-text-gray);">فئة A</div>
-            <div style="font-size: 2em; font-weight: 900; color: #27ae60;"><?php echo $stats['cat_a']; ?></div>
-        </div>
-        <div class="sm-stat-card" style="border-right: 5px solid #3498db;">
-            <div style="font-size: 0.85em; color: var(--sm-text-gray);">فئة B</div>
-            <div style="font-size: 2em; font-weight: 900; color: #3498db;"><?php echo $stats['cat_b']; ?></div>
-        </div>
-        <div class="sm-stat-card" style="border-right: 5px solid #e53e3e;">
-            <div style="font-size: 0.85em; color: var(--sm-text-gray);">منتهي</div>
-            <div style="font-size: 2em; font-weight: 900; color: #e53e3e;"><?php echo $stats['expired']; ?></div>
-        </div>
+    <div class="sm-card-grid" style="margin-bottom: 30px;">
+        <?php
+        // Total Facilities
+        $icon = 'dashicons-building'; $label = 'إجمالي المنشآت'; $value = $stats['total']; $color = '#111F35';
+        include SM_PLUGIN_DIR . 'templates/component-stat-card.php';
+
+        // Category A
+        $icon = 'dashicons-star-filled'; $label = 'فئة A (كبرى)'; $value = $stats['cat_a']; $color = '#27ae60';
+        include SM_PLUGIN_DIR . 'templates/component-stat-card.php';
+
+        // Category B
+        $icon = 'dashicons-star-half'; $label = 'فئة B (متوسطة)'; $value = $stats['cat_b']; $color = '#3498db';
+        include SM_PLUGIN_DIR . 'templates/component-stat-card.php';
+
+        // Expired
+        $icon = 'dashicons-warning'; $label = 'تراخيص منتهية'; $value = $stats['expired']; $color = '#e53e3e';
+        include SM_PLUGIN_DIR . 'templates/component-stat-card.php';
+        ?>
     </div>
 
     <div style="background: #f8fafc; padding: 30px; border-radius: 12px; border: 1px solid #e2e8f0; margin-bottom: 20px;">
@@ -87,9 +91,10 @@ $registry = $wpdb->get_results($wpdb->prepare(
     </div>
 
     <div class="sm-table-container">
-        <table class="sm-table">
+        <table class="sm-table sm-table-dense">
             <thead>
                 <tr>
+                    <th style="width:40px;"><input type="checkbox" onclick="document.querySelectorAll('.member-checkbox').forEach(cb => cb.checked = this.checked)"></th>
                     <th>المنشأة / المالك</th>
                     <th>رقم الترخيص</th>
                     <th>الفئة</th>
@@ -103,6 +108,7 @@ $registry = $wpdb->get_results($wpdb->prepare(
                     $is_expired = $m->facility_license_expiration_date < $current_date;
                 ?>
                 <tr>
+                    <td><input type="checkbox" class="member-checkbox" value="<?php echo $m->id; ?>"></td>
                     <td>
                         <div style="font-weight: 700; color: var(--sm-primary-color);"><?php echo esc_html($m->facility_name); ?></div>
                         <div style="font-size: 11px; color: #718096;">المالك: <?php echo esc_html($m->name); ?></div>

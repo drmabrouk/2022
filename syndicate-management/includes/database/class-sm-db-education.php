@@ -92,12 +92,14 @@ class SM_DB_Education {
         return $wpdb->get_results($wpdb->prepare($query, ...$params));
     }
 
-    public static function save_survey_response($survey_id, $user_id, $responses) {
+    public static function save_test_response($data) {
         global $wpdb;
         return $wpdb->insert("{$wpdb->prefix}sm_survey_responses", array(
-            'survey_id' => $survey_id,
-            'user_id' => $user_id,
-            'responses' => json_encode($responses),
+            'survey_id' => intval($data['survey_id']),
+            'user_id' => intval($data['user_id']),
+            'responses' => json_encode($data['responses']),
+            'score' => floatval($data['score'] ?? 0),
+            'status' => sanitize_text_field($data['status'] ?? 'pending'),
             'created_at' => current_time('mysql')
         ));
     }
@@ -112,21 +114,8 @@ class SM_DB_Education {
         $survey = self::get_survey($survey_id);
         if (!$survey) return array();
 
-        $user = wp_get_current_user();
-        $is_officer = in_array('sm_syndicate_admin', (array)$user->roles) || in_array('sm_syndicate_member', (array)$user->roles);
-        $has_full_access = current_user_can('sm_full_access') || current_user_can('manage_options');
-        $my_gov = get_user_meta($user->ID, 'sm_governorate', true);
-
-        $where = $wpdb->prepare("survey_id = %d", $survey_id);
-        if ($is_officer && !$has_full_access && $my_gov) {
-            $where .= $wpdb->prepare(" AND (
-                EXISTS (SELECT 1 FROM {$wpdb->prefix}usermeta um WHERE um.user_id = user_id AND um.meta_key = 'sm_governorate' AND um.meta_value = %s)
-                OR EXISTS (SELECT 1 FROM {$wpdb->prefix}sm_members m WHERE m.wp_user_id = user_id AND m.governorate = %s)
-            )", $my_gov, $my_gov);
-        }
-
         $questions = self::get_test_questions($survey_id);
-        $responses = $wpdb->get_results("SELECT responses, score FROM {$wpdb->prefix}sm_survey_responses WHERE $where");
+        $responses = self::get_survey_responses($survey_id);
 
         $results = [
             'stats' => [
@@ -155,7 +144,19 @@ class SM_DB_Education {
 
     public static function get_survey_responses($survey_id) {
         global $wpdb;
-        return $wpdb->get_results($wpdb->prepare("SELECT * FROM {$wpdb->prefix}sm_survey_responses WHERE survey_id = %d", $survey_id));
+        $user = wp_get_current_user();
+        $is_sys_admin = in_array('sm_system_admin', (array)$user->roles) || current_user_can('manage_options');
+        $my_gov = get_user_meta($user->ID, 'sm_governorate', true);
+
+        $where = $wpdb->prepare("survey_id = %d", $survey_id);
+        if (!$is_sys_admin && $my_gov) {
+            $where .= $wpdb->prepare(" AND (
+                EXISTS (SELECT 1 FROM {$wpdb->prefix}usermeta um WHERE um.user_id = user_id AND um.meta_key = 'sm_governorate' AND um.meta_value = %s)
+                OR EXISTS (SELECT 1 FROM {$wpdb->prefix}sm_members m WHERE m.wp_user_id = user_id AND m.governorate = %s)
+            )", $my_gov, $my_gov);
+        }
+
+        return $wpdb->get_results("SELECT * FROM {$wpdb->prefix}sm_survey_responses WHERE $where");
     }
 
     public static function assign_test($test_id, $user_id) {
@@ -190,5 +191,31 @@ class SM_DB_Education {
     public static function get_user_best_score($test_id, $user_id) {
         global $wpdb;
         return $wpdb->get_var($wpdb->prepare("SELECT MAX(score) FROM {$wpdb->prefix}sm_survey_responses WHERE survey_id = %d AND user_id = %d", $test_id, $user_id));
+    }
+
+    public static function get_user_survey_response_id($survey_id, $user_id) {
+        global $wpdb;
+        return $wpdb->get_var($wpdb->prepare("SELECT id FROM {$wpdb->prefix}sm_survey_responses WHERE survey_id = %d AND user_id = %d", intval($survey_id), intval($user_id)));
+    }
+
+    public static function get_surveys_admin($args = []) {
+        global $wpdb;
+        $user = wp_get_current_user();
+        $is_sys_admin = in_array('sm_system_admin', (array)$user->roles) || current_user_can('manage_options');
+        $my_gov = get_user_meta($user->ID, 'sm_governorate', true);
+
+        $where = "1=1";
+        $params = [];
+
+        if (!$is_sys_admin && $my_gov) {
+            $where .= " AND (branch = %s OR branch = 'all')";
+            $params[] = $my_gov;
+        }
+
+        $query = "SELECT * FROM {$wpdb->prefix}sm_surveys WHERE $where ORDER BY created_at DESC";
+        if (!empty($params)) {
+            return $wpdb->get_results($wpdb->prepare($query, $params));
+        }
+        return $wpdb->get_results($query);
     }
 }

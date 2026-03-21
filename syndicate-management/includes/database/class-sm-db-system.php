@@ -25,8 +25,37 @@ class SM_DB_System {
 
     public static function get_member_documents($member_id, $args = []) {
         global $wpdb;
-        $query = "SELECT * FROM {$wpdb->prefix}sm_documents WHERE member_id = %d";
-        $params = [intval($member_id)];
+        $query = "SELECT d.* FROM {$wpdb->prefix}sm_documents d";
+
+        $user = wp_get_current_user();
+        $has_full_access = current_user_can('sm_full_access') || current_user_can('manage_options');
+        $my_gov = get_user_meta($user->ID, 'sm_governorate', true);
+
+        if (!$has_full_access && $my_gov) {
+            $query .= " JOIN {$wpdb->prefix}sm_members m ON d.member_id = m.id";
+        }
+
+        $query .= " WHERE 1=1";
+        $params = [];
+
+        if ($member_id) {
+            $query .= " AND d.member_id = %d";
+            $params[] = intval($member_id);
+        }
+
+        if (!$has_full_access && $my_gov) {
+            $query .= " AND m.governorate = %s";
+            $params[] = $my_gov;
+        }
+
+        if (!empty($args['search'])) {
+            if (strpos($query, 'sm_members') === false) {
+                 $query = str_replace('WHERE', "JOIN {$wpdb->prefix}sm_members m ON d.member_id = m.id WHERE", $query);
+            }
+            $query .= " AND (d.title LIKE %s OR m.name LIKE %s OR m.national_id LIKE %s)";
+            $s = '%' . $wpdb->esc_like($args['search']) . '%';
+            $params[] = $s; $params[] = $s; $params[] = $s;
+        }
 
         if (!empty($args['category'])) {
             $query .= " AND category = %s";
@@ -40,6 +69,11 @@ class SM_DB_System {
 
         $query .= " ORDER BY created_at DESC";
         return $wpdb->get_results($wpdb->prepare($query, $params));
+    }
+
+    public static function get_document_member_id($doc_id) {
+        global $wpdb;
+        return $wpdb->get_var($wpdb->prepare("SELECT member_id FROM {$wpdb->prefix}sm_documents WHERE id = %d", intval($doc_id)));
     }
 
     public static function delete_document($doc_id) {
@@ -138,6 +172,11 @@ class SM_DB_System {
         ");
     }
 
+    public static function get_pub_document_by_id($id) {
+        global $wpdb;
+        return $wpdb->get_row($wpdb->prepare("SELECT * FROM {$wpdb->prefix}sm_pub_documents WHERE id = %d", intval($id)));
+    }
+
     public static function get_pub_document_by_serial($serial) {
         global $wpdb;
         return $wpdb->get_row($wpdb->prepare("SELECT * FROM {$wpdb->prefix}sm_pub_documents WHERE serial_number = %s", $serial));
@@ -178,6 +217,21 @@ class SM_DB_System {
             $where .= $wpdb->prepare(" AND status = %s", $args['status']);
         }
         return $wpdb->get_results("SELECT * FROM {$wpdb->prefix}sm_alerts WHERE $where ORDER BY created_at DESC");
+    }
+
+    public static function get_log($id) {
+        global $wpdb;
+        return $wpdb->get_row($wpdb->prepare("SELECT * FROM {$wpdb->prefix}sm_logs WHERE id = %d", $id));
+    }
+
+    public static function delete_log($id) {
+        global $wpdb;
+        return $wpdb->delete("{$wpdb->prefix}sm_logs", ['id' => intval($id)]);
+    }
+
+    public static function truncate_logs() {
+        global $wpdb;
+        return $wpdb->query("TRUNCATE TABLE {$wpdb->prefix}sm_logs");
     }
 
     public static function delete_alert($id) {
@@ -235,15 +289,39 @@ class SM_DB_System {
         ]);
     }
 
+    public static function get_branch_by_slug($slug) {
+        global $wpdb;
+        return $wpdb->get_row($wpdb->prepare("SELECT * FROM {$wpdb->prefix}sm_branches_data WHERE slug = %s", $slug));
+    }
+
     public static function get_branches_data($args = []) {
         global $wpdb;
+        $user = wp_get_current_user();
+        $has_full_access = current_user_can('sm_full_access') || current_user_can('manage_options');
+        $my_gov = get_user_meta($user->ID, 'sm_governorate', true);
+
         $where = "1=1";
         $params = [];
 
+        if (!$has_full_access && $my_gov) {
+            $where .= " AND slug = %s";
+            $params[] = $my_gov;
+        }
+
         if (!empty($args['search'])) {
-            $where .= " AND (name LIKE %s OR manager LIKE %s OR city LIKE %s OR address LIKE %s)";
+            $where .= " AND (name LIKE %s OR manager LIKE %s OR address LIKE %s OR committees LIKE %s)";
             $s = '%' . $wpdb->esc_like($args['search']) . '%';
             $params = array_merge($params, [$s, $s, $s, $s]);
+        }
+
+        if (!empty($args['location'])) {
+            $where .= " AND address LIKE %s";
+            $params[] = '%' . $wpdb->esc_like($args['location']) . '%';
+        }
+
+        if (!empty($args['committee'])) {
+            $where .= " AND committees LIKE %s";
+            $params[] = '%' . $wpdb->esc_like($args['committee']) . '%';
         }
 
         if (isset($args['is_active'])) {
@@ -282,6 +360,13 @@ class SM_DB_System {
             'digital_wallet' => sanitize_text_field($data['digital_wallet'] ?? ''),
             'instapay_id' => sanitize_text_field($data['instapay_id'] ?? ''),
             'postal_code' => sanitize_text_field($data['postal_code'] ?? ''),
+            'logo_url' => esc_url_raw($data['logo_url'] ?? ''),
+            'latitude' => sanitize_text_field($data['latitude'] ?? ''),
+            'longitude' => sanitize_text_field($data['longitude'] ?? ''),
+            'payment_methods' => !empty($data['payment_methods']) ? json_encode($data['payment_methods']) : '',
+            'privacy_settings' => !empty($data['privacy_settings']) ? json_encode($data['privacy_settings']) : '',
+            'committees' => sanitize_text_field($data['committees'] ?? ''),
+            'fees' => !empty($data['fees']) ? json_encode($data['fees']) : null,
             'is_active' => isset($data['is_active']) ? 1 : 0
         ];
 
@@ -297,6 +382,41 @@ class SM_DB_System {
     public static function delete_branch($id) {
         global $wpdb;
         return $wpdb->delete("{$wpdb->prefix}sm_branches_data", ['id' => intval($id)]);
+    }
+
+    public static function get_branch_management_stats() {
+        global $wpdb;
+        $user = wp_get_current_user();
+        $has_full_access = current_user_can('sm_full_access') || current_user_can('manage_options');
+        $my_gov = get_user_meta($user->ID, 'sm_governorate', true);
+
+        $stats = [];
+
+        $where_branch = "1=1";
+        $where_member = "1=1";
+        $p_branch = [];
+        $p_member = [];
+
+        if (!$has_full_access && $my_gov) {
+            $where_branch = "slug = %s";
+            $where_member = "governorate = %s";
+            $p_branch[] = $my_gov;
+            $p_member[] = $my_gov;
+        }
+
+        $stats['total_branches'] = $wpdb->get_var($wpdb->prepare("SELECT COUNT(*) FROM {$wpdb->prefix}sm_branches_data WHERE $where_branch", ...$p_branch));
+        $stats['total_members'] = $wpdb->get_var($wpdb->prepare("SELECT COUNT(*) FROM {$wpdb->prefix}sm_members WHERE $where_member", ...$p_member));
+        $stats['total_practice_licenses'] = $wpdb->get_var($wpdb->prepare("SELECT COUNT(*) FROM {$wpdb->prefix}sm_members WHERE license_number != '' AND $where_member", ...$p_member));
+        $stats['total_facility_licenses'] = $wpdb->get_var($wpdb->prepare("SELECT COUNT(*) FROM {$wpdb->prefix}sm_members WHERE facility_number != '' AND $where_member", ...$p_member));
+
+        return $stats;
+    }
+
+    public static function truncate_tables($tables) {
+        global $wpdb;
+        foreach ($tables as $t) {
+            $wpdb->query("TRUNCATE TABLE {$wpdb->prefix}$t");
+        }
     }
 
     public static function get_backup_data() {

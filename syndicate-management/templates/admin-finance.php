@@ -18,6 +18,7 @@ foreach ($members as $m) {
     <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 30px;">
         <h3 style="margin:0;">إدارة الاستحقاقات المالية</h3>
         <div style="display:flex; gap:10px;">
+             <button onclick="smOpenPrintCustomizer('finance')" class="sm-btn" style="background: #4a5568; width: auto;"><span class="dashicons dashicons-printer"></span> طباعة مخصصة</button>
              <div class="sm-actions-dropdown" style="position:relative; display:inline-block;">
                 <button class="sm-btn" style="background: #2c3e50; width: auto;"><span class="dashicons dashicons-media-spreadsheet"></span> تقارير الاستحقاقات <span class="dashicons dashicons-arrow-down-alt2" style="font-size: 10px;"></span></button>
                 <div class="sm-actions-content" style="left:0; right:auto;">
@@ -37,23 +38,24 @@ foreach ($members as $m) {
     </div>
 
     <!-- Overall Metrics -->
-    <div class="sm-card-grid" style="margin-bottom: 20px;">
-        <div class="sm-stat-card" style="border-right: 5px solid #27ae60;">
-            <div style="font-size: 0.85em; color: var(--sm-text-gray); margin-bottom: 5px; font-weight: 700;">إجمالي المبالغ المحصلة</div>
-            <div style="font-size: 1.8em; font-weight: 900; color: #27ae60;"><?php echo number_format($stats['total_paid'], 2); ?> <span style="font-size: 0.5em;">ج.م</span></div>
-        </div>
-        <div class="sm-stat-card" style="border-right: 5px solid #e67e22;">
-            <div style="font-size: 0.85em; color: var(--sm-text-gray); margin-bottom: 5px; font-weight: 700;">إجمالي المستحقات المتأخرة</div>
-            <div style="font-size: 1.8em; font-weight: 900; color: #e67e22;"><?php echo number_format($stats['total_balance'], 2); ?> <span style="font-size: 0.5em;">ج.م</span></div>
-        </div>
-        <div class="sm-stat-card" style="border-right: 5px solid #e53e3e;">
-            <div style="font-size: 0.85em; color: var(--sm-text-gray); margin-bottom: 5px; font-weight: 700;">إجمالي الغرامات المقررة</div>
-            <div style="font-size: 1.8em; font-weight: 900; color: #e53e3e;"><?php echo number_format($stats['total_penalty'], 2); ?> <span style="font-size: 0.5em;">ج.م</span></div>
-        </div>
-        <div class="sm-stat-card" style="border-right: 5px solid #111F35;">
-            <div style="font-size: 0.85em; color: var(--sm-text-gray); margin-bottom: 5px; font-weight: 700;">القيمة الإجمالية للمطالبات</div>
-            <div style="font-size: 1.8em; font-weight: 900; color: #111F35;"><?php echo number_format($stats['total_owed'], 2); ?> <span style="font-size: 0.5em;">ج.م</span></div>
-        </div>
+    <div class="sm-card-grid" style="margin-bottom: 30px;">
+        <?php
+        // Total Collected Amount
+        $icon = 'dashicons-money-alt'; $label = 'إجمالي المبالغ المحصلة'; $value = number_format($stats['total_paid'], 2); $color = '#38a169'; $suffix = 'ج.م';
+        include SM_PLUGIN_DIR . 'templates/component-stat-card.php';
+
+        // Total Overdue Receivables
+        $icon = 'dashicons-warning'; $label = 'إجمالي المستحقات المتأخرة'; $value = number_format($stats['total_balance'], 2); $color = '#dd6b20'; $suffix = 'ج.م';
+        include SM_PLUGIN_DIR . 'templates/component-stat-card.php';
+
+        // Total Assigned Penalties
+        $icon = 'dashicons-hammer'; $label = 'إجمالي الغرامات المقررة'; $value = number_format($stats['total_penalty'], 2); $color = '#e53e3e'; $suffix = 'ج.م';
+        include SM_PLUGIN_DIR . 'templates/component-stat-card.php';
+
+        // Total Claims Value
+        $icon = 'dashicons-calculator'; $label = 'القيمة الإجمالية للمطالبات'; $value = number_format($stats['total_owed'], 2); $color = '#111F35'; $suffix = 'ج.م';
+        include SM_PLUGIN_DIR . 'templates/component-stat-card.php';
+        ?>
     </div>
 
     <!-- Search & Filter -->
@@ -73,9 +75,10 @@ foreach ($members as $m) {
 
     <!-- Members Balance Table -->
     <div class="sm-table-container">
-        <table class="sm-table">
+        <table class="sm-table sm-table-dense">
             <thead>
                 <tr>
+                    <th style="width:40px;"><input type="checkbox" onclick="document.querySelectorAll('.member-checkbox').forEach(cb => cb.checked = this.checked)"></th>
                     <th>العضو</th>
                     <th>الرقم القومي</th>
                     <th>المستحق</th>
@@ -91,6 +94,7 @@ foreach ($members as $m) {
                 <?php else: ?>
                     <?php foreach ($members_with_balance as $m): ?>
                         <tr>
+                            <td><input type="checkbox" class="member-checkbox" value="<?php echo $m->id; ?>"></td>
                             <td>
                                 <div style="font-weight: 700; color: var(--sm-dark-color);"><?php echo esc_html($m->name); ?></div>
                                 <div style="font-size: 11px; color: #718096;"><?php echo esc_html($m->membership_number); ?></div>

@@ -1,6 +1,5 @@
 <?php if (!defined('ABSPATH')) exit; ?>
 <?php
-global $wpdb;
 $can_manage_members = current_user_can('sm_manage_members');
 $import_results = get_transient('sm_import_results_' . get_current_user_id());
 if ($import_results) {
@@ -89,6 +88,7 @@ if ($import_results) {
     <div style="display: flex; gap: 10px; margin-bottom: 8px; flex-wrap: wrap; align-items: center;">
         <button onclick="document.getElementById('add-single-member-modal').style.display='flex'" class="sm-btn">+ إضافة عضو جديد</button>
         <button onclick="document.getElementById('csv-import-form').style.display='block'" class="sm-btn sm-btn-secondary">استيراد أعضاء (Excel)</button>
+        <button onclick="smOpenPrintCustomizer('members')" class="sm-btn" style="background: #4a5568;"><span class="dashicons dashicons-printer" style="font-size: 16px; margin-top: 4px;"></span> طباعة مخصصة</button>
         <a href="<?php echo admin_url('admin-ajax.php?action=sm_print&print_type=id_card'); ?>" target="_blank" class="sm-btn sm-btn-accent" style="background: #27ae60; text-decoration:none;">طباعة كافة البطاقات</a>
     </div>
 
@@ -159,8 +159,8 @@ if ($import_results) {
                                 <div style="display: flex; gap: 5px; justify-content: flex-end;">
                                     <a href="<?php echo add_query_arg('sm_tab', 'member-profile'); ?>&member_id=<?php echo $member->id; ?>" class="sm-btn sm-btn-outline" style="padding: 4px 10px; font-size: 11px; height: 28px; text-decoration:none; display:flex; align-items:center;">عرض</a>
                                     <?php if ($can_manage_members): ?>
-                                        <button onclick='editSmMember(<?php echo json_encode($member); ?>)' class="sm-btn sm-btn-outline" style="padding: 4px 10px; font-size: 11px; height: 28px; color: #2c3e50; border-color: #2c3e50;">تعديل</button>
-                                        <button onclick='smOpenMemberAccountModal(<?php echo json_encode(["id" => $member->id, "wp_user_id" => $member->wp_user_id, "name" => $member->name, "email" => $member->email]); ?>)' class="sm-btn" style="padding: 4px 10px; font-size: 11px; height: 28px; background: #2c3e50;">الحساب</button>
+                                        <button onclick='editSmMember(<?php echo esc_attr(json_encode($member)); ?>)' class="sm-btn sm-btn-outline" style="padding: 4px 10px; font-size: 11px; height: 28px; color: #2c3e50; border-color: #2c3e50;">تعديل</button>
+                                        <button onclick='smOpenMemberAccountModal(<?php echo esc_attr(json_encode(["id" => $member->id, "wp_user_id" => $member->wp_user_id, "name" => $member->name, "email" => $member->email])); ?>)' class="sm-btn" style="padding: 4px 10px; font-size: 11px; height: 28px; background: #2c3e50;">الحساب</button>
                                     <?php endif; ?>
                                 </div>
                             </td>
@@ -173,7 +173,7 @@ if ($import_results) {
 
     <!-- Pagination -->
     <?php
-    $total_members = $wpdb->get_var("SELECT COUNT(*) FROM {$wpdb->prefix}sm_members"); // Simplified count for now
+    $total_members = SM_DB::count_members(['search' => $_GET['member_search'] ?? '', 'governorate' => $_GET['gov_filter'] ?? '']);
     $limit = 20;
     $total_pages = ceil($total_members / $limit);
     $current_page = isset($_GET['paged']) ? max(1, intval($_GET['paged'])) : 1;

@@ -4,15 +4,23 @@ if (!defined('ABSPATH')) {
 }
 
 class SM_License_Manager {
-    public static function ajax_update_license() {
-        if (!current_user_can('sm_manage_licenses')) {
-            wp_send_json_error('Unauthorized');
+    private static function check_capability($cap) {
+        if (!current_user_can($cap)) {
+            wp_send_json_error(['message' => 'Unauthorized access.']);
         }
+    }
+
+    private static function validate_member_access($member_id) {
+        if (!SM_Member_Manager::can_access_member($member_id)) {
+            wp_send_json_error(['message' => 'Access denied to this member data.']);
+        }
+    }
+
+    public static function ajax_update_license() {
+        self::check_capability('sm_manage_licenses');
         check_ajax_referer('sm_add_member', 'nonce');
         $mid = intval($_POST['member_id']);
-        if (!SM_Member_Manager::can_access_member($mid)) {
-            wp_send_json_error('Access denied');
-        }
+        self::validate_member_access($mid);
         SM_DB::update_member($mid, [
             'license_number' => sanitize_text_field($_POST['license_number']),
             'license_issue_date' => sanitize_text_field($_POST['license_issue_date']),
@@ -30,14 +38,10 @@ class SM_License_Manager {
     }
 
     public static function ajax_update_facility() {
-        if (!current_user_can('sm_manage_licenses')) {
-            wp_send_json_error('Unauthorized');
-        }
+        self::check_capability('sm_manage_licenses');
         check_ajax_referer('sm_add_member', 'nonce');
         $mid = intval($_POST['member_id']);
-        if (!SM_Member_Manager::can_access_member($mid)) {
-            wp_send_json_error('Access denied');
-        }
+        self::validate_member_access($mid);
         SM_DB::update_member($mid, [
             'facility_name' => sanitize_text_field($_POST['facility_name']),
             'facility_number' => sanitize_text_field($_POST['facility_number']),
@@ -58,10 +62,9 @@ class SM_License_Manager {
     }
 
     public static function ajax_verify_document() {
-        global $wpdb;
         $val = trim(sanitize_text_field($_POST['search_value'] ?? ''));
         if (empty($val)) {
-            wp_send_json_error('يرجى إدخال قيمة للبحث');
+            wp_send_json_error(['message' => 'يرجى إدخال قيمة للبحث']);
         }
 
         $results = [];
@@ -182,10 +185,8 @@ class SM_License_Manager {
 
         // 5. Fallback: Search by Name (Partial) -> Basic Info
         if (strlen($val) >= 3) {
-            $member = $wpdb->get_row($wpdb->prepare(
-                "SELECT * FROM {$wpdb->prefix}sm_members WHERE name LIKE %s LIMIT 1",
-                '%' . $wpdb->esc_like($val) . '%'
-            ));
+            $members = SM_DB::get_members(['search' => $val, 'limit' => 1]);
+            $member = !empty($members) ? $members[0] : null;
             if ($member) {
                 $results['type'] = 'search';
                 $results['owner'] = [
@@ -205,7 +206,7 @@ class SM_License_Manager {
             }
         }
 
-        wp_send_json_error('عذراً، لم يتم العثور على أية بيانات مطابقة لقيمة البحث المدخلة في السجلات الرسمية.');
+        wp_send_json_error(['message' => 'عذراً، لم يتم العثور على أية بيانات مطابقة لقيمة البحث المدخلة في السجلات الرسمية.']);
     }
 
     public static function ajax_print_license() {
@@ -233,13 +234,11 @@ class SM_License_Manager {
     }
 
     public static function ajax_verify_suggest() {
-        global $wpdb;
         $q = sanitize_text_field($_GET['query'] ?? '');
         if (strlen($q) < 3) {
             wp_send_json_success([]);
         }
-        $s = '%' . $wpdb->esc_like($q) . '%';
-        $res = $wpdb->get_results($wpdb->prepare("SELECT name, national_id FROM {$wpdb->prefix}sm_members WHERE name LIKE %s OR national_id LIKE %s LIMIT 5", $s, $s));
+        $res = SM_DB::get_member_suggestions($q, 5);
         $sug = [];
         foreach ($res as $r) {
             $sug[] = $r->name;

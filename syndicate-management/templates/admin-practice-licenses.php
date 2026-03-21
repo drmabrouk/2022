@@ -1,6 +1,5 @@
 <?php if (!defined('ABSPATH')) exit;
 
-global $wpdb;
 $members = SM_DB::get_members(['limit' => -1]);
 
 $stats = [
@@ -27,18 +26,22 @@ foreach ($members as $m) {
 }
 
 $search = isset($_GET['license_search']) ? sanitize_text_field($_GET['license_search']) : '';
-$registry = $wpdb->get_results($wpdb->prepare(
-    "SELECT * FROM {$wpdb->prefix}sm_members WHERE license_number != '' AND (name LIKE %s OR national_id LIKE %s OR license_number LIKE %s) ORDER BY license_expiration_date ASC",
-    '%' . $wpdb->esc_like($search) . '%',
-    '%' . $wpdb->esc_like($search) . '%',
-    '%' . $wpdb->esc_like($search) . '%'
-));
+$registry = SM_DB::get_members([
+    'search' => $search,
+    'search_licenses' => true,
+    'only_with_license' => true,
+    'orderby' => 'license_expiration_date ASC',
+    'limit' => -1
+]);
 ?>
 
 <div class="sm-practice-licenses" dir="rtl">
     <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 30px;">
         <h3 style="margin:0;">إدارة تصاريح مزاولة المهنة</h3>
-        <button onclick="smOpenLicenseIssuanceModal()" class="sm-btn" style="width:auto;">+ إصدار / تجديد تصريح</button>
+        <div style="display:flex; gap:10px;">
+            <button onclick="smOpenPrintCustomizer('practice_licenses')" class="sm-btn" style="background: #4a5568; width: auto;"><span class="dashicons dashicons-printer"></span> طباعة السجل</button>
+            <button onclick="smOpenLicenseIssuanceModal()" class="sm-btn" style="width:auto;">+ إصدار / تجديد تصريح</button>
+        </div>
     </div>
 
     <div class="sm-tabs-wrapper" style="display: flex; gap: 10px; margin-bottom: 30px; border-bottom: 2px solid #eee; padding-bottom: 10px;">
@@ -55,23 +58,24 @@ $registry = $wpdb->get_results($wpdb->prepare(
 
     <div id="license-registry" class="sm-internal-tab">
 
-    <div class="sm-card-grid" style="margin-bottom: 20px;">
-        <div class="sm-stat-card">
-            <div style="font-size: 0.85em; color: var(--sm-text-gray);">إجمالي التراخيص</div>
-            <div style="font-size: 2em; font-weight: 900; color: var(--sm-dark-color);"><?php echo $stats['total']; ?></div>
-        </div>
-        <div class="sm-stat-card" style="border-right: 5px solid #27ae60;">
-            <div style="font-size: 0.85em; color: var(--sm-text-gray);">تراخيص سارية</div>
-            <div style="font-size: 2em; font-weight: 900; color: #27ae60;"><?php echo $stats['active']; ?></div>
-        </div>
-        <div class="sm-stat-card" style="border-right: 5px solid #e67e22;">
-            <div style="font-size: 0.85em; color: var(--sm-text-gray);">تنتهي قريباً (30 يوم)</div>
-            <div style="font-size: 2em; font-weight: 900; color: #e67e22;"><?php echo $stats['expiring_soon']; ?></div>
-        </div>
-        <div class="sm-stat-card" style="border-right: 5px solid #e53e3e;">
-            <div style="font-size: 0.85em; color: var(--sm-text-gray);">تراخيص منتهية</div>
-            <div style="font-size: 2em; font-weight: 900; color: #e53e3e;"><?php echo $stats['expired']; ?></div>
-        </div>
+    <div class="sm-card-grid" style="margin-bottom: 30px;">
+        <?php
+        // Total Licenses
+        $icon = 'dashicons-id-alt'; $label = 'إجمالي التراخيص'; $value = $stats['total']; $color = '#111F35';
+        include SM_PLUGIN_DIR . 'templates/component-stat-card.php';
+
+        // Active Licenses
+        $icon = 'dashicons-yes-alt'; $label = 'تراخيص سارية'; $value = $stats['active']; $color = '#38a169';
+        include SM_PLUGIN_DIR . 'templates/component-stat-card.php';
+
+        // Expiring Soon
+        $icon = 'dashicons-clock'; $label = 'تنتهي قريباً (30 يوم)'; $value = $stats['expiring_soon']; $color = '#dd6b20';
+        include SM_PLUGIN_DIR . 'templates/component-stat-card.php';
+
+        // Expired
+        $icon = 'dashicons-no-alt'; $label = 'تراخيص منتهية'; $value = $stats['expired']; $color = '#e53e3e';
+        include SM_PLUGIN_DIR . 'templates/component-stat-card.php';
+        ?>
     </div>
 
     <div style="background: #f8fafc; padding: 30px; border-radius: 12px; border: 1px solid #e2e8f0; margin-bottom: 20px;">
@@ -86,9 +90,10 @@ $registry = $wpdb->get_results($wpdb->prepare(
     </div>
 
     <div class="sm-table-container">
-        <table class="sm-table">
+        <table class="sm-table sm-table-dense">
             <thead>
                 <tr>
+                    <th style="width:40px;"><input type="checkbox" onclick="document.querySelectorAll('.member-checkbox').forEach(cb => cb.checked = this.checked)"></th>
                     <th>العضو</th>
                     <th>رقم الترخيص</th>
                     <th>تاريخ الإصدار</th>
@@ -103,6 +108,7 @@ $registry = $wpdb->get_results($wpdb->prepare(
                     $is_soon = !$is_expired && $m->license_expiration_date <= $soon_date;
                 ?>
                 <tr>
+                    <td><input type="checkbox" class="member-checkbox" value="<?php echo $m->id; ?>"></td>
                     <td>
                         <div style="font-weight: 700;"><?php echo esc_html($m->name); ?></div>
                         <div style="font-size: 11px; color: #718096;"><?php echo esc_html($m->national_id); ?></div>

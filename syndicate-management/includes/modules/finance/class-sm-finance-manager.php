@@ -4,42 +4,62 @@ if (!defined('ABSPATH')) {
 }
 
 class SM_Finance_Manager {
-    public static function ajax_record_payment() {
-        if (!current_user_can('sm_manage_finance')) {
-            wp_send_json_error('Unauthorized');
+    private static function check_capability($cap) {
+        if (!current_user_can($cap)) {
+            wp_send_json_error(['message' => 'Unauthorized access.']);
         }
+    }
+
+    private static function validate_member_access($member_id) {
+        if (!SM_Member_Manager::can_access_member($member_id)) {
+            wp_send_json_error(['message' => 'Access denied to this member data.']);
+        }
+    }
+
+    public static function ajax_record_payment() {
+        self::check_capability('sm_manage_finance');
         check_ajax_referer('sm_finance_action', 'nonce');
         $mid = intval($_POST['member_id']);
-        if (!SM_Member_Manager::can_access_member($mid)) {
-            wp_send_json_error('Access denied');
-        }
+        self::validate_member_access($mid);
         if (SM_Finance::record_payment($_POST)) {
-            wp_send_json_success();
+            SM_Finance::invalidate_financial_caches();
+            delete_transient('sm_stats_global');
+            $member = SM_DB::get_member_by_id($mid);
+            if ($member && $member->governorate) delete_transient('sm_stats_' . $member->governorate);
+
+            wp_send_json_success(['message' => 'Payment recorded']);
         } else {
-            wp_send_json_error('Failed to record payment');
+            wp_send_json_error(['message' => 'Failed to record payment']);
         }
     }
 
     public static function ajax_delete_transaction() {
         if (!current_user_can('sm_full_access') && !current_user_can('manage_options')) {
-            wp_send_json_error('Unauthorized');
+            wp_send_json_error(['message' => 'Unauthorized']);
         }
         check_ajax_referer('sm_admin_action', 'nonce');
-        global $wpdb;
         $id = intval($_POST['transaction_id']);
-        $wpdb->delete("{$wpdb->prefix}sm_payments", ['id' => $id]);
+        $pmt = SM_DB::get_payment_by_id($id);
+
+        SM_DB::delete_payment($id);
+
+        if ($pmt) {
+            SM_Finance::invalidate_financial_caches();
+            delete_transient('sm_stats_global');
+            $member = SM_DB::get_member_by_id($pmt->member_id);
+            if ($member && $member->governorate) delete_transient('sm_stats_' . $member->governorate);
+        }
+
         SM_Logger::log('حذف عملية مالية', "تم حذف العملية رقم #$id");
-        wp_send_json_success();
+        wp_send_json_success(['message' => 'Transaction deleted']);
     }
 
     public static function ajax_get_member_finance_html() {
         if (!is_user_logged_in()) {
-            wp_send_json_error('Unauthorized');
+            wp_send_json_error(['message' => 'Unauthorized']);
         }
         $mid = intval($_GET['member_id']);
-        if (!SM_Member_Manager::can_access_member($mid)) {
-            wp_send_json_error('Access denied');
-        }
+        self::validate_member_access($mid);
         $dues = SM_Finance::calculate_member_dues($mid);
         $history = SM_Finance::get_payment_history($mid);
         ob_start();
@@ -92,8 +112,7 @@ class SM_Finance_Manager {
 
     public static function ajax_print_invoice() {
         $pid = intval($_GET['payment_id'] ?? 0);
-        global $wpdb;
-        $pmt = $wpdb->get_row($wpdb->prepare("SELECT member_id FROM {$wpdb->prefix}sm_payments WHERE id = %d", $pid));
+        $pmt = SM_DB::get_payment_by_id($pid);
         if (!$pmt || !SM_Member_Manager::can_access_member($pmt->member_id)) {
             wp_die('Unauthorized');
         }

@@ -447,6 +447,9 @@ class SM_Public {
             update_option('sm_verify_help', sanitize_text_field($_POST['sm_verify_help']));
             update_option('sm_verify_show_membership', intval($_POST['sm_verify_show_membership']));
             update_option('sm_verify_show_practice', intval($_POST['sm_verify_show_practice']));
+            update_option('sm_verify_show_facility', intval($_POST['sm_verify_show_facility']));
+            update_option('sm_verify_accent_color', sanitize_hex_color($_POST['sm_verify_accent_color']));
+            update_option('sm_verify_success_msg', sanitize_text_field($_POST['sm_verify_success_msg']));
 
             wp_redirect(add_query_arg(['sm_tab' => 'advanced-settings', 'sub' => 'verification', 'settings_saved' => 1], wp_get_referer()));
             exit;

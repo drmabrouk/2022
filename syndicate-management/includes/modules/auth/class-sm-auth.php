@@ -207,11 +207,11 @@ class SM_Auth {
         $national_id = sanitize_text_field($_POST['national_id'] ?? '');
         $member = SM_DB::get_member_by_national_id($national_id);
         if (!$member || !$member->wp_user_id) {
-            wp_send_json_error('الرقم القومي غير مسجل في النظام');
+            wp_send_json_error(['message' => 'الرقم القومي غير مسجل في النظام']);
         }
         $user = get_userdata($member->wp_user_id);
         if (!$user) {
-            wp_send_json_error('بيانات الحساب غير موجودة');
+            wp_send_json_error(['message' => 'بيانات الحساب غير موجودة']);
         }
         $otp = sprintf("%06d", mt_rand(1, 999999));
         update_user_meta($user->ID, 'sm_recovery_otp', $otp);
@@ -231,7 +231,7 @@ class SM_Auth {
         $new_pass = $_POST['new_password'] ?? '';
         $member = SM_DB::get_member_by_national_id($national_id);
         if (!$member || !$member->wp_user_id) {
-            wp_send_json_error('بيانات غير صحيحة');
+            wp_send_json_error(['message' => 'بيانات غير صحيحة']);
         }
         $user_id = $member->wp_user_id;
         $saved_otp = get_user_meta($user_id, 'sm_recovery_otp', true);
@@ -239,10 +239,10 @@ class SM_Auth {
         $otp_used = get_user_meta($user_id, 'sm_recovery_otp_used', true);
         if ($otp_used || $saved_otp !== $otp || (time() - $otp_time) > 600) {
             update_user_meta($user_id, 'sm_recovery_otp_used', 1);
-            wp_send_json_error('رمز التحقق غير صحيح أو منتهي الصلاحية');
+            wp_send_json_error(['message' => 'رمز التحقق غير صحيح أو منتهي الصلاحية']);
         }
         if (strlen($new_pass) < 10 || !preg_match('/^[a-zA-Z0-9]+$/', $new_pass)) {
-            wp_send_json_error('كلمة المرور يجب أن تكون 10 أحرف على الأقل وتتكون من حروف وأرقام فقط بدون رموز');
+            wp_send_json_error(['message' => 'كلمة المرور يجب أن تكون 10 أحرف على الأقل وتتكون من حروف وأرقام فقط بدون رموز']);
         }
         wp_set_password($new_pass, $user_id);
         update_user_meta($user_id, 'sm_recovery_otp_used', 1);
@@ -257,13 +257,13 @@ class SM_Auth {
 
         $member = SM_DB::get_member_by_national_id($national_id);
         if (!$member) {
-            wp_send_json_error('الرقم القومي غير موجود في السجلات المهنية.');
+            wp_send_json_error(['message' => 'الرقم القومي غير موجود في السجلات المهنية.']);
         }
         if ($member->membership_number !== $membership_number) {
-            wp_send_json_error('بيانات التحقق غير صحيحة، يرجى مراجعة رقم القيد.');
+            wp_send_json_error(['message' => 'بيانات التحقق غير صحيحة، يرجى مراجعة رقم القيد.']);
         }
         if ($member->governorate !== $branch_slug) {
-            wp_send_json_error('العضو غير مسجل في الفرع المختار. يرجى اختيار الفرع الصحيح.');
+            wp_send_json_error(['message' => 'العضو غير مسجل في الفرع المختار. يرجى اختيار الفرع الصحيح.']);
         }
 
         wp_send_json_success('تم التحقق بنجاح. يرجى إكمال بيانات التواصل');
@@ -278,13 +278,13 @@ class SM_Auth {
         $new_pass = $_POST['password'] ?? '';
         $member = SM_DB::get_member_by_national_id($national_id);
         if (!$member || $member->membership_number !== $membership_number) {
-            wp_send_json_error('فشل التحقق من الهوية');
+            wp_send_json_error(['message' => 'فشل التحقق من الهوية']);
         }
         if (strlen($new_pass) < 10 || !preg_match('/^[a-zA-Z0-9]+$/', $new_pass)) {
-            wp_send_json_error('كلمة المرور يجب أن تكون 10 أحرف على الأقل وتتكون من حروف وأرقام فقط');
+            wp_send_json_error(['message' => 'كلمة المرور يجب أن تكون 10 أحرف على الأقل وتتكون من حروف وأرقام فقط']);
         }
         if (!is_email($new_email)) {
-            wp_send_json_error('بريد إلكتروني غير صحيح');
+            wp_send_json_error(['message' => 'بريد إلكتروني غير صحيح']);
         }
         SM_DB::update_member($member->id, ['email' => $new_email, 'phone' => $new_phone]);
         if ($member->wp_user_id) {
@@ -297,49 +297,27 @@ class SM_Auth {
 
     public static function ajax_submit_membership_request() {
         check_ajax_referer('sm_registration_nonce', 'nonce');
-        global $wpdb;
         $nid = sanitize_text_field($_POST['national_id']);
         if (SM_DB::member_exists($nid)) {
-            wp_send_json_error('عذراً، هذا الرقم القومي مسجل مسبقاً في النظام كعضو مفعل.');
+            wp_send_json_error(['message' => 'عذراً، هذا الرقم القومي مسجل مسبقاً في النظام كعضو مفعل.']);
         }
-        $exists_request = $wpdb->get_var($wpdb->prepare("SELECT id FROM {$wpdb->prefix}sm_membership_requests WHERE national_id = %s", $nid));
+        $exists_request = SM_DB::get_membership_request_by_national_id($nid);
         if ($exists_request) {
-            wp_send_json_error('عذراً، يوجد طلب عضوية قيد المراجعة بهذا الرقم القومي.');
+            wp_send_json_error(['message' => 'عذراً، يوجد طلب عضوية قيد المراجعة بهذا الرقم القومي.']);
         }
-        $insert_data = [
-            'national_id' => $nid,
-            'name' => sanitize_text_field($_POST['name']),
-            'phone' => sanitize_text_field($_POST['phone']),
-            'email' => sanitize_email($_POST['email']),
-            'residence_governorate' => sanitize_text_field($_POST['residence_governorate']),
-            'residence_city' => sanitize_text_field($_POST['residence_city']),
-            'residence_street' => sanitize_text_field($_POST['residence_street']),
-            'university' => sanitize_text_field($_POST['university']),
-            'faculty' => sanitize_text_field($_POST['faculty']),
-            'department' => sanitize_text_field($_POST['department']),
-            'specialization' => sanitize_text_field($_POST['specialization']),
-            'graduation_date' => sanitize_text_field($_POST['graduation_date']),
-            'academic_degree' => sanitize_text_field($_POST['academic_degree']),
-            'professional_grade' => sanitize_text_field($_POST['professional_grade']),
-            'governorate' => sanitize_text_field($_POST['governorate']),
-            'sub_syndicate' => sanitize_text_field($_POST['sub_syndicate'] ?? ''),
-            'status' => 'Pending Shipment',
-            'current_stage' => 5,
-            'created_at' => current_time('mysql')
-        ];
-        $res = $wpdb->insert("{$wpdb->prefix}sm_membership_requests", $insert_data);
+
+        $res = SM_DB::add_membership_request($_POST);
         if ($res) {
-            $request_id = $wpdb->insert_id;
-            $tracking_code = 'REG-' . date('Ymd') . $request_id;
+            $tracking_code = 'REG-' . date('Ymd') . $res;
             wp_send_json_success($tracking_code);
         } else {
-            wp_send_json_error('فشل في إرسال الطلب: ' . $wpdb->last_error);
+            wp_send_json_error(['message' => 'فشل في إرسال الطلب']);
         }
     }
 
     public static function ajax_update_profile() {
         if (!is_user_logged_in()) {
-            wp_send_json_error('يجب تسجيل الدخول أولاً');
+            wp_send_json_error(['message' => 'يجب تسجيل الدخول أولاً']);
         }
         check_ajax_referer('sm_profile_action', 'nonce');
 
@@ -359,19 +337,21 @@ class SM_Auth {
 
         if (!empty($pass)) {
             if (strlen($pass) < 10) {
-                wp_send_json_error('كلمة المرور يجب أن تكون 10 أحرف على الأقل');
+                wp_send_json_error(['message' => 'كلمة المرور يجب أن تكون 10 أحرف على الأقل']);
             }
             $data['user_pass'] = $pass;
         }
 
         $res = wp_update_user($data);
         if (is_wp_error($res)) {
-            wp_send_json_error($res->get_error_message());
+            wp_send_json_error(['message' => $res->get_error_message()]);
         }
 
         if (!$is_member && !empty($email)) {
-            global $wpdb;
-            $wpdb->update("{$wpdb->prefix}sm_members", ['email' => $email], ['wp_user_id' => $user_id]);
+            $member = SM_DB::get_member_by_wp_user_id($user_id);
+            if ($member) {
+                SM_DB::update_member($member->id, ['email' => $email]);
+            }
         }
 
         SM_Logger::log('تحديث الملف الشخصي', "قام المستخدم بتحديث بياناته الشخصية");
@@ -379,10 +359,9 @@ class SM_Auth {
     }
 
     public static function ajax_track_membership_request() {
-        global $wpdb;
-        $req = $wpdb->get_row($wpdb->prepare("SELECT * FROM {$wpdb->prefix}sm_membership_requests WHERE national_id = %s", sanitize_text_field($_POST['national_id'])));
+        $req = SM_DB::get_membership_request_by_national_id(sanitize_text_field($_POST['national_id']));
         if (!$req) {
-            wp_send_json_error('Not found');
+            wp_send_json_error(['message' => 'Not found']);
         }
         $map = [
             'Pending Payment Verification' => 'قيد مراجعة الدفع',

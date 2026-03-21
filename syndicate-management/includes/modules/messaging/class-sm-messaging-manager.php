@@ -4,9 +4,21 @@ if (!defined('ABSPATH')) {
 }
 
 class SM_Messaging_Manager {
+    private static function check_capability($cap) {
+        if (!current_user_can($cap)) {
+            wp_send_json_error(['message' => 'Unauthorized access.']);
+        }
+    }
+
+    private static function validate_member_access($member_id) {
+        if (!SM_Member_Manager::can_access_member($member_id)) {
+            wp_send_json_error(['message' => 'Access denied to this member data.']);
+        }
+    }
+
     public static function ajax_send_message() {
         if (!is_user_logged_in()) {
-            wp_send_json_error('Unauthorized');
+            wp_send_json_error(['message' => 'Unauthorized']);
         }
         check_ajax_referer('sm_message_action', 'nonce');
 
@@ -14,20 +26,17 @@ class SM_Messaging_Manager {
         $mid = intval($_POST['member_id'] ?? 0);
 
         if (!$mid) {
-            global $wpdb;
-            $m_wp = $wpdb->get_row($wpdb->prepare("SELECT id FROM {$wpdb->prefix}sm_members WHERE wp_user_id = %d", $sid));
-            if ($m_wp) {
-                $mid = $m_wp->id;
+            $member_wp = SM_DB_Members::get_member_by_username(wp_get_current_user()->user_login);
+            if ($member_wp) {
+                $mid = $member_wp->id;
             }
         }
 
-        if (!SM_Member_Manager::can_access_member($mid)) {
-            wp_send_json_error('Access denied');
-        }
+        self::validate_member_access($mid);
 
         $member = SM_DB::get_member_by_id($mid);
         if (!$member) {
-            wp_send_json_error('Invalid member context');
+            wp_send_json_error(['message' => 'Invalid member context']);
         }
 
         $msg = sanitize_textarea_field($_POST['message'] ?? '');
@@ -50,22 +59,19 @@ class SM_Messaging_Manager {
 
     public static function ajax_get_conversation() {
         if (!is_user_logged_in()) {
-            wp_send_json_error('Unauthorized');
+            wp_send_json_error(['message' => 'Unauthorized']);
         }
         check_ajax_referer('sm_message_action', 'nonce');
 
         $mid = intval($_POST['member_id'] ?? 0);
         if (!$mid) {
-            global $wpdb;
-            $m_wp = $wpdb->get_row($wpdb->prepare("SELECT id FROM {$wpdb->prefix}sm_members WHERE wp_user_id = %d", get_current_user_id()));
-            if ($m_wp) {
-                $mid = $m_wp->id;
+            $member_wp = SM_DB_Members::get_member_by_username(wp_get_current_user()->user_login);
+            if ($member_wp) {
+                $mid = $member_wp->id;
             }
         }
 
-        if (!SM_Member_Manager::can_access_member($mid)) {
-            wp_send_json_error('Access denied');
-        }
+        self::validate_member_access($mid);
 
         wp_send_json_success(SM_DB::get_ticket_messages($mid));
     }
@@ -79,39 +85,30 @@ class SM_Messaging_Manager {
         $subj = sanitize_text_field($_POST['subject']);
         $msg = sanitize_textarea_field($_POST['message']);
 
-        global $wpdb;
-        $member = $wpdb->get_row($wpdb->prepare("SELECT id, governorate FROM {$wpdb->prefix}sm_members WHERE email = %s", $email));
+        $member = SM_DB_Members::get_member_by_email($email);
         $mid = $member ? $member->id : 0;
         $prov = $member ? $member->governorate : 'HQ';
 
-        $ticket_data = [
+        $tid = SM_DB_Communications::create_ticket([
             'member_id' => $mid,
             'subject' => $subj,
             'category' => 'inquiry',
             'priority' => 'medium',
-            'status' => 'open',
+            'message' => "رسالة من نموذج التواصل:\n\nالاسم: $name\nالهاتف: $phone\nالبريد: $email\n\nالرسالة:\n$msg",
             'province' => $prov,
-            'created_at' => current_time('mysql'),
-            'updated_at' => current_time('mysql')
-        ];
+            'sender_id' => is_user_logged_in() ? get_current_user_id() : 0
+        ]);
 
-        if ($wpdb->insert("{$wpdb->prefix}sm_tickets", $ticket_data)) {
-            $tid = $wpdb->insert_id;
-            $wpdb->insert("{$wpdb->prefix}sm_ticket_thread", [
-                'ticket_id' => $tid,
-                'sender_id' => is_user_logged_in() ? get_current_user_id() : 0,
-                'message' => "رسالة من نموذج التواصل:\n\nالاسم: $name\nالهاتف: $phone\nالبريد: $email\n\nالرسالة:\n$msg",
-                'created_at' => current_time('mysql')
-            ]);
+        if ($tid) {
             wp_send_json_success();
         } else {
-            wp_send_json_error('فشل تقديم تذكرة الدعم');
+            wp_send_json_error(['message' => 'فشل تقديم تذكرة الدعم']);
         }
     }
 
     public static function ajax_get_conversations() {
         if (!is_user_logged_in()) {
-            wp_send_json_error('Unauthorized');
+            wp_send_json_error(['message' => 'Unauthorized']);
         }
         check_ajax_referer('sm_message_action', 'nonce');
         $user = wp_get_current_user();
@@ -119,7 +116,7 @@ class SM_Messaging_Manager {
         $has_full = current_user_can('sm_full_access') || current_user_can('manage_options');
 
         if (!$gov && !$has_full) {
-            wp_send_json_error('No governorate assigned');
+            wp_send_json_error(['message' => 'No governorate assigned']);
         }
 
         if (in_array('sm_syndicate_member', (array)$user->roles)) {
@@ -147,17 +144,16 @@ class SM_Messaging_Manager {
 
     public static function ajax_mark_read() {
         if (!is_user_logged_in()) {
-            wp_send_json_error('Unauthorized');
+            wp_send_json_error(['message' => 'Unauthorized']);
         }
         check_ajax_referer('sm_message_action', 'nonce');
-        global $wpdb;
-        $wpdb->update("{$wpdb->prefix}sm_messages", ['is_read' => 1], ['receiver_id' => get_current_user_id(), 'sender_id' => intval($_POST['other_user_id'])]);
+        SM_DB::mark_messages_read(get_current_user_id(), intval($_POST['other_user_id']));
         wp_send_json_success();
     }
 
     public static function ajax_get_tickets() {
         if (!is_user_logged_in()) {
-            wp_send_json_error('Unauthorized');
+            wp_send_json_error(['message' => 'Unauthorized']);
         }
         check_ajax_referer('sm_ticket_action', 'nonce');
         wp_send_json_success(SM_DB::get_tickets($_GET));
@@ -165,14 +161,13 @@ class SM_Messaging_Manager {
 
     public static function ajax_create_ticket() {
         if (!is_user_logged_in()) {
-            wp_send_json_error('Unauthorized');
+            wp_send_json_error(['message' => 'Unauthorized']);
         }
         check_ajax_referer('sm_ticket_action', 'nonce');
-        global $wpdb;
         $user = wp_get_current_user();
-        $member = $wpdb->get_row($wpdb->prepare("SELECT * FROM {$wpdb->prefix}sm_members WHERE wp_user_id = %d", $user->ID));
+        $member = SM_DB_Members::get_member_by_username($user->user_login);
         if (!$member) {
-            wp_send_json_error('Member profile not found');
+            wp_send_json_error(['message' => 'Member profile not found']);
         }
         $url = null;
         $attachment_path = null;
@@ -206,32 +201,31 @@ class SM_Messaging_Manager {
             }
             wp_send_json_success($tid);
         } else {
-            wp_send_json_error('Failed to create ticket');
+            wp_send_json_error(['message' => 'Failed to create ticket']);
         }
     }
 
     public static function ajax_get_ticket_details() {
         if (!is_user_logged_in()) {
-            wp_send_json_error('Unauthorized');
+            wp_send_json_error(['message' => 'Unauthorized']);
         }
         check_ajax_referer('sm_ticket_action', 'nonce');
         $id = intval($_GET['id']);
         $ticket = SM_DB::get_ticket($id);
         if (!$ticket) {
-            wp_send_json_error('Ticket not found');
+            wp_send_json_error(['message' => 'Ticket not found']);
         }
         $user = wp_get_current_user();
         if (!current_user_can('sm_full_access') && !current_user_can('manage_options')) {
             if (in_array('sm_syndicate_admin', $user->roles)) {
                 $gov = get_user_meta($user->ID, 'sm_governorate', true);
                 if ($gov && $ticket->province !== $gov) {
-                    wp_send_json_error('Access denied');
+                    wp_send_json_error(['message' => 'Access denied']);
                 }
             } else {
-                global $wpdb;
-                $mid = $wpdb->get_var($wpdb->prepare("SELECT id FROM {$wpdb->prefix}sm_members WHERE wp_user_id = %d", $user->ID));
-                if ($ticket->member_id != $mid) {
-                    wp_send_json_error('Access denied');
+                $member = SM_DB_Members::get_member_by_username($user->user_login);
+                if (!$member || $ticket->member_id != $member->id) {
+                    wp_send_json_error(['message' => 'Access denied']);
                 }
             }
         }
@@ -240,12 +234,12 @@ class SM_Messaging_Manager {
 
     public static function ajax_add_ticket_reply() {
         if (!is_user_logged_in()) {
-            wp_send_json_error('Unauthorized');
+            wp_send_json_error(['message' => 'Unauthorized']);
         }
         check_ajax_referer('sm_ticket_action', 'nonce');
         $tid = intval($_POST['ticket_id']);
         $ticket = SM_DB::get_ticket($tid);
-        if (!$ticket) wp_send_json_error('Ticket not found');
+        if (!$ticket) wp_send_json_error(['message' => 'Ticket not found']);
 
         $url = null;
         $attachment_path = null;
@@ -283,35 +277,29 @@ class SM_Messaging_Manager {
             }
             wp_send_json_success($rid);
         } else {
-            wp_send_json_error('Failed to add reply');
+            wp_send_json_error(['message' => 'Failed to add reply']);
         }
     }
 
     public static function ajax_close_ticket() {
         if (!is_user_logged_in()) {
-            wp_send_json_error('Unauthorized');
+            wp_send_json_error(['message' => 'Unauthorized']);
         }
         check_ajax_referer('sm_ticket_action', 'nonce');
         if (SM_DB::update_ticket_status(intval($_POST['id']), 'closed')) {
             wp_send_json_success();
         } else {
-            wp_send_json_error('Failed to close ticket');
+            wp_send_json_error(['message' => 'Failed to close ticket']);
         }
     }
 
     public static function ajax_get_communication_templates() {
-        if (!current_user_can('sm_manage_system')) {
-            wp_send_json_error('Unauthorized');
-        }
-        global $wpdb;
-        $templates = $wpdb->get_results("SELECT * FROM {$wpdb->prefix}sm_notification_templates WHERE is_enabled = 1");
-        wp_send_json_success($templates);
+        self::check_capability('sm_manage_system');
+        wp_send_json_success(SM_DB::get_notification_templates());
     }
 
     public static function ajax_send_direct_message() {
-        if (!current_user_can('sm_manage_system')) {
-            wp_send_json_error('Unauthorized');
-        }
+        self::check_capability('sm_manage_system');
         check_ajax_referer('sm_message_action', 'nonce');
 
         $member_ids = isset($_POST['member_ids']) ? array_map('intval', $_POST['member_ids']) : [];
@@ -319,7 +307,7 @@ class SM_Messaging_Manager {
             $member_ids[] = intval($_POST['member_id']);
         }
 
-        if (empty($member_ids)) wp_send_json_error('لم يتم اختيار أعضاء');
+        if (empty($member_ids)) wp_send_json_error(['message' => 'لم يتم اختيار أعضاء']);
 
         // Handle Attachments
         $attachment_paths = [];
@@ -453,8 +441,7 @@ class SM_Messaging_Manager {
 
         $branch_details = '';
         if ($member && !empty($member->governorate)) {
-             global $wpdb;
-             $branch = $wpdb->get_row($wpdb->prepare("SELECT * FROM {$wpdb->prefix}sm_branches_data WHERE slug = %s", $member->governorate));
+             $branch = SM_DB::get_branch_by_slug($member->governorate);
              if ($branch) {
                  $branch_details = "<div style='margin-top: 30px; padding-top: 20px; border-top: 2px solid #f1f5f9; font-size: 13px; color: #475569;'>";
                  $branch_details .= "<strong style='color: {$dark_color};'>للتواصل مع فرعك النقابي ({$branch->name}):</strong><br>";
@@ -517,9 +504,7 @@ class SM_Messaging_Manager {
     }
 
     public static function ajax_get_member_comms_log() {
-        if (!current_user_can('sm_manage_system')) {
-            wp_send_json_error('Unauthorized');
-        }
+        self::check_capability('sm_manage_system');
         $mid = intval($_GET['member_id'] ?? 0);
         wp_send_json_success(SM_DB_Communications::get_member_notification_logs($mid));
     }

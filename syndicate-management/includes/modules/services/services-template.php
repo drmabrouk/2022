@@ -13,7 +13,7 @@
         </div>
         <div id="sm-tracking-results-area" style="margin-top: 30px; display: none; background: #fff; border-radius: 20px; padding: 30px; border: 1px solid #e2e8f0; animation: smFadeIn 0.4s ease; box-shadow: 0 10px 15px -3px rgba(0,0,0,0.05);"></div>
         <?php if ($is_logged_in && $current_member): ?>
-            <?php global $wpdb; $my_requests = $wpdb->get_results($wpdb->prepare("SELECT r.*, s.name as service_name FROM {$wpdb->prefix}sm_service_requests r JOIN {$wpdb->prefix}sm_services s ON r.service_id = s.id WHERE r.member_id = %d ORDER BY r.created_at DESC LIMIT 5", $current_member->id)); if ($my_requests): ?>
+            <?php $my_requests = SM_DB_Services::get_service_requests(['member_id' => $current_member->id]); if ($my_requests): $my_requests = array_slice($my_requests, 0, 5); ?>
             <div style="margin-top: 35px; border-top: 1px solid #e2e8f0; padding-top: 25px;"><h4 style="margin: 0 0 15px 0; font-weight: 800; color: var(--sm-dark-color); display: flex; align-items: center; gap: 10px;"><span class="dashicons dashicons-clock" style="color:var(--sm-primary-color);"></span> طلباتك الأخيرة</h4><div style="display: grid; gap: 10px;"><?php foreach ($my_requests as $mr): $track_code = date('Ymd', strtotime($mr->created_at)) . $mr->id; $labels = ['pending' => 'قيد الانتظار', 'approved' => 'مكتمل', 'rejected' => 'مرفوض']; ?><div style="background: #fff; padding: 12px 15px; border-radius: 12px; border: 1px solid #f1f5f9; display: flex; justify-content: space-between; align-items: center; transition: 0.2s; cursor: pointer;" onclick="document.getElementById('sm_service_tracking_input').value='<?php echo $track_code; ?>'; smTrackServiceRequest();"><div><div style="font-weight: 700; color: var(--sm-dark-color); font-size: 14px;"><?php echo esc_html($mr->service_name); ?></div><div style="font-size: 10px; color: #94a3b8; margin-top: 2px;">كود التتبع: #<?php echo $track_code; ?></div></div><div style="display: flex; align-items: center; gap: 10px;"><span style="font-size: 11px; font-weight: 700; padding: 3px 10px; border-radius: 8px; background: #f8fafc; border: 1px solid #e2e8f0;"><?php echo $labels[$mr->status] ?? $mr->status; ?></span><span class="dashicons dashicons-arrow-left-alt2" style="font-size: 14px; color: var(--sm-primary-color);"></span></div></div><?php endforeach; ?></div></div>
             <?php endif; ?>
         <?php endif; ?>
@@ -41,7 +41,7 @@
                         <p style="font-size: 13px; color: #64748b; line-height: 1.6; margin-bottom: 20px; flex: 1;"><?php echo esc_html($s->description); ?></p>
                         <div style="display: flex; justify-content: space-between; align-items: center; margin-top: auto; padding-top: 20px; border-top: 1px solid #f1f5f9;">
                             <div style="display: flex; flex-direction: column;"><span style="font-size: 10px; color: #94a3b8; font-weight: 600;">رسوم الخدمة</span><span style="font-weight: 900; color: var(--sm-primary-color); font-size: 1.1em;"><?php echo $s->fees > 0 ? number_format($s->fees, 2) . ' <small>ج.م</small>' : 'خدمة مجانية'; ?></span></div>
-                            <?php $btn_onclick = $is_logged_in ? "smOpenProgressiveForm(this, ".json_encode($s).")" : "window.location.href='".esc_url($login_url)."'"; ?>
+                            <?php $btn_onclick = $is_logged_in ? "smOpenProgressiveForm(this, " . esc_attr(json_encode($s)) . ")" : "window.location.href='" . esc_url($login_url) . "'"; ?>
                             <button onclick='<?php echo $btn_onclick; ?>' class="sm-btn-sleek sm-service-trigger" style="background: var(--sm-dark-color); color: #fff; padding: 8px 20px; border: none; border-radius: 12px; font-weight: 700; font-size: 13px; cursor: pointer; transition: 0.3s;">طلب خدمة</button>
                         </div>
                     </div>
@@ -129,7 +129,7 @@ window.smOpenProgressiveForm = function(btn, s) {
     let reqFields = []; try { reqFields = JSON.parse(s.required_fields); } catch(e){}
 
     // Fetch branch info for payment if member is logged in
-    const branchInfo = <?php echo $current_member ? json_encode(SM_DB::get_branches_data()) : '[]'; ?>;
+    const branchInfo = <?php echo $current_member ? wp_json_encode(SM_DB::get_branches_data()) : '[]'; ?>;
     const myBranch = branchInfo.find(b => b.slug === '<?php echo $current_member ? $current_member->governorate : ""; ?>') || branchInfo[0] || {};
 
     const renderStep = (step) => {

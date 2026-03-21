@@ -68,6 +68,22 @@ class SM_DB {
         return SM_DB_Members::get_next_sort_order();
     }
 
+    public static function get_member_suggestions($q, $l = 5) {
+        return SM_DB_Members::get_member_suggestions($q, $l);
+    }
+
+    public static function get_member_wp_user_ids($gov = null) {
+        return SM_DB_Members::get_member_wp_user_ids($gov);
+    }
+
+    public static function get_member_ids_by_governorate($gov) {
+        return SM_DB_Members::get_member_ids_by_governorate($gov);
+    }
+
+    public static function delete_members_by_governorate($gov) {
+        return SM_DB_Members::delete_members_by_governorate($gov);
+    }
+
     public static function add_membership_request($data) {
         return SM_DB_Members::add_membership_request($data);
     }
@@ -80,8 +96,16 @@ class SM_DB {
         return SM_DB_Members::get_membership_request($id);
     }
 
+    public static function get_membership_request_by_national_id($nid) {
+        return SM_DB_Members::get_membership_request_by_national_id($nid);
+    }
+
     public static function get_membership_requests($status = null) {
         return SM_DB_Members::get_membership_requests($status);
+    }
+
+    public static function count_members($args = []) {
+        return SM_DB_Members::count_members($args);
     }
 
     public static function add_update_request($mid, $data) {
@@ -146,6 +170,22 @@ class SM_DB {
         return SM_DB_Finance::get_statistics($filters);
     }
 
+    public static function delete_payments_by_member_ids($ids) {
+        return SM_DB_Finance::delete_payments_by_member_ids($ids);
+    }
+
+    public static function get_payments($args = []) {
+        return SM_DB_Finance::get_payments($args);
+    }
+
+    public static function get_payment_by_id($id) {
+        return SM_DB_Finance::get_payment_by_id($id);
+    }
+
+    public static function delete_payment($id) {
+        return SM_DB_Finance::delete_payment($id);
+    }
+
     // Communications Delegation
     public static function send_message($sid, $rid, $msg, $mid = null, $url = null, $gov = null) {
         return SM_DB_Communications::send_message($sid, $rid, $msg, $mid, $url, $gov);
@@ -173,6 +213,10 @@ class SM_DB {
 
     public static function get_conversations($uid) {
         return SM_DB_Communications::get_conversations($uid);
+    }
+
+    public static function mark_messages_read($rid, $sid) {
+        return SM_DB_Communications::mark_messages_read($rid, $sid);
     }
 
     public static function delete_expired_messages() {
@@ -203,17 +247,21 @@ class SM_DB {
         return SM_DB_Communications::update_ticket_status($id, $status);
     }
 
+    public static function get_notification_templates() {
+        return SM_DB_Communications::get_notification_templates();
+    }
+
     // Education Delegation
-    public static function add_survey($title, $q, $rec, $uid, $spec = '', $type = 'practice') {
-        return SM_DB_Education::add_survey($title, $q, $rec, $uid, $spec, $type);
+    public static function add_survey($data) {
+        return SM_DB_Education::add_survey($data);
     }
 
     public static function get_surveys($uid, $role, $spec = '') {
         return SM_DB_Education::get_surveys($uid, $role, $spec);
     }
 
-    public static function save_survey_response($sid, $uid, $res) {
-        return SM_DB_Education::save_survey_response($sid, $uid, $res);
+    public static function save_test_response($data) {
+        return SM_DB_Education::save_test_response($data);
     }
 
     public static function get_survey($id) {
@@ -236,6 +284,30 @@ class SM_DB {
         return SM_DB_Education::get_test_assignments($tid);
     }
 
+    public static function add_test_question($data) {
+        return SM_DB_Education::add_question($data);
+    }
+
+    public static function delete_test_question($id) {
+        return SM_DB_Education::delete_question($id);
+    }
+
+    public static function get_test_questions($tid) {
+        return SM_DB_Education::get_test_questions($tid);
+    }
+
+    public static function get_user_attempts_count($tid, $uid) {
+        return SM_DB_Education::get_user_attempts_count($tid, $uid);
+    }
+
+    public static function get_surveys_admin($args = []) {
+        return SM_DB_Education::get_surveys_admin($args);
+    }
+
+    public static function update_survey_data($id, $data) {
+        return SM_DB_Education::update_survey($id, $data);
+    }
+
     // System & Docs Delegation
     public static function add_document($data) {
         return SM_DB_System::add_document($data);
@@ -243,6 +315,14 @@ class SM_DB {
 
     public static function get_member_documents($mid, $args = []) {
         return SM_DB_System::get_member_documents($mid, $args);
+    }
+
+    public static function get_member_by_email($email) {
+        return SM_DB_Members::get_member_by_email($email);
+    }
+
+    public static function get_document_member_id($id) {
+        return SM_DB_System::get_document_member_id($id);
     }
 
     public static function delete_document($id) {
@@ -269,6 +349,10 @@ class SM_DB {
         return SM_DB_System::get_pub_template($id);
     }
 
+    public static function get_pub_document_by_id($id) {
+        return SM_DB_System::get_pub_document_by_id($id);
+    }
+
     public static function generate_pub_document($data) {
         return SM_DB_System::generate_pub_document($data);
     }
@@ -293,6 +377,10 @@ class SM_DB {
         return SM_DB_System::get_alerts($args);
     }
 
+    public static function get_service_request_by_id($id) {
+        return SM_DB_Services::get_service_request_by_id($id);
+    }
+
     public static function get_alert($id) {
         return SM_DB_System::get_alert($id);
     }
@@ -305,6 +393,10 @@ class SM_DB {
         return SM_DB_System::get_active_alerts_for_user($uid);
     }
 
+    public static function get_branch_by_slug($slug) {
+        return SM_DB_System::get_branch_by_slug($slug);
+    }
+
     public static function acknowledge_alert($aid, $uid) {
         return SM_DB_System::acknowledge_alert($aid, $uid);
     }
@@ -313,12 +405,37 @@ class SM_DB {
         return SM_DB_System::get_branches_data($args);
     }
 
+    public static function get_branch_management_stats() {
+        return SM_DB_System::get_branch_management_stats();
+    }
+
     public static function save_branch($data) {
         return SM_DB_System::save_branch($data);
     }
 
+    public static function get_branch_by_id($id) {
+        global $wpdb;
+        return $wpdb->get_row($wpdb->prepare("SELECT * FROM {$wpdb->prefix}sm_branches_data WHERE id = %d", intval($id)));
+    }
+
     public static function delete_branch($id) {
         return SM_DB_System::delete_branch($id);
+    }
+
+    public static function truncate_tables($ts) {
+        return SM_DB_System::truncate_tables($ts);
+    }
+
+    public static function get_log($id) {
+        return SM_DB_System::get_log($id);
+    }
+
+    public static function delete_log($id) {
+        return SM_DB_System::delete_log($id);
+    }
+
+    public static function truncate_logs() {
+        return SM_DB_System::truncate_logs();
     }
 
     public static function get_backup_data() {

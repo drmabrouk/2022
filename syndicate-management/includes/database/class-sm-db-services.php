@@ -5,10 +5,25 @@ if (!defined('ABSPATH')) {
 
 class SM_DB_Services {
 
+    public static function get_service_by_id($id) {
+        global $wpdb;
+        return $wpdb->get_row($wpdb->prepare("SELECT * FROM {$wpdb->prefix}sm_services WHERE id = %d", intval($id)));
+    }
+
+    public static function get_service_request_by_id($id) {
+        global $wpdb;
+        return $wpdb->get_row($wpdb->prepare("SELECT * FROM {$wpdb->prefix}sm_service_requests WHERE id = %d", intval($id)));
+    }
+
     public static function get_services($args = array()) {
         global $wpdb;
         $where = "1=1";
         $params = [];
+
+        if (!empty($args['id'])) {
+            $where .= " AND id = %d";
+            $params[] = intval($args['id']);
+        }
 
         if (isset($args['is_deleted'])) {
             $where .= " AND is_deleted = %d";
@@ -162,7 +177,17 @@ class SM_DB_Services {
         );
         if ($fees_paid !== null) $data['fees_paid'] = floatval($fees_paid);
 
-        return $wpdb->update("{$wpdb->prefix}sm_service_requests", $data, array('id' => $request_id));
+        $res = $wpdb->update("{$wpdb->prefix}sm_service_requests", $data, array('id' => $request_id));
+
+        if ($res !== false) {
+            $req = $wpdb->get_row($wpdb->prepare("SELECT member_id FROM {$wpdb->prefix}sm_service_requests WHERE id = %d", $request_id));
+            if ($req) {
+                $member = SM_DB_Members::get_member_by_id($req->member_id);
+                SM_Finance::invalidate_financial_caches($member->governorate ?? null);
+            }
+        }
+
+        return $res;
     }
 
     public static function add_professional_request($member_id, $type) {
@@ -177,10 +202,19 @@ class SM_DB_Services {
 
     public static function get_professional_requests($args = []) {
         global $wpdb;
+        $user = wp_get_current_user();
+        $has_full_access = current_user_can('sm_full_access') || current_user_can('manage_options');
+        $my_gov = get_user_meta($user->ID, 'sm_governorate', true);
+
         $query = "SELECT r.*, m.name as member_name, m.national_id, m.governorate
                  FROM {$wpdb->prefix}sm_professional_requests r
                  JOIN {$wpdb->prefix}sm_members m ON r.member_id = m.id WHERE 1=1";
         $params = [];
+
+        if (!$has_full_access && $my_gov) {
+            $query .= " AND m.governorate = %s";
+            $params[] = $my_gov;
+        }
 
         if (!empty($args['member_id'])) {
             $query .= " AND r.member_id = %d";
@@ -194,7 +228,7 @@ class SM_DB_Services {
             $query .= " AND r.request_type = %s";
             $params[] = $args['type'];
         }
-        if (!empty($args['governorate'])) {
+        if (!empty($args['governorate']) && $has_full_access) {
             $query .= " AND m.governorate = %s";
             $params[] = $args['governorate'];
         }

@@ -18,6 +18,8 @@ class Syndicate_Management {
         require_once SM_PLUGIN_DIR . 'includes/core/class-sm-loader.php';
         require_once SM_PLUGIN_DIR . 'includes/core/class-sm-settings.php';
         require_once SM_PLUGIN_DIR . 'includes/core/class-sm-logger.php';
+        require_once SM_PLUGIN_DIR . 'includes/core/class-sm-health-check.php';
+        require_once SM_PLUGIN_DIR . 'includes/core/class-sm-backup-manager.php';
 
         // Database Layer
         require_once SM_PLUGIN_DIR . 'includes/database/class-sm-db-members.php';
@@ -41,6 +43,7 @@ class Syndicate_Management {
         require_once SM_PLUGIN_DIR . 'includes/modules/messaging/class-sm-messaging-manager.php';
         require_once SM_PLUGIN_DIR . 'includes/modules/education/class-sm-education-manager.php';
         require_once SM_PLUGIN_DIR . 'includes/modules/system/class-sm-system-manager.php';
+        require_once SM_PLUGIN_DIR . 'includes/modules/system/class-sm-print-manager.php';
 
         // Controllers
         require_once SM_PLUGIN_DIR . 'admin/class-sm-admin.php';
@@ -67,6 +70,9 @@ class Syndicate_Management {
         $this->loader->add_action('template_redirect', $plugin_public, 'handle_form_submission');
         $this->loader->add_action('wp_login_failed', $plugin_public, 'login_failed');
         $this->loader->add_action('wp_login', $plugin_public, 'log_successful_login', 10, 2);
+
+        // Backup & Maintenance
+        $this->loader->add_action('sm_scheduled_backup', 'SM_Backup_Manager', 'handle_scheduled_backup');
 
         // Map AJAX Hooks to Modules
         $ajax_map = [
@@ -161,6 +167,14 @@ class Syndicate_Management {
             'sm_save_pub_identity' => ['SM_System_Manager', 'ajax_save_pub_identity'],
             'sm_save_pub_template' => ['SM_System_Manager', 'ajax_save_pub_template'],
             'sm_export_branches' => ['SM_System_Manager', 'ajax_export_branches'],
+            'sm_get_branch_details' => ['SM_System_Manager', 'ajax_get_branch_details'],
+            'sm_download_backup' => ['SM_System_Manager', 'ajax_download_backup'],
+            'sm_restore_backup_ajax' => ['SM_System_Manager', 'ajax_restore_backup'],
+            'sm_get_backup_history' => ['SM_System_Manager', 'ajax_get_backup_history'],
+            'sm_update_backup_freq' => ['SM_System_Manager', 'ajax_update_backup_freq'],
+            'sm_download_stored_backup' => ['SM_System_Manager', 'ajax_download_stored_backup'],
+
+            'sm_get_custom_print' => ['SM_Print_Manager', 'ajax_get_custom_print'],
 
             'sm_update_profile_ajax' => ['SM_Auth', 'ajax_update_profile'],
             'sm_forgot_password_otp' => ['SM_Auth', 'ajax_forgot_password_otp'],
@@ -170,6 +184,7 @@ class Syndicate_Management {
             'sm_submit_membership_request' => ['SM_Auth', 'ajax_submit_membership_request'],
 
             'sm_get_template_ajax' => ['SM_Notifications', 'ajax_get_template_ajax'],
+            'sm_run_health_check' => ['SM_Health_Check', 'ajax_run_health_check'],
         ];
 
         foreach ($ajax_map as $action => $callback) {
@@ -201,6 +216,7 @@ class Syndicate_Management {
     public function run() {
         add_action('plugins_loaded', array($this, 'check_version_updates'));
         $this->loader->add_action('init', $this, 'schedule_maintenance_cron');
+        $this->loader->add_action('init', 'SM_Backup_Manager', 'schedule_automated_backup');
         set_error_handler(array($this, 'handle_errors'));
         register_shutdown_function(array($this, 'handle_fatal_errors'));
         $this->loader->run();
