@@ -19,7 +19,7 @@ class SM_Finance {
             );
         }
 
-        $settings = SM_Settings::get_finance_settings();
+        $settings = SM_Settings::get_branch_fees($member->governorate ?? null);
         $current_year = (int)date('Y');
         $current_date = date('Y-m-d');
 

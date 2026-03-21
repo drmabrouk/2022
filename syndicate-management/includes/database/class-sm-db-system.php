@@ -271,9 +271,19 @@ class SM_DB_System {
         $params = [];
 
         if (!empty($args['search'])) {
-            $where .= " AND (name LIKE %s OR manager LIKE %s OR city LIKE %s OR address LIKE %s)";
+            $where .= " AND (name LIKE %s OR manager LIKE %s OR address LIKE %s OR committees LIKE %s)";
             $s = '%' . $wpdb->esc_like($args['search']) . '%';
             $params = array_merge($params, [$s, $s, $s, $s]);
+        }
+
+        if (!empty($args['location'])) {
+            $where .= " AND address LIKE %s";
+            $params[] = '%' . $wpdb->esc_like($args['location']) . '%';
+        }
+
+        if (!empty($args['committee'])) {
+            $where .= " AND committees LIKE %s";
+            $params[] = '%' . $wpdb->esc_like($args['committee']) . '%';
         }
 
         if (isset($args['is_active'])) {
@@ -312,6 +322,8 @@ class SM_DB_System {
             'digital_wallet' => sanitize_text_field($data['digital_wallet'] ?? ''),
             'instapay_id' => sanitize_text_field($data['instapay_id'] ?? ''),
             'postal_code' => sanitize_text_field($data['postal_code'] ?? ''),
+            'committees' => sanitize_text_field($data['committees'] ?? ''),
+            'fees' => !empty($data['fees']) ? json_encode($data['fees']) : null,
             'is_active' => isset($data['is_active']) ? 1 : 0
         ];
 
@@ -327,6 +339,16 @@ class SM_DB_System {
     public static function delete_branch($id) {
         global $wpdb;
         return $wpdb->delete("{$wpdb->prefix}sm_branches_data", ['id' => intval($id)]);
+    }
+
+    public static function get_branch_management_stats() {
+        global $wpdb;
+        $stats = [];
+        $stats['total_branches'] = $wpdb->get_var("SELECT COUNT(*) FROM {$wpdb->prefix}sm_branches_data");
+        $stats['total_members'] = $wpdb->get_var("SELECT COUNT(*) FROM {$wpdb->prefix}sm_members");
+        $stats['total_practice_licenses'] = $wpdb->get_var("SELECT COUNT(*) FROM {$wpdb->prefix}sm_members WHERE license_number != ''");
+        $stats['total_facility_licenses'] = $wpdb->get_var("SELECT COUNT(*) FROM {$wpdb->prefix}sm_members WHERE facility_number != ''");
+        return $stats;
     }
 
     public static function truncate_tables($tables) {

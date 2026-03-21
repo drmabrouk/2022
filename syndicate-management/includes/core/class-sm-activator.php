@@ -461,6 +461,8 @@ class SM_Activator {
             digital_wallet varchar(20),
             instapay_id varchar(100),
             postal_code varchar(20),
+            fees longtext,
+            committees text,
             is_active tinyint(1) DEFAULT 1,
             created_at datetime DEFAULT CURRENT_TIMESTAMP,
             PRIMARY KEY  (id),
@@ -929,6 +931,8 @@ class SM_Activator {
             'digital_wallet' => 'varchar(20)',
             'instapay_id' => 'varchar(100)',
             'postal_code' => 'varchar(20)',
+            'fees' => 'longtext',
+            'committees' => 'text',
             'is_active' => 'tinyint(1) DEFAULT 1'
         ];
 

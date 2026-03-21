@@ -382,8 +382,17 @@ class SM_DB {
         return SM_DB_System::get_branches_data($args);
     }
 
+    public static function get_branch_management_stats() {
+        return SM_DB_System::get_branch_management_stats();
+    }
+
     public static function save_branch($data) {
         return SM_DB_System::save_branch($data);
+    }
+
+    public static function get_branch_by_id($id) {
+        global $wpdb;
+        return $wpdb->get_row($wpdb->prepare("SELECT * FROM {$wpdb->prefix}sm_branches_data WHERE id = %d", intval($id)));
     }
 
     public static function delete_branch($id) {

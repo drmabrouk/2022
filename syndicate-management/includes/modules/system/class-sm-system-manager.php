@@ -5,12 +5,31 @@ if (!defined('ABSPATH')) {
 
 class SM_System_Manager {
     public static function ajax_save_branch() {
-        if (!current_user_can('sm_full_access') && !current_user_can('manage_options')) {
+        $can_manage_all = current_user_can('sm_full_access') || current_user_can('manage_options');
+        $is_officer = in_array('sm_syndicate_admin', (array)wp_get_current_user()->roles);
+
+        if (!$can_manage_all && !$is_officer) {
             wp_send_json_error('Unauthorized');
         }
         check_ajax_referer('sm_admin_action', 'nonce');
 
         $data = $_POST;
+        $id = !empty($data['id']) ? intval($data['id']) : null;
+
+        // Granular Permissions: Branch officers can only edit their own branch
+        if ($is_officer && !$can_manage_all) {
+            $my_gov = get_user_meta(get_current_user_id(), 'sm_governorate', true);
+            if (!$id) {
+                wp_send_json_error('لا تملك صلاحية إضافة فروع جديدة.');
+            }
+            $branch = SM_DB::get_branch_by_id($id);
+            if (!$branch || $branch->slug !== $my_gov) {
+                wp_send_json_error('لا تملك صلاحية تعديل هذا الفرع.');
+            }
+            // Officers cannot change the slug (internal routing)
+            unset($data['slug']);
+        }
+
         if (isset($data['is_active'])) {
             $data['is_active'] = (int)$data['is_active'];
         }
@@ -25,7 +44,7 @@ class SM_System_Manager {
 
     public static function ajax_delete_branch() {
         if (!current_user_can('sm_full_access') && !current_user_can('manage_options')) {
-            wp_send_json_error('Unauthorized');
+            wp_send_json_error('Unauthorized: لا يملك مسؤول الفرع صلاحية الحذف.');
         }
         check_ajax_referer('sm_admin_action', 'nonce');
         $id = intval($_POST['id']);
