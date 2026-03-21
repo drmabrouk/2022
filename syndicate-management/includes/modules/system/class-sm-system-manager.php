@@ -387,6 +387,19 @@ class SM_System_Manager {
         exit;
     }
 
+    public static function ajax_get_branch_details() {
+        if (!is_user_logged_in()) wp_send_json_error('Unauthorized');
+        $id = intval($_GET['id']);
+        $branch = SM_DB::get_branch_by_id($id);
+        if (!$branch) wp_send_json_error('Branch not found');
+
+        $stats = SM_DB_Finance::get_statistics(['governorate' => $branch->slug]);
+        wp_send_json_success([
+            'branch' => $branch,
+            'stats' => $stats
+        ]);
+    }
+
     public static function ajax_download_backup() {
         if (!current_user_can('manage_options')) wp_send_json_error('Unauthorized');
         check_ajax_referer('sm_admin_action', 'nonce');

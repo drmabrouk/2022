@@ -322,6 +322,11 @@ class SM_DB_System {
             'digital_wallet' => sanitize_text_field($data['digital_wallet'] ?? ''),
             'instapay_id' => sanitize_text_field($data['instapay_id'] ?? ''),
             'postal_code' => sanitize_text_field($data['postal_code'] ?? ''),
+            'logo_url' => esc_url_raw($data['logo_url'] ?? ''),
+            'latitude' => sanitize_text_field($data['latitude'] ?? ''),
+            'longitude' => sanitize_text_field($data['longitude'] ?? ''),
+            'payment_methods' => !empty($data['payment_methods']) ? json_encode($data['payment_methods']) : '',
+            'privacy_settings' => !empty($data['privacy_settings']) ? json_encode($data['privacy_settings']) : '',
             'committees' => sanitize_text_field($data['committees'] ?? ''),
             'fees' => !empty($data['fees']) ? json_encode($data['fees']) : null,
             'is_active' => isset($data['is_active']) ? 1 : 0

@@ -18,6 +18,7 @@ foreach ($members as $m) {
     <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 30px;">
         <h3 style="margin:0;">إدارة الاستحقاقات المالية</h3>
         <div style="display:flex; gap:10px;">
+             <button onclick="smOpenPrintCustomizer('finance')" class="sm-btn" style="background: #4a5568; width: auto;"><span class="dashicons dashicons-printer"></span> طباعة مخصصة</button>
              <div class="sm-actions-dropdown" style="position:relative; display:inline-block;">
                 <button class="sm-btn" style="background: #2c3e50; width: auto;"><span class="dashicons dashicons-media-spreadsheet"></span> تقارير الاستحقاقات <span class="dashicons dashicons-arrow-down-alt2" style="font-size: 10px;"></span></button>
                 <div class="sm-actions-content" style="left:0; right:auto;">
@@ -74,9 +75,10 @@ foreach ($members as $m) {
 
     <!-- Members Balance Table -->
     <div class="sm-table-container">
-        <table class="sm-table">
+        <table class="sm-table sm-table-dense">
             <thead>
                 <tr>
+                    <th style="width:40px;"><input type="checkbox" onclick="document.querySelectorAll('.member-checkbox').forEach(cb => cb.checked = this.checked)"></th>
                     <th>العضو</th>
                     <th>الرقم القومي</th>
                     <th>المستحق</th>
@@ -92,6 +94,7 @@ foreach ($members as $m) {
                 <?php else: ?>
                     <?php foreach ($members_with_balance as $m): ?>
                         <tr>
+                            <td><input type="checkbox" class="member-checkbox" value="<?php echo $m->id; ?>"></td>
                             <td>
                                 <div style="font-weight: 700; color: var(--sm-dark-color);"><?php echo esc_html($m->name); ?></div>
                                 <div style="font-size: 11px; color: #718096;"><?php echo esc_html($m->membership_number); ?></div>

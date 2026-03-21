@@ -43,6 +43,7 @@ class Syndicate_Management {
         require_once SM_PLUGIN_DIR . 'includes/modules/messaging/class-sm-messaging-manager.php';
         require_once SM_PLUGIN_DIR . 'includes/modules/education/class-sm-education-manager.php';
         require_once SM_PLUGIN_DIR . 'includes/modules/system/class-sm-system-manager.php';
+        require_once SM_PLUGIN_DIR . 'includes/modules/system/class-sm-print-manager.php';
 
         // Controllers
         require_once SM_PLUGIN_DIR . 'admin/class-sm-admin.php';
@@ -166,11 +167,14 @@ class Syndicate_Management {
             'sm_save_pub_identity' => ['SM_System_Manager', 'ajax_save_pub_identity'],
             'sm_save_pub_template' => ['SM_System_Manager', 'ajax_save_pub_template'],
             'sm_export_branches' => ['SM_System_Manager', 'ajax_export_branches'],
+            'sm_get_branch_details' => ['SM_System_Manager', 'ajax_get_branch_details'],
             'sm_download_backup' => ['SM_System_Manager', 'ajax_download_backup'],
             'sm_restore_backup_ajax' => ['SM_System_Manager', 'ajax_restore_backup'],
             'sm_get_backup_history' => ['SM_System_Manager', 'ajax_get_backup_history'],
             'sm_update_backup_freq' => ['SM_System_Manager', 'ajax_update_backup_freq'],
             'sm_download_stored_backup' => ['SM_System_Manager', 'ajax_download_stored_backup'],
+
+            'sm_get_custom_print' => ['SM_Print_Manager', 'ajax_get_custom_print'],
 
             'sm_update_profile_ajax' => ['SM_Auth', 'ajax_update_profile'],
             'sm_forgot_password_otp' => ['SM_Auth', 'ajax_forgot_password_otp'],

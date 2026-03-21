@@ -38,7 +38,10 @@ $registry = $wpdb->get_results($wpdb->prepare(
 <div class="sm-practice-licenses" dir="rtl">
     <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 30px;">
         <h3 style="margin:0;">إدارة تصاريح مزاولة المهنة</h3>
-        <button onclick="smOpenLicenseIssuanceModal()" class="sm-btn" style="width:auto;">+ إصدار / تجديد تصريح</button>
+        <div style="display:flex; gap:10px;">
+            <button onclick="smOpenPrintCustomizer('practice_licenses')" class="sm-btn" style="background: #4a5568; width: auto;"><span class="dashicons dashicons-printer"></span> طباعة السجل</button>
+            <button onclick="smOpenLicenseIssuanceModal()" class="sm-btn" style="width:auto;">+ إصدار / تجديد تصريح</button>
+        </div>
     </div>
 
     <div class="sm-tabs-wrapper" style="display: flex; gap: 10px; margin-bottom: 30px; border-bottom: 2px solid #eee; padding-bottom: 10px;">
@@ -87,9 +90,10 @@ $registry = $wpdb->get_results($wpdb->prepare(
     </div>
 
     <div class="sm-table-container">
-        <table class="sm-table">
+        <table class="sm-table sm-table-dense">
             <thead>
                 <tr>
+                    <th style="width:40px;"><input type="checkbox" onclick="document.querySelectorAll('.member-checkbox').forEach(cb => cb.checked = this.checked)"></th>
                     <th>العضو</th>
                     <th>رقم الترخيص</th>
                     <th>تاريخ الإصدار</th>
@@ -104,6 +108,7 @@ $registry = $wpdb->get_results($wpdb->prepare(
                     $is_soon = !$is_expired && $m->license_expiration_date <= $soon_date;
                 ?>
                 <tr>
+                    <td><input type="checkbox" class="member-checkbox" value="<?php echo $m->id; ?>"></td>
                     <td>
                         <div style="font-weight: 700;"><?php echo esc_html($m->name); ?></div>
                         <div style="font-size: 11px; color: #718096;"><?php echo esc_html($m->national_id); ?></div>

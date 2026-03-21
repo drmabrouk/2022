@@ -39,7 +39,10 @@ $registry = $wpdb->get_results($wpdb->prepare(
 <div class="sm-facility-licenses" dir="rtl">
     <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 30px;">
         <h3 style="margin:0;">إدارة تراخيص المنشآت</h3>
-        <button onclick="smOpenFacilityModal()" class="sm-btn" style="width:auto;">+ تسجيل / تجديد منشأة</button>
+        <div style="display:flex; gap:10px;">
+            <button onclick="smOpenPrintCustomizer('facility_licenses')" class="sm-btn" style="background: #4a5568; width: auto;"><span class="dashicons dashicons-printer"></span> طباعة السجل</button>
+            <button onclick="smOpenFacilityModal()" class="sm-btn" style="width:auto;">+ تسجيل / تجديد منشأة</button>
+        </div>
     </div>
 
     <div class="sm-tabs-wrapper" style="display: flex; gap: 10px; margin-bottom: 30px; border-bottom: 2px solid #eee; padding-bottom: 10px;">
@@ -88,9 +91,10 @@ $registry = $wpdb->get_results($wpdb->prepare(
     </div>
 
     <div class="sm-table-container">
-        <table class="sm-table">
+        <table class="sm-table sm-table-dense">
             <thead>
                 <tr>
+                    <th style="width:40px;"><input type="checkbox" onclick="document.querySelectorAll('.member-checkbox').forEach(cb => cb.checked = this.checked)"></th>
                     <th>المنشأة / المالك</th>
                     <th>رقم الترخيص</th>
                     <th>الفئة</th>
@@ -104,6 +108,7 @@ $registry = $wpdb->get_results($wpdb->prepare(
                     $is_expired = $m->facility_license_expiration_date < $current_date;
                 ?>
                 <tr>
+                    <td><input type="checkbox" class="member-checkbox" value="<?php echo $m->id; ?>"></td>
                     <td>
                         <div style="font-weight: 700; color: var(--sm-primary-color);"><?php echo esc_html($m->facility_name); ?></div>
                         <div style="font-size: 11px; color: #718096;">المالك: <?php echo esc_html($m->name); ?></div>
