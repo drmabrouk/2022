@@ -30,7 +30,7 @@ class SM_DB_Finance {
         $params = [];
 
         if (!$has_full_access && $my_gov) {
-            $where .= " AND EXISTS (SELECT 1 FROM {$wpdb->prefix}sm_members m WHERE m.id = p.member_id AND m.governorate = %s)";
+            $where .= " AND m.governorate = %s";
             $params[] = $my_gov;
         }
 
@@ -39,7 +39,7 @@ class SM_DB_Finance {
         if (!empty($args['year'])) { $where .= " AND YEAR(p.payment_date) = %d"; $params[] = intval($args['year']); }
 
         if (!empty($args['search'])) {
-            $where .= " AND EXISTS (SELECT 1 FROM {$wpdb->prefix}sm_members m WHERE m.id = p.member_id AND (m.name LIKE %s OR m.national_id LIKE %s))";
+            $where .= " AND (m.name LIKE %s OR m.national_id LIKE %s)";
             $s = '%' . $wpdb->esc_like($args['search']) . '%';
             $params[] = $s; $params[] = $s;
         }
@@ -52,14 +52,18 @@ class SM_DB_Finance {
         }
 
         $limit = isset($args['limit']) ? intval($args['limit']) : 500;
-        $query = "SELECT p.*, u.display_name as staff_name FROM {$wpdb->prefix}sm_payments p LEFT JOIN {$wpdb->base_prefix}users u ON p.created_by = u.ID WHERE $where ORDER BY p.created_at DESC";
+        $query = "SELECT p.*, m.name as member_name, m.governorate as member_gov, u.display_name as staff_name
+                  FROM {$wpdb->prefix}sm_payments p
+                  JOIN {$wpdb->prefix}sm_members m ON p.member_id = m.id
+                  LEFT JOIN {$wpdb->base_prefix}users u ON p.created_by = u.ID
+                  WHERE $where ORDER BY p.created_at DESC";
 
         if ($limit != -1) {
             $query .= $wpdb->prepare(" LIMIT %d", $limit);
         }
 
         if (!empty($params)) {
-            return $wpdb->get_results($wpdb->prepare($query, $params));
+            return $wpdb->get_results($wpdb->prepare($query, ...$params));
         }
         return $wpdb->get_results($query);
     }

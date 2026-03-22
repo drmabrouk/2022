@@ -116,14 +116,19 @@ class SM_DB_Members {
         }
 
         $orderby = $args['orderby'] ?? 'sort_order ASC, name ASC';
-        $query = "SELECT * FROM $table_name WHERE $where ORDER BY $orderby";
 
         if ($limit != -1) {
-            $query .= $wpdb->prepare(" LIMIT %d OFFSET %d", $limit, $offset);
+            $where .= " ORDER BY $orderby LIMIT %d OFFSET %d";
+            $params[] = $limit;
+            $params[] = $offset;
+        } else {
+            $where .= " ORDER BY $orderby";
         }
 
+        $query = "SELECT * FROM $table_name WHERE $where";
+
         if (!empty($params)) {
-            return $wpdb->get_results($wpdb->prepare($query, $params));
+            return $wpdb->get_results($wpdb->prepare($query, ...$params));
         }
         return $wpdb->get_results($query);
     }
@@ -229,7 +234,7 @@ class SM_DB_Members {
         $wp_user_id = null;
 
         if (!function_exists('wp_insert_user')) {
-            require_once(ABSPATH . 'wp-includes/user.php');
+            require_once(ABSPATH . 'wp-admin/includes/user.php');
         }
 
         // Check if WP user already exists by login
@@ -309,6 +314,10 @@ class SM_DB_Members {
     public static function update_member($id, $data) {
         global $wpdb;
         $table_name = $wpdb->prefix . 'sm_members';
+
+        if (!function_exists('wp_update_user')) {
+            require_once(ABSPATH . 'wp-admin/includes/user.php');
+        }
 
         $update_data = array();
         $fields = [

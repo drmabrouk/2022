@@ -196,7 +196,7 @@ class Syndicate_Management {
                 'sm_submit_service_request', 'sm_track_service_request',
                 'sm_forgot_password_otp', 'sm_reset_password_otp',
                 'sm_activate_account_step1', 'sm_activate_account_final',
-                'sm_submit_membership_request', 'sm_track_membership_request',
+                'sm_submit_membership_request',
                 'sm_submit_membership_request_stage3', 'sm_get_test_questions'
             ];
 

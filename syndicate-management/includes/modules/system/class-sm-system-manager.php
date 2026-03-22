@@ -116,6 +116,7 @@ class SM_System_Manager {
             wp_send_json_error(['message' => 'Unauthorized']);
         }
         check_ajax_referer('sm_admin_action', 'nonce');
+        require_once(ABSPATH . 'wp-admin/includes/user.php');
 
         $pass = $_POST['admin_password'] ?? '';
         $user = wp_get_current_user();
@@ -127,7 +128,6 @@ class SM_System_Manager {
         $uids = SM_DB::get_member_wp_user_ids();
 
         if (!empty($uids)) {
-            require_once(ABSPATH . 'wp-admin/includes/user.php');
             foreach ($uids as $uid) {
                 wp_delete_user($uid);
             }
@@ -220,6 +220,7 @@ class SM_System_Manager {
             wp_send_json_error(['message' => 'Unauthorized']);
         }
         check_ajax_referer('sm_admin_action', 'nonce');
+        require_once(ABSPATH . 'wp-admin/includes/user.php');
         $gov = sanitize_text_field($_POST['governorate']);
         if (!$gov) {
             wp_send_json_error(['message' => 'فرع غير محددة']);
@@ -230,7 +231,6 @@ class SM_System_Manager {
         }
         $uids = SM_DB::get_member_wp_user_ids($gov);
         if (!empty($uids)) {
-            require_once(ABSPATH . 'wp-admin/includes/user.php');
             foreach ($uids as $uid) wp_delete_user($uid);
         }
         SM_DB::delete_payments_by_member_ids($m_ids);
@@ -244,6 +244,7 @@ class SM_System_Manager {
             wp_send_json_error(['message' => 'Unauthorized']);
         }
         check_ajax_referer('sm_admin_action', 'nonce');
+        require_once(ABSPATH . 'wp-admin/includes/user.php');
         $gov = sanitize_text_field($_POST['governorate']);
         if (empty($_FILES['backup_file']['tmp_name'])) {
             wp_send_json_error(['message' => 'الملف غير موجود']);
