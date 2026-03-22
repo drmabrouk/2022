@@ -40,6 +40,8 @@ class SM_Member_Manager {
         $res = SM_DB::add_member($_POST);
         if (is_wp_error($res)) {
             wp_send_json_error(['message' => $res->get_error_message()]);
+        } elseif (!$res) {
+            wp_send_json_error(['message' => 'فشل في إضافة العضو لقاعدة البيانات.']);
         } else {
             delete_transient('sm_stats_global');
             if (!empty($_POST['governorate'])) delete_transient('sm_stats_' . $_POST['governorate']);

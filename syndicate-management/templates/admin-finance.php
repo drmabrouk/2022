@@ -5,7 +5,7 @@ $search = isset($_GET['member_search']) ? sanitize_text_field($_GET['member_sear
 $members = SM_DB::get_members(['search' => $search]);
 
 if (!empty($members)) {
-    SM_Finance::prefetch_data(array_map(fn($m) => $m->id, $members));
+    SM_Finance::prefetch_data(array_map(function($m) { return $m->id; }, $members));
 }
 
 $members_with_balance = [];

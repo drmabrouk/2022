@@ -18,14 +18,18 @@
         handleAjaxError: function(err, customMsg = 'حدث خطأ أثناء تنفيذ العملية') {
             console.error('SM_AJAX_ERROR:', err);
             let msg = '';
-            if (typeof err === 'string') {
+            if (err === 0 || err === "0") {
+                msg = 'WordPress returned 0 (Check AJAX action name or nonce validation)';
+            } else if (typeof err === 'string') {
                 msg = err;
             } else if (err && err.message) {
                 msg = err.message;
             } else if (err && err.data) {
                 msg = typeof err.data === 'string' ? err.data : (err.data.message || JSON.stringify(err.data));
-            } else {
+            } else if (err && typeof err === 'object') {
                 msg = JSON.stringify(err);
+            } else {
+                msg = String(err);
             }
             this.showNotification(customMsg + ': ' + msg, true);
         },
@@ -758,15 +762,25 @@
         btn.disabled = true; btn.innerText = 'جاري التجهيز...';
 
         fetch(ajaxurl, { method: 'POST', body: fd })
-        .then(r => r.json())
+        .then(r => {
+            if (!r.ok) throw new Error('Network response was not ok: ' + r.statusText);
+            return r.text();
+        })
+        .then(text => {
+            try {
+                return JSON.parse(text);
+            } catch(e) {
+                throw new Error('Invalid JSON response from server: ' + text.substring(0, 100));
+            }
+        })
         .then(res => {
             btn.disabled = false; btn.innerText = 'استخراج للطباعة';
-            if (res.success) {
+            if (res.success && res.data && res.data.html) {
                 const win = window.open('', '_blank');
                 win.document.write(res.data.html);
                 win.document.close();
             } else {
-                smHandleAjaxError(res.data, 'فشل استخراج بيانات الطباعة');
+                smHandleAjaxError(res.data || res, 'فشل استخراج بيانات الطباعة');
             }
         }).catch(err => {
             btn.disabled = false; btn.innerText = 'استخراج للطباعة';

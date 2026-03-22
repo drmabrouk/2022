@@ -44,8 +44,19 @@ class SM_DB_Finance {
             $params[] = $s; $params[] = $s;
         }
 
+        if (isset($args['include']) && !empty($args['include'])) {
+            $include_ids = array_map('intval', (array)$args['include']);
+            if (!empty($include_ids)) {
+                $where .= " AND p.id IN (" . implode(',', $include_ids) . ")";
+            }
+        }
+
         $limit = isset($args['limit']) ? intval($args['limit']) : 500;
-        $query = "SELECT p.*, u.display_name as staff_name FROM {$wpdb->prefix}sm_payments p LEFT JOIN {$wpdb->base_prefix}users u ON p.created_by = u.ID WHERE $where ORDER BY p.created_at DESC LIMIT $limit";
+        $query = "SELECT p.*, u.display_name as staff_name FROM {$wpdb->prefix}sm_payments p LEFT JOIN {$wpdb->base_prefix}users u ON p.created_by = u.ID WHERE $where ORDER BY p.created_at DESC";
+
+        if ($limit != -1) {
+            $query .= $wpdb->prepare(" LIMIT %d", $limit);
+        }
 
         if (!empty($params)) {
             return $wpdb->get_results($wpdb->prepare($query, $params));

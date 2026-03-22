@@ -40,11 +40,12 @@ class SM_System_Manager {
             $data['is_active'] = (int)$data['is_active'];
         }
 
-        if (SM_DB::save_branch($data) !== false) {
+        $res = SM_DB::save_branch($data);
+        if ($res !== false) {
             SM_Logger::log('حفظ بيانات فرع', "تم حفظ بيانات الفرع: " . sanitize_text_field($data['name'] ?? ''));
             wp_send_json_success('Branch saved');
         } else {
-            wp_send_json_error(['message' => 'Failed to save branch']);
+            wp_send_json_error(['message' => 'فشل في حفظ بيانات الفرع. تأكد من صحة الكود (Slug).']);
         }
     }
 

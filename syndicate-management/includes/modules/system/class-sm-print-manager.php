@@ -12,9 +12,10 @@ class SM_Print_Manager {
         self::check_capability('sm_print_reports');
         check_ajax_referer('sm_admin_action', 'nonce');
 
-        $module = sanitize_text_field($_POST['module']);
+        $module = sanitize_text_field($_POST['module'] ?? '');
         $fields = isset($_POST['fields']) ? array_map('sanitize_text_field', $_POST['fields']) : [];
-        $ids = isset($_POST['ids']) ? array_map('intval', explode(',', $_POST['ids'])) : [];
+        $ids_raw = isset($_POST['ids']) ? sanitize_text_field($_POST['ids']) : '';
+        $ids = !empty($ids_raw) ? array_map('intval', explode(',', $ids_raw)) : [];
         $all_records = isset($_POST['all_records']) && $_POST['all_records'] === 'true';
 
         $current_user = wp_get_current_user();
@@ -27,12 +28,13 @@ class SM_Print_Manager {
         switch ($module) {
             case 'members':
                 $title = 'كشف بيانات الأعضاء';
-                $args = $all_records ? ['limit' => -1] : ['include' => $ids];
+                $args = ['limit' => -1];
+                if (!$all_records && !empty($ids)) $args['include'] = $ids;
                 if (!$is_admin && $my_gov) $args['governorate'] = $my_gov;
                 $results = SM_DB::get_members($args);
 
                 if (!empty($results)) {
-                    SM_Finance::prefetch_data(array_map(fn($m) => $m->id, $results));
+                    SM_Finance::prefetch_data(array_map(function($m) { return $m->id; }, $results));
                 }
 
                 foreach ($results as $row) {
@@ -65,10 +67,11 @@ class SM_Print_Manager {
 
             case 'finance':
                 $title = 'تقرير العمليات المالية';
-                $results = SM_DB::get_payments(['limit' => $all_records ? -1 : 500]);
+                $args = ['limit' => -1];
+                if (!$all_records && !empty($ids)) $args['include'] = $ids;
+                $results = SM_DB::get_payments($args);
 
                 foreach ($results as $row) {
-                    if (!$all_records && !empty($ids) && !in_array($row->id, $ids)) continue;
                     $member = SM_DB::get_member_by_id($row->member_id);
                     $item = [];
                     foreach ($fields as $f) {
@@ -87,14 +90,12 @@ class SM_Print_Manager {
 
             case 'practice_licenses':
                 $title = 'سجل تراخيص مزاولة المهنة';
-                $args = ['limit' => -1];
+                $args = ['limit' => -1, 'only_with_license' => true];
+                if (!$all_records && !empty($ids)) $args['include'] = $ids;
                 if (!$is_admin && $my_gov) $args['governorate'] = $my_gov;
                 $members = SM_DB::get_members($args);
 
                 foreach ($members as $row) {
-                    if (empty($row->license_number)) continue;
-                    if (!$all_records && !empty($ids) && !in_array($row->id, $ids)) continue;
-
                     $item = [];
                     foreach ($fields as $f) {
                         switch ($f) {
@@ -115,14 +116,12 @@ class SM_Print_Manager {
 
             case 'facility_licenses':
                 $title = 'سجل تراخيص المنشآت';
-                $args = ['limit' => -1];
+                $args = ['limit' => -1, 'only_with_facility' => true];
+                if (!$all_records && !empty($ids)) $args['include'] = $ids;
                 if (!$is_admin && $my_gov) $args['governorate'] = $my_gov;
                 $members = SM_DB::get_members($args);
 
                 foreach ($members as $row) {
-                    if (empty($row->facility_number)) continue;
-                    if (!$all_records && !empty($ids) && !in_array($row->id, $ids)) continue;
-
                     $item = [];
                     foreach ($fields as $f) {
                         switch ($f) {
