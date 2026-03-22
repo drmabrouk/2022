@@ -162,8 +162,8 @@ class SM_Print_Manager {
             $html = ob_get_clean();
 
             wp_send_json_success(['html' => $html]);
-        } catch (Exception $e) {
-            wp_send_json_error(['message' => 'حدث خطأ غير متوقع: ' . $e->getMessage()]);
+        } catch (Throwable $e) {
+            wp_send_json_error(['message' => 'حدث خطأ غير متوقع في نظام الطباعة: ' . $e->getMessage()]);
         }
     }
 }

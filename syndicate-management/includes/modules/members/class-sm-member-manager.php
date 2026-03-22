@@ -35,36 +35,48 @@ class SM_Member_Manager {
     }
 
     public static function ajax_add_member() {
-        self::check_capability('sm_manage_members');
-        check_ajax_referer('sm_add_member', 'sm_nonce');
-        require_once(ABSPATH . 'wp-admin/includes/user.php');
-        $res = SM_DB::add_member($_POST);
-        if (is_wp_error($res)) {
-            wp_send_json_error(['message' => $res->get_error_message()]);
-        } elseif (!$res) {
-            wp_send_json_error(['message' => 'فشل في إضافة العضو لقاعدة البيانات.']);
-        } else {
-            delete_transient('sm_stats_global');
-            if (!empty($_POST['governorate'])) delete_transient('sm_stats_' . $_POST['governorate']);
-            wp_send_json_success($res);
+        try {
+            self::check_capability('sm_manage_members');
+            check_ajax_referer('sm_add_member', 'sm_nonce');
+            if (!function_exists('wp_insert_user')) {
+                require_once(ABSPATH . 'wp-admin/includes/user.php');
+            }
+            $res = SM_DB::add_member($_POST);
+            if (is_wp_error($res)) {
+                wp_send_json_error(['message' => $res->get_error_message()]);
+            } elseif (!$res) {
+                wp_send_json_error(['message' => 'فشل في إضافة العضو لقاعدة البيانات.']);
+            } else {
+                delete_transient('sm_stats_global');
+                if (!empty($_POST['governorate'])) delete_transient('sm_stats_' . $_POST['governorate']);
+                wp_send_json_success($res);
+            }
+        } catch (Throwable $e) {
+            wp_send_json_error(['message' => 'Critical Error adding member: ' . $e->getMessage()]);
         }
     }
 
     public static function ajax_update_member() {
-        self::check_capability('sm_manage_members');
-        check_ajax_referer('sm_add_member', 'sm_nonce');
-        require_once(ABSPATH . 'wp-admin/includes/user.php');
-        $id = intval($_POST['member_id']);
-        self::validate_member_access($id);
-        $old = SM_DB::get_member_by_id($id);
-        SM_DB::update_member($id, $_POST);
+        try {
+            self::check_capability('sm_manage_members');
+            check_ajax_referer('sm_add_member', 'sm_nonce');
+            if (!function_exists('wp_update_user')) {
+                require_once(ABSPATH . 'wp-admin/includes/user.php');
+            }
+            $id = intval($_POST['member_id']);
+            self::validate_member_access($id);
+            $old = SM_DB::get_member_by_id($id);
+            SM_DB::update_member($id, $_POST);
 
-        delete_transient('sm_stats_global');
-        if ($old) delete_transient('sm_stats_' . $old->governorate);
-        if (!empty($_POST['governorate'])) delete_transient('sm_stats_' . $_POST['governorate']);
-        SM_Finance::invalidate_financial_caches($old ? $old->governorate : null);
+            delete_transient('sm_stats_global');
+            if ($old) delete_transient('sm_stats_' . $old->governorate);
+            if (!empty($_POST['governorate'])) delete_transient('sm_stats_' . $_POST['governorate']);
+            SM_Finance::invalidate_financial_caches($old ? $old->governorate : null);
 
-        wp_send_json_success(['message' => 'Updated']);
+            wp_send_json_success(['message' => 'Updated']);
+        } catch (Throwable $e) {
+            wp_send_json_error(['message' => 'Critical Error updating member: ' . $e->getMessage()]);
+        }
     }
 
     public static function ajax_import_staffs_csv() {
@@ -183,10 +195,16 @@ class SM_Member_Manager {
     }
 
     public static function ajax_update_member_account() {
-        self::check_capability('sm_manage_members');
-        check_ajax_referer('sm_admin_action', 'nonce');
-        if (!function_exists('wp_update_user')) {
-            require_once(ABSPATH . 'wp-admin/includes/user.php');
+        try {
+            self::check_capability('sm_manage_members');
+            check_ajax_referer('sm_admin_action', 'nonce');
+            if (!function_exists('wp_update_user')) {
+                require_once(ABSPATH . 'wp-admin/includes/user.php');
+            }
+        if (!function_exists('media_handle_upload')) {
+            require_once(ABSPATH . 'wp-admin/includes/file.php');
+            require_once(ABSPATH . 'wp-admin/includes/image.php');
+            require_once(ABSPATH . 'wp-admin/includes/media.php');
         }
         $mid = intval($_POST['member_id']);
         $uid = intval($_POST['wp_user_id']);
@@ -211,8 +229,11 @@ class SM_Member_Manager {
 
         SM_DB::update_member($mid, ['email' => $email]);
 
-        SM_Logger::log('تحديث حساب عضو', "تم تحديث بيانات الحساب للعضو ID: $mid");
-        wp_send_json_success(['message' => 'Account updated']);
+            SM_Logger::log('تحديث حساب عضو', "تم تحديث بيانات الحساب للعضو ID: $mid");
+            wp_send_json_success(['message' => 'Account updated']);
+        } catch (Throwable $e) {
+            wp_send_json_error(['message' => 'Critical Error updating account: ' . $e->getMessage()]);
+        }
     }
 
     private static function check_capability($cap) {
@@ -272,10 +293,11 @@ class SM_Member_Manager {
     }
 
     public static function ajax_add_staff() {
-        self::check_capability('sm_manage_users');
-        if (!function_exists('wp_insert_user')) {
-            require_once(ABSPATH . 'wp-admin/includes/user.php');
-        }
+        try {
+            self::check_capability('sm_manage_users');
+            if (!function_exists('wp_insert_user')) {
+                require_once(ABSPATH . 'wp-admin/includes/user.php');
+            }
         if (!wp_verify_nonce($_POST['sm_nonce'], 'sm_syndicateMemberAction')) {
             wp_send_json_error(['message' => 'Security check failed']);
         }
@@ -318,15 +340,19 @@ class SM_Member_Manager {
             $gov = get_user_meta(get_current_user_id(), 'sm_governorate', true);
         }
         update_user_meta($uid, 'sm_governorate', $gov);
-        SM_Logger::log('إضافة مستخدم', "الاسم: $display_name الدور: $role");
-        wp_send_json_success($uid);
+            SM_Logger::log('إضافة مستخدم', "الاسم: $display_name الدور: $role");
+            wp_send_json_success($uid);
+        } catch (Throwable $e) {
+            wp_send_json_error(['message' => 'Critical Error adding staff: ' . $e->getMessage()]);
+        }
     }
 
     public static function ajax_update_staff() {
-        self::check_capability('sm_manage_users');
-        if (!function_exists('wp_update_user')) {
-            require_once(ABSPATH . 'wp-admin/includes/user.php');
-        }
+        try {
+            self::check_capability('sm_manage_users');
+            if (!function_exists('wp_update_user')) {
+                require_once(ABSPATH . 'wp-admin/includes/user.php');
+            }
         if (!wp_verify_nonce($_POST['sm_nonce'], 'sm_syndicateMemberAction')) {
             wp_send_json_error(['message' => 'Security check failed']);
         }
@@ -356,9 +382,12 @@ class SM_Member_Manager {
         update_user_meta($uid, 'sm_syndicateMemberIdAttr', sanitize_text_field($_POST['officer_id']));
         update_user_meta($uid, 'sm_phone', sanitize_text_field($_POST['phone']));
         update_user_meta($uid, 'sm_rank', sanitize_text_field($_POST['rank']));
-        update_user_meta($uid, 'sm_account_status', sanitize_text_field($_POST['account_status']));
-        SM_Logger::log('تحديث مستخدم', "الاسم: {$_POST['display_name']}");
-        wp_send_json_success(['message' => 'Updated']);
+            update_user_meta($uid, 'sm_account_status', sanitize_text_field($_POST['account_status']));
+            SM_Logger::log('تحديث مستخدم', "الاسم: {$_POST['display_name']}");
+            wp_send_json_success(['message' => 'Updated']);
+        } catch (Throwable $e) {
+            wp_send_json_error(['message' => 'Critical Error updating staff: ' . $e->getMessage()]);
+        }
     }
 
     public static function ajax_delete_staff() {
@@ -449,10 +478,14 @@ class SM_Member_Manager {
     }
 
     public static function ajax_process_membership_request() {
-        self::check_capability('sm_manage_members');
-        check_ajax_referer('sm_admin_action', 'nonce');
+        try {
+            self::check_capability('sm_manage_members');
+            check_ajax_referer('sm_admin_action', 'nonce');
+            if (!function_exists('wp_insert_user')) {
+                require_once(ABSPATH . 'wp-admin/includes/user.php');
+            }
 
-        $rid = intval($_POST['request_id']);
+            $rid = intval($_POST['request_id']);
         $status = sanitize_text_field($_POST['status']);
         $reason = sanitize_text_field($_POST['reason'] ?? '');
 
@@ -527,8 +560,11 @@ class SM_Member_Manager {
 
         SM_DB::update_membership_request($rid, $upd);
 
-        SM_Logger::log('معالجة طلب عضوية', "تم {$status} طلب العضوية للرقم القومي: {$req->national_id}");
-        wp_send_json_success(['message' => "Request $status"]);
+            SM_Logger::log('معالجة طلب عضوية', "تم {$status} طلب العضوية للرقم القومي: {$req->national_id}");
+            wp_send_json_success(['message' => "Request $status"]);
+        } catch (Throwable $e) {
+            wp_send_json_error(['message' => 'Critical Error processing membership: ' . $e->getMessage()]);
+        }
     }
 
     public static function ajax_upload_document() {

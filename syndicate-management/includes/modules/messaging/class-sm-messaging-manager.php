@@ -17,10 +17,11 @@ class SM_Messaging_Manager {
     }
 
     public static function ajax_send_message() {
-        if (!is_user_logged_in()) {
-            wp_send_json_error(['message' => 'Unauthorized']);
-        }
-        check_ajax_referer('sm_message_action', 'nonce');
+        try {
+            if (!is_user_logged_in()) {
+                wp_send_json_error(['message' => 'Unauthorized']);
+            }
+            check_ajax_referer('sm_message_action', 'nonce');
 
         $sid = get_current_user_id();
         $mid = intval($_POST['member_id'] ?? 0);
@@ -55,8 +56,11 @@ class SM_Messaging_Manager {
             }
         }
 
-        SM_DB::send_message($sid, $rid, $msg, $mid, $url, $member->governorate);
-        wp_send_json_success();
+            SM_DB::send_message($sid, $rid, $msg, $mid, $url, $member->governorate);
+            wp_send_json_success();
+        } catch (Throwable $e) {
+            wp_send_json_error(['message' => 'Critical Error sending message: ' . $e->getMessage()]);
+        }
     }
 
     public static function ajax_get_conversation() {
@@ -162,10 +166,11 @@ class SM_Messaging_Manager {
     }
 
     public static function ajax_create_ticket() {
-        if (!is_user_logged_in()) {
-            wp_send_json_error(['message' => 'Unauthorized']);
-        }
-        check_ajax_referer('sm_ticket_action', 'nonce');
+        try {
+            if (!is_user_logged_in()) {
+                wp_send_json_error(['message' => 'Unauthorized']);
+            }
+            check_ajax_referer('sm_ticket_action', 'nonce');
         $user = wp_get_current_user();
         $member = SM_DB_Members::get_member_by_username($user->user_login);
         if (!$member) {
@@ -196,16 +201,19 @@ class SM_Messaging_Manager {
             'province' => $member->governorate,
             'file_url' => $url
         ]);
-        if ($tid) {
-            // Notification to official (Optional, but let's send confirmation to member)
-            if ($member->email) {
-                $email_subject = "تأكيد استلام تذكرة دعم رقم #$tid: $subject";
-                $email_body = "عزيزي العضو {$member->name}،\n\nتم استلام تذكرتكم بنجاح وسيقوم الفريق المختص بمراجعتها والرد عليكم في أقرب وقت ممكن.\n\nالموضوع: $subject\nالتفاصيل: $message";
-                self::send_professional_html_email($member->email, $email_subject, $email_body, $attachment_path ? [$attachment_path] : [], $member);
+            if ($tid) {
+                // Notification to official (Optional, but let's send confirmation to member)
+                if ($member->email) {
+                    $email_subject = "تأكيد استلام تذكرة دعم رقم #$tid: $subject";
+                    $email_body = "عزيزي العضو {$member->name}،\n\nتم استلام تذكرتكم بنجاح وسيقوم الفريق المختص بمراجعتها والرد عليكم في أقرب وقت ممكن.\n\nالموضوع: $subject\nالتفاصيل: $message";
+                    self::send_professional_html_email($member->email, $email_subject, $email_body, $attachment_path ? [$attachment_path] : [], $member);
+                }
+                wp_send_json_success($tid);
+            } else {
+                wp_send_json_error(['message' => 'Failed to create ticket']);
             }
-            wp_send_json_success($tid);
-        } else {
-            wp_send_json_error(['message' => 'Failed to create ticket']);
+        } catch (Throwable $e) {
+            wp_send_json_error(['message' => 'Critical Error creating ticket: ' . $e->getMessage()]);
         }
     }
 
@@ -237,10 +245,11 @@ class SM_Messaging_Manager {
     }
 
     public static function ajax_add_ticket_reply() {
-        if (!is_user_logged_in()) {
-            wp_send_json_error(['message' => 'Unauthorized']);
-        }
-        check_ajax_referer('sm_ticket_action', 'nonce');
+        try {
+            if (!is_user_logged_in()) {
+                wp_send_json_error(['message' => 'Unauthorized']);
+            }
+            check_ajax_referer('sm_ticket_action', 'nonce');
         $tid = intval($_POST['ticket_id']);
         $ticket = SM_DB::get_ticket($tid);
         if (!$ticket) wp_send_json_error(['message' => 'Ticket not found']);
@@ -266,24 +275,27 @@ class SM_Messaging_Manager {
             'message' => $msg,
             'file_url' => $url
         ]);
-        if ($rid) {
-            $sender = wp_get_current_user();
-            $is_official_reply = !in_array('sm_syndicate_member', $sender->roles);
+            if ($rid) {
+                $sender = wp_get_current_user();
+                $is_official_reply = !in_array('sm_syndicate_member', $sender->roles);
 
-            if ($is_official_reply) {
-                SM_DB::update_ticket_status($tid, 'in-progress');
+                if ($is_official_reply) {
+                    SM_DB::update_ticket_status($tid, 'in-progress');
 
-                // Send email to member
-                $member = SM_DB::get_member_by_id($ticket->member_id);
-                if ($member && $member->email) {
-                    $email_subject = "رد جديد على تذكرة الدعم: " . $ticket->subject;
-                    $email_body = "السيد الزميل/ {$member->name}\nتحية طيبة وبعد،،\n\nتم إضافة رد جديد من قبل إدارة النقابة على تذكرة الدعم الخاصة بكم:\n\n" . $msg . "\n\nيمكنكم متابعة التذكرة والرد عليها عبر حسابكم في المنصة الرقمية.";
-                    self::send_professional_html_email($member->email, $email_subject, $email_body, $attachment_path ? [$attachment_path] : [], $member);
+                    // Send email to member
+                    $member = SM_DB::get_member_by_id($ticket->member_id);
+                    if ($member && $member->email) {
+                        $email_subject = "رد جديد على تذكرة الدعم: " . $ticket->subject;
+                        $email_body = "السيد الزميل/ {$member->name}\nتحية طيبة وبعد،،\n\nتم إضافة رد جديد من قبل إدارة النقابة على تذكرة الدعم الخاصة بكم:\n\n" . $msg . "\n\nيمكنكم متابعة التذكرة والرد عليها عبر حسابكم في المنصة الرقمية.";
+                        self::send_professional_html_email($member->email, $email_subject, $email_body, $attachment_path ? [$attachment_path] : [], $member);
+                    }
                 }
+                wp_send_json_success($rid);
+            } else {
+                wp_send_json_error(['message' => 'Failed to add reply']);
             }
-            wp_send_json_success($rid);
-        } else {
-            wp_send_json_error(['message' => 'Failed to add reply']);
+        } catch (Throwable $e) {
+            wp_send_json_error(['message' => 'Critical Error adding reply: ' . $e->getMessage()]);
         }
     }
 
@@ -305,8 +317,9 @@ class SM_Messaging_Manager {
     }
 
     public static function ajax_send_direct_message() {
-        self::check_capability('sm_manage_system');
-        check_ajax_referer('sm_message_action', 'nonce');
+        try {
+            self::check_capability('sm_manage_system');
+            check_ajax_referer('sm_message_action', 'nonce');
 
         $member_ids = isset($_POST['member_ids']) ? array_map('intval', $_POST['member_ids']) : [];
         if (empty($member_ids) && !empty($_POST['member_id'])) {
@@ -367,7 +380,10 @@ class SM_Messaging_Manager {
             $results[$mid] = self::process_single_direct_comm($mid, $member, $channels, $subject, $message, $template_type, $attachment_paths, $attachment_urls);
         }
 
-        wp_send_json_success($results);
+            wp_send_json_success($results);
+        } catch (Throwable $e) {
+            wp_send_json_error(['message' => 'Critical Error sending direct message: ' . $e->getMessage()]);
+        }
     }
 
     private static function process_single_direct_comm($mid, $member, $channels, $subject, $message, $template_type, $attachment_paths = [], $attachment_urls = []) {

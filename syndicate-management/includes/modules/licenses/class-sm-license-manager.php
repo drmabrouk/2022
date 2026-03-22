@@ -17,9 +17,10 @@ class SM_License_Manager {
     }
 
     public static function ajax_update_license() {
-        self::check_capability('sm_manage_licenses');
-        check_ajax_referer('sm_add_member', 'nonce');
-        $mid = intval($_POST['member_id']);
+        try {
+            self::check_capability('sm_manage_licenses');
+            check_ajax_referer('sm_add_member', 'nonce');
+            $mid = intval($_POST['member_id']);
         self::validate_member_access($mid);
 
         $res = SM_DB::update_member($mid, [
@@ -39,14 +40,18 @@ class SM_License_Manager {
             'file_url' => admin_url('admin-ajax.php?action=sm_print_license&member_id=' . $mid),
             'file_type' => 'application/pdf'
         ]);
-        SM_Logger::log('تحديث ترخيص مزاولة', "العضو ID: $mid");
-        wp_send_json_success();
+            SM_Logger::log('تحديث ترخيص مزاولة', "العضو ID: $mid");
+            wp_send_json_success();
+        } catch (Throwable $e) {
+            wp_send_json_error(['message' => 'Critical Error updating license: ' . $e->getMessage()]);
+        }
     }
 
     public static function ajax_update_facility() {
-        self::check_capability('sm_manage_licenses');
-        check_ajax_referer('sm_add_member', 'nonce');
-        $mid = intval($_POST['member_id']);
+        try {
+            self::check_capability('sm_manage_licenses');
+            check_ajax_referer('sm_add_member', 'nonce');
+            $mid = intval($_POST['member_id']);
         self::validate_member_access($mid);
 
         $res = SM_DB::update_member($mid, [
@@ -69,15 +74,19 @@ class SM_License_Manager {
             'file_url' => admin_url('admin-ajax.php?action=sm_print_facility&member_id=' . $mid),
             'file_type' => 'application/pdf'
         ]);
-        SM_Logger::log('تحديث منشأة', "العضو ID: $mid");
-        wp_send_json_success();
+            SM_Logger::log('تحديث منشأة', "العضو ID: $mid");
+            wp_send_json_success();
+        } catch (Throwable $e) {
+            wp_send_json_error(['message' => 'Critical Error updating facility: ' . $e->getMessage()]);
+        }
     }
 
     public static function ajax_verify_document() {
-        $val = trim(sanitize_text_field($_POST['search_value'] ?? ''));
-        if (empty($val)) {
-            wp_send_json_error(['message' => 'يرجى إدخال قيمة للبحث']);
-        }
+        try {
+            $val = trim(sanitize_text_field($_POST['search_value'] ?? ''));
+            if (empty($val)) {
+                wp_send_json_error(['message' => 'يرجى إدخال قيمة للبحث']);
+            }
 
         $results = [];
         $grades = SM_Settings::get_professional_grades();
@@ -218,7 +227,10 @@ class SM_License_Manager {
             }
         }
 
-        wp_send_json_error(['message' => 'عذراً، لم يتم العثور على أية بيانات مطابقة لقيمة البحث المدخلة في السجلات الرسمية.']);
+            wp_send_json_error(['message' => 'عذراً، لم يتم العثور على أية بيانات مطابقة لقيمة البحث المدخلة في السجلات الرسمية.']);
+        } catch (Throwable $e) {
+            wp_send_json_error(['message' => 'Critical Error during verification: ' . $e->getMessage()]);
+        }
     }
 
     public static function ajax_print_license() {

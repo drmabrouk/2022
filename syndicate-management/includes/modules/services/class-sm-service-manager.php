@@ -34,10 +34,11 @@ class SM_Service_Manager {
     }
 
     public static function ajax_add_service() {
-        self::check_capability('sm_manage_system');
-        check_ajax_referer('sm_admin_action', 'nonce');
+        try {
+            self::check_capability('sm_manage_system');
+            check_ajax_referer('sm_admin_action', 'nonce');
 
-        if (empty($_POST['name'])) {
+            if (empty($_POST['name'])) {
             wp_send_json_error(['message' => 'اسم الخدمة مطلوب']);
         }
 
@@ -54,20 +55,27 @@ class SM_Service_Manager {
             'selected_profile_fields' => stripslashes($_POST['selected_profile_fields'] ?? '[]')
         ];
 
-        if (SM_DB::add_service($data)) {
-            wp_send_json_success();
-        } else {
-            wp_send_json_error(['message' => 'Failed to add service']);
+            if (SM_DB::add_service($data)) {
+                wp_send_json_success();
+            } else {
+                wp_send_json_error(['message' => 'Failed to add service']);
+            }
+        } catch (Throwable $e) {
+            wp_send_json_error(['message' => 'Critical Error adding service: ' . $e->getMessage()]);
         }
     }
 
     public static function ajax_update_service() {
-        self::check_capability('sm_manage_system');
-        check_ajax_referer('sm_admin_action', 'nonce');
-        if (SM_DB::update_service(intval($_POST['id']), $_POST)) {
-            wp_send_json_success();
-        } else {
-            wp_send_json_error(['message' => 'Failed']);
+        try {
+            self::check_capability('sm_manage_system');
+            check_ajax_referer('sm_admin_action', 'nonce');
+            if (SM_DB::update_service(intval($_POST['id']), $_POST)) {
+                wp_send_json_success();
+            } else {
+                wp_send_json_error(['message' => 'Failed']);
+            }
+        } catch (Throwable $e) {
+            wp_send_json_error(['message' => 'Critical Error updating service: ' . $e->getMessage()]);
         }
     }
 
@@ -80,12 +88,16 @@ class SM_Service_Manager {
     }
 
     public static function ajax_delete_service() {
-        self::check_capability('sm_manage_system');
-        check_ajax_referer('sm_admin_action', 'nonce');
-        if (SM_DB::delete_service(intval($_POST['id']), !empty($_POST['permanent']))) {
-            wp_send_json_success();
-        } else {
-            wp_send_json_error(['message' => 'Failed']);
+        try {
+            self::check_capability('sm_manage_system');
+            check_ajax_referer('sm_admin_action', 'nonce');
+            if (SM_DB::delete_service(intval($_POST['id']), !empty($_POST['permanent']))) {
+                wp_send_json_success();
+            } else {
+                wp_send_json_error(['message' => 'Failed']);
+            }
+        } catch (Throwable $e) {
+            wp_send_json_error(['message' => 'Critical Error deleting service: ' . $e->getMessage()]);
         }
     }
 
@@ -100,7 +112,8 @@ class SM_Service_Manager {
     }
 
     public static function ajax_submit_service_request() {
-        $sid = intval($_POST['service_id']);
+        try {
+            $sid = intval($_POST['service_id']);
         $service = SM_DB_Services::get_service_by_id($sid);
 
         if (!$service) {
@@ -128,20 +141,24 @@ class SM_Service_Manager {
             }
         }
 
-        $res = SM_DB::submit_service_request($data);
-        if ($res) {
-            SM_Logger::log('طلب خدمة رقمية', "العضو ID: $mid طلب خدمة ID: $sid");
-            wp_send_json_success(date('Ymd') . $res);
-        } else {
-            wp_send_json_error('Failed to submit request');
+            $res = SM_DB::submit_service_request($data);
+            if ($res) {
+                SM_Logger::log('طلب خدمة رقمية', "العضو ID: $mid طلب خدمة ID: $sid");
+                wp_send_json_success(date('Ymd') . $res);
+            } else {
+                wp_send_json_error('Failed to submit request');
+            }
+        } catch (Throwable $e) {
+            wp_send_json_error(['message' => 'Critical Error submitting service request: ' . $e->getMessage()]);
         }
     }
 
     public static function ajax_process_service_request() {
-        if (!current_user_can('sm_manage_members')) {
-            wp_send_json_error(['message' => 'Unauthorized']);
-        }
-        check_ajax_referer('sm_admin_action', 'nonce');
+        try {
+            if (!current_user_can('sm_manage_members')) {
+                wp_send_json_error(['message' => 'Unauthorized']);
+            }
+            check_ajax_referer('sm_admin_action', 'nonce');
 
         $id = intval($_POST['id']);
         $status = sanitize_text_field($_POST['status']);
@@ -154,29 +171,32 @@ class SM_Service_Manager {
 
         $service = SM_DB_Services::get_service_by_id($req->service_id);
 
-        if (SM_DB::update_service_request_status($id, $status, ($status === 'approved' && $service) ? $service->fees : null, $notes)) {
-             if ($status === 'approved') {
-                 if ($service && $service->fees > 0) {
-                     SM_Finance::record_payment([
-                         'member_id' => $req->member_id,
-                         'amount' => $service->fees,
-                         'payment_type' => 'other',
-                         'payment_date' => current_time('Y-m-d'),
-                         'details_ar' => 'رسوم خدمة: ' . $service->name,
-                         'notes' => 'طلب رقم #' . $id
-                     ]);
-                 }
-                 SM_DB::add_document([
-                     'member_id' => $req->member_id,
-                     'category' => 'certificates',
-                     'title' => $service->name . " - طلب رقم #" . $id,
-                     'file_url' => admin_url('admin-ajax.php?action=sm_print_service_request&id=' . $id),
-                     'file_type' => 'application/pdf'
-                 ]);
-             }
-             wp_send_json_success();
-        } else {
-            wp_send_json_error('Failed to process request');
+            if (SM_DB::update_service_request_status($id, $status, ($status === 'approved' && $service) ? $service->fees : null, $notes)) {
+                if ($status === 'approved') {
+                    if ($service && $service->fees > 0) {
+                        SM_Finance::record_payment([
+                            'member_id' => $req->member_id,
+                            'amount' => $service->fees,
+                            'payment_type' => 'other',
+                            'payment_date' => current_time('Y-m-d'),
+                            'details_ar' => 'رسوم خدمة: ' . $service->name,
+                            'notes' => 'طلب رقم #' . $id
+                        ]);
+                    }
+                    SM_DB::add_document([
+                        'member_id' => $req->member_id,
+                        'category' => 'certificates',
+                        'title' => $service->name . " - طلب رقم #" . $id,
+                        'file_url' => admin_url('admin-ajax.php?action=sm_print_service_request&id=' . $id),
+                        'file_type' => 'application/pdf'
+                    ]);
+                }
+                wp_send_json_success();
+            } else {
+                wp_send_json_error('Failed to process request');
+            }
+        } catch (Throwable $e) {
+            wp_send_json_error(['message' => 'Critical Error processing service request: ' . $e->getMessage()]);
         }
     }
 

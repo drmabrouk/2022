@@ -48,26 +48,34 @@ class SM_System_Manager {
              wp_send_json_error(['message' => 'البريد الإلكتروني غير صحيح.']);
         }
 
-        $res = SM_DB::save_branch($data);
-        if ($res !== false) {
-            SM_Logger::log('حفظ بيانات فرع', "تم حفظ بيانات الفرع: " . sanitize_text_field($data['name'] ?? ''));
-            wp_send_json_success('Branch saved');
-        } else {
-            wp_send_json_error(['message' => 'فشل في حفظ بيانات الفرع. تأكد من صحة الكود (Slug).']);
+        try {
+            $res = SM_DB::save_branch($data);
+            if ($res !== false) {
+                SM_Logger::log('حفظ بيانات فرع', "تم حفظ بيانات الفرع: " . sanitize_text_field($data['name'] ?? ''));
+                wp_send_json_success('Branch saved');
+            } else {
+                wp_send_json_error(['message' => 'فشل في حفظ بيانات الفرع. تأكد من صحة الكود (Slug).']);
+            }
+        } catch (Throwable $e) {
+            wp_send_json_error(['message' => 'Critical Error while saving branch: ' . $e->getMessage()]);
         }
     }
 
     public static function ajax_delete_branch() {
-        if (!current_user_can('sm_full_access') && !current_user_can('manage_options')) {
-            wp_send_json_error(['message' => 'Unauthorized: لا يملك مسؤول الفرع صلاحية الحذف.']);
-        }
-        check_ajax_referer('sm_admin_action', 'nonce');
-        $id = intval($_POST['id']);
-        if (SM_DB::delete_branch($id)) {
-            SM_Logger::log('حذف فرع', "تم حذف الفرع رقم #$id");
-            wp_send_json_success('Branch deleted');
-        } else {
-            wp_send_json_error(['message' => 'Failed to delete branch']);
+        try {
+            if (!current_user_can('sm_full_access') && !current_user_can('manage_options')) {
+                wp_send_json_error(['message' => 'Unauthorized: لا يملك مسؤول الفرع صلاحية الحذف.']);
+            }
+            check_ajax_referer('sm_admin_action', 'nonce');
+            $id = intval($_POST['id']);
+            if (SM_DB::delete_branch($id)) {
+                SM_Logger::log('حذف فرع', "تم حذف الفرع رقم #$id");
+                wp_send_json_success('Branch deleted');
+            } else {
+                wp_send_json_error(['message' => 'Failed to delete branch']);
+            }
+        } catch (Throwable $e) {
+            wp_send_json_error(['message' => 'Critical Error deleting branch: ' . $e->getMessage()]);
         }
     }
 
@@ -97,10 +105,11 @@ class SM_System_Manager {
     }
 
     public static function ajax_save_alert() {
-        self::check_capability('sm_manage_system');
-        check_ajax_referer('sm_admin_action', 'nonce');
+        try {
+            self::check_capability('sm_manage_system');
+            check_ajax_referer('sm_admin_action', 'nonce');
 
-        $data = [
+            $data = [
             'id' => !empty($_POST['id']) ? intval($_POST['id']) : null,
             'title' => sanitize_text_field($_POST['title']),
             'message' => wp_kses_post($_POST['message']),
@@ -112,18 +121,22 @@ class SM_System_Manager {
             'target_users' => sanitize_text_field($_POST['target_users'] ?? '')
         ];
 
-        if (SM_DB::save_alert($data)) {
-            wp_send_json_success('Alert saved');
-        } else {
-            wp_send_json_error(['message' => 'Failed to save alert']);
+            if (SM_DB::save_alert($data)) {
+                wp_send_json_success('Alert saved');
+            } else {
+                wp_send_json_error(['message' => 'Failed to save alert']);
+            }
+        } catch (Throwable $e) {
+            wp_send_json_error(['message' => 'Critical Error saving alert: ' . $e->getMessage()]);
         }
     }
 
     public static function ajax_reset_system() {
-        if (!current_user_can('manage_options') && !current_user_can('sm_full_access')) {
-            wp_send_json_error(['message' => 'Unauthorized']);
-        }
-        check_ajax_referer('sm_admin_action', 'nonce');
+        try {
+            if (!current_user_can('manage_options') && !current_user_can('sm_full_access')) {
+                wp_send_json_error(['message' => 'Unauthorized']);
+            }
+            check_ajax_referer('sm_admin_action', 'nonce');
         if (!function_exists('wp_delete_user')) {
             require_once(ABSPATH . 'wp-admin/includes/user.php');
         }
@@ -146,15 +159,19 @@ class SM_System_Manager {
         SM_DB::truncate_tables($tables);
         delete_option('sm_invoice_sequence_' . date('Y'));
 
-        SM_Logger::log('إعادة تهيئة النظام', "تم مسح كافة البيانات وتصفير النظام بالكامل");
-        wp_send_json_success('System reset complete');
+            SM_Logger::log('إعادة تهيئة النظام', "تم مسح كافة البيانات وتصفير النظام بالكامل");
+            wp_send_json_success('System reset complete');
+        } catch (Throwable $e) {
+            wp_send_json_error(['message' => 'Critical Error resetting system: ' . $e->getMessage()]);
+        }
     }
 
     public static function ajax_rollback_log() {
-        if (!current_user_can('manage_options') && !current_user_can('sm_full_access')) {
-            wp_send_json_error(['message' => 'Unauthorized']);
-        }
-        check_ajax_referer('sm_admin_action', 'nonce');
+        try {
+            if (!current_user_can('manage_options') && !current_user_can('sm_full_access')) {
+                wp_send_json_error(['message' => 'Unauthorized']);
+            }
+            check_ajax_referer('sm_admin_action', 'nonce');
 
         $lid = intval($_POST['log_id']);
         $log = SM_DB::get_log($lid);
@@ -215,7 +232,10 @@ class SM_System_Manager {
                 wp_send_json_error(['message' => 'فشل في إدراج البيانات']);
             }
         }
-        wp_send_json_error(['message' => 'نوع الاستعادة غير مدعوم']);
+            wp_send_json_error(['message' => 'نوع الاستعادة غير مدعوم']);
+        } catch (Throwable $e) {
+            wp_send_json_error(['message' => 'Critical Error during rollback: ' . $e->getMessage()]);
+        }
     }
 
     public static function ajax_get_counts() {
@@ -226,10 +246,11 @@ class SM_System_Manager {
     }
 
     public static function ajax_delete_gov_data() {
-        if (!current_user_can('manage_options') && !current_user_can('sm_full_access')) {
-            wp_send_json_error(['message' => 'Unauthorized']);
-        }
-        check_ajax_referer('sm_admin_action', 'nonce');
+        try {
+            if (!current_user_can('manage_options') && !current_user_can('sm_full_access')) {
+                wp_send_json_error(['message' => 'Unauthorized']);
+            }
+            check_ajax_referer('sm_admin_action', 'nonce');
         if (!function_exists('wp_delete_user')) {
             require_once(ABSPATH . 'wp-admin/includes/user.php');
         }
@@ -247,15 +268,19 @@ class SM_System_Manager {
         }
         SM_DB::delete_payments_by_member_ids($m_ids);
         SM_DB::delete_members_by_governorate($gov);
-        SM_Logger::log('حذف بيانات فرع', "تم مسح كافة بيانات فرع: $gov");
-        wp_send_json_success('Governorate data deleted');
+            SM_Logger::log('حذف بيانات فرع', "تم مسح كافة بيانات فرع: $gov");
+            wp_send_json_success('Governorate data deleted');
+        } catch (Throwable $e) {
+            wp_send_json_error(['message' => 'Critical Error deleting governorate data: ' . $e->getMessage()]);
+        }
     }
 
     public static function ajax_merge_gov_data() {
-        if (!current_user_can('manage_options') && !current_user_can('sm_full_access')) {
-            wp_send_json_error(['message' => 'Unauthorized']);
-        }
-        check_ajax_referer('sm_admin_action', 'nonce');
+        try {
+            if (!current_user_can('manage_options') && !current_user_can('sm_full_access')) {
+                wp_send_json_error(['message' => 'Unauthorized']);
+            }
+            check_ajax_referer('sm_admin_action', 'nonce');
         if (!function_exists('wp_insert_user')) {
             require_once(ABSPATH . 'wp-admin/includes/user.php');
         }
@@ -289,7 +314,10 @@ class SM_System_Manager {
                 $success++;
             }
         }
-        wp_send_json_success("تم دمج $success عضواً.");
+            wp_send_json_success("تم دمج $success عضواً.");
+        } catch (Throwable $e) {
+            wp_send_json_error(['message' => 'Critical Error merging governorate data: ' . $e->getMessage()]);
+        }
     }
 
     public static function ajax_delete_log() {
