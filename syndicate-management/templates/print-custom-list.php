@@ -55,20 +55,24 @@ $syndicate = SM_Settings::get_syndicate_info();
         <thead>
             <tr>
                 <th style="width:30px;">#</th>
-                <?php if (!empty($data)): foreach (array_keys($data[0]) as $h): ?>
-                    <th><?php echo $h; ?></th>
+                <?php if (!empty($data) && isset($data[0])): foreach (array_keys($data[0]) as $h): ?>
+                    <th><?php echo esc_html($h); ?></th>
                 <?php endforeach; endif; ?>
             </tr>
         </thead>
         <tbody>
-            <?php foreach ($data as $idx => $row): ?>
+            <?php if (!empty($data)): foreach ($data as $idx => $row): ?>
                 <tr>
                     <td><?php echo $idx + 1; ?></td>
                     <?php foreach ($row as $val): ?>
-                        <td><?php echo $val; ?></td>
+                        <td><?php echo esc_html($val); ?></td>
                     <?php endforeach; ?>
                 </tr>
-            <?php endforeach; ?>
+            <?php endforeach; else: ?>
+                <tr>
+                    <td colspan="10" style="text-align:center; padding:30px; color:#94a3b8;">لا توجد بيانات متاحة للطباعة بناءً على الفلاتر المختارة.</td>
+                </tr>
+            <?php endif; ?>
         </tbody>
     </table>
 
