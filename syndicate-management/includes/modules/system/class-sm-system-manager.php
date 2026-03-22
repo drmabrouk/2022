@@ -19,6 +19,10 @@ class SM_System_Manager {
         }
         check_ajax_referer('sm_admin_action', 'nonce');
 
+        if (empty($_POST['name'])) {
+            wp_send_json_error(['message' => 'اسم الفرع مطلوب.']);
+        }
+
         $data = $_POST;
         $id = !empty($data['id']) ? intval($data['id']) : null;
 
@@ -38,6 +42,10 @@ class SM_System_Manager {
 
         if (isset($data['is_active'])) {
             $data['is_active'] = (int)$data['is_active'];
+        }
+
+        if (!empty($data['email']) && !is_email($data['email'])) {
+             wp_send_json_error(['message' => 'البريد الإلكتروني غير صحيح.']);
         }
 
         $res = SM_DB::save_branch($data);
@@ -116,7 +124,9 @@ class SM_System_Manager {
             wp_send_json_error(['message' => 'Unauthorized']);
         }
         check_ajax_referer('sm_admin_action', 'nonce');
-        require_once(ABSPATH . 'wp-admin/includes/user.php');
+        if (!function_exists('wp_delete_user')) {
+            require_once(ABSPATH . 'wp-admin/includes/user.php');
+        }
 
         $pass = $_POST['admin_password'] ?? '';
         $user = wp_get_current_user();
@@ -220,7 +230,9 @@ class SM_System_Manager {
             wp_send_json_error(['message' => 'Unauthorized']);
         }
         check_ajax_referer('sm_admin_action', 'nonce');
-        require_once(ABSPATH . 'wp-admin/includes/user.php');
+        if (!function_exists('wp_delete_user')) {
+            require_once(ABSPATH . 'wp-admin/includes/user.php');
+        }
         $gov = sanitize_text_field($_POST['governorate']);
         if (!$gov) {
             wp_send_json_error(['message' => 'فرع غير محددة']);
@@ -244,7 +256,9 @@ class SM_System_Manager {
             wp_send_json_error(['message' => 'Unauthorized']);
         }
         check_ajax_referer('sm_admin_action', 'nonce');
-        require_once(ABSPATH . 'wp-admin/includes/user.php');
+        if (!function_exists('wp_insert_user')) {
+            require_once(ABSPATH . 'wp-admin/includes/user.php');
+        }
         $gov = sanitize_text_field($_POST['governorate']);
         if (empty($_FILES['backup_file']['tmp_name'])) {
             wp_send_json_error(['message' => 'الملف غير موجود']);

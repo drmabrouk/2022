@@ -119,7 +119,9 @@ class SM_Service_Manager {
 
         $data = $_POST;
         if (!empty($_FILES['payment_receipt'])) {
-            require_once(ABSPATH . 'wp-admin/includes/file.php');
+            if (!function_exists('wp_handle_upload')) {
+                require_once(ABSPATH . 'wp-admin/includes/file.php');
+            }
             $upload = wp_handle_upload($_FILES['payment_receipt'], ['test_form' => false]);
             if (isset($upload['url'])) {
                 $data['payment_receipt_url'] = $upload['url'];

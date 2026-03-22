@@ -116,16 +116,13 @@ class SM_DB_Members {
         }
 
         $orderby = $args['orderby'] ?? 'sort_order ASC, name ASC';
+        $query = "SELECT * FROM $table_name WHERE $where ORDER BY $orderby";
 
         if ($limit != -1) {
-            $where .= " ORDER BY $orderby LIMIT %d OFFSET %d";
+            $query .= " LIMIT %d OFFSET %d";
             $params[] = $limit;
             $params[] = $offset;
-        } else {
-            $where .= " ORDER BY $orderby";
         }
-
-        $query = "SELECT * FROM $table_name WHERE $where";
 
         if (!empty($params)) {
             return $wpdb->get_results($wpdb->prepare($query, ...$params));
@@ -207,7 +204,7 @@ class SM_DB_Members {
 
         $query = "SELECT COUNT(*) FROM {$wpdb->prefix}sm_members WHERE $where";
         if (!empty($params)) {
-            return (int)$wpdb->get_var($wpdb->prepare($query, $params));
+            return (int)$wpdb->get_var($wpdb->prepare($query, ...$params));
         }
         return (int)$wpdb->get_var($query);
     }
@@ -269,22 +266,22 @@ class SM_DB_Members {
             'university' => sanitize_text_field($data['university'] ?? ''),
             'faculty' => sanitize_text_field($data['faculty'] ?? ''),
             'department' => sanitize_text_field($data['department'] ?? ''),
-            'graduation_date' => !empty($data['graduation_date']) ? sanitize_text_field($data['graduation_date']) : null,
+            'graduation_date' => (!empty($data['graduation_date']) && $data['graduation_date'] !== '0000-00-00') ? sanitize_text_field($data['graduation_date']) : null,
             'residence_street' => sanitize_textarea_field($data['residence_street'] ?? ''),
             'residence_city' => sanitize_text_field($data['residence_city'] ?? ''),
             'residence_governorate' => sanitize_text_field($data['residence_governorate'] ?? ''),
             'governorate' => sanitize_text_field($data['governorate'] ?? ''),
             'membership_number' => sanitize_text_field($data['membership_number'] ?? ''),
-            'membership_start_date' => !empty($data['membership_start_date']) ? sanitize_text_field($data['membership_start_date']) : null,
-            'membership_expiration_date' => !empty($data['membership_expiration_date']) ? sanitize_text_field($data['membership_expiration_date']) : null,
+            'membership_start_date' => (!empty($data['membership_start_date']) && $data['membership_start_date'] !== '0000-00-00') ? sanitize_text_field($data['membership_start_date']) : null,
+            'membership_expiration_date' => (!empty($data['membership_expiration_date']) && $data['membership_expiration_date'] !== '0000-00-00') ? sanitize_text_field($data['membership_expiration_date']) : null,
             'membership_status' => sanitize_text_field($data['membership_status'] ?? ''),
             'license_number' => sanitize_text_field($data['license_number'] ?? ''),
-            'license_issue_date' => !empty($data['license_issue_date']) ? sanitize_text_field($data['license_issue_date']) : null,
-            'license_expiration_date' => !empty($data['license_expiration_date']) ? sanitize_text_field($data['license_expiration_date']) : null,
+            'license_issue_date' => (!empty($data['license_issue_date']) && $data['license_issue_date'] !== '0000-00-00') ? sanitize_text_field($data['license_issue_date']) : null,
+            'license_expiration_date' => (!empty($data['license_expiration_date']) && $data['license_expiration_date'] !== '0000-00-00') ? sanitize_text_field($data['license_expiration_date']) : null,
             'facility_number' => sanitize_text_field($data['facility_number'] ?? ''),
             'facility_name' => sanitize_text_field($data['facility_name'] ?? ''),
-            'facility_license_issue_date' => !empty($data['facility_license_issue_date']) ? sanitize_text_field($data['facility_license_issue_date']) : null,
-            'facility_license_expiration_date' => !empty($data['facility_license_expiration_date']) ? sanitize_text_field($data['facility_license_expiration_date']) : null,
+            'facility_license_issue_date' => (!empty($data['facility_license_issue_date']) && $data['facility_license_issue_date'] !== '0000-00-00') ? sanitize_text_field($data['facility_license_issue_date']) : null,
+            'facility_license_expiration_date' => (!empty($data['facility_license_expiration_date']) && $data['facility_license_expiration_date'] !== '0000-00-00') ? sanitize_text_field($data['facility_license_expiration_date']) : null,
             'facility_address' => sanitize_textarea_field($data['facility_address'] ?? ''),
             'sub_syndicate' => sanitize_text_field($data['sub_syndicate'] ?? ''),
             'facility_category' => sanitize_text_field($data['facility_category'] ?? 'C'),
@@ -341,7 +338,7 @@ class SM_DB_Members {
         foreach ($fields as $f) {
             if (isset($data[$f])) {
                 if (in_array($f, $date_fields)) {
-                    $update_data[$f] = !empty($data[$f]) ? sanitize_text_field($data[$f]) : null;
+                    $update_data[$f] = (!empty($data[$f]) && $data[$f] !== '0000-00-00') ? sanitize_text_field($data[$f]) : null;
                 } elseif (in_array($f, ['facility_address', 'notes', 'residence_street'])) {
                     $update_data[$f] = sanitize_textarea_field($data[$f]);
                 } elseif ($f === 'email') {
