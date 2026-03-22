@@ -78,7 +78,7 @@ class SM_Finance_Manager {
         $members = SM_DB::get_members(['limit' => -1]);
 
         if (!empty($members)) {
-            SM_Finance::prefetch_data(array_map(fn($m) => $m->id, $members));
+            SM_Finance::prefetch_data(array_map(function($m) { return $m->id; }, $members));
         }
 
         $data = [];

@@ -240,7 +240,7 @@ class SM_Notifications {
         $ms = SM_DB::get_members(['limit' => -1]);
 
         if (!empty($ms)) {
-            SM_Finance::prefetch_data(array_map(fn($m) => $m->id, $ms));
+            SM_Finance::prefetch_data(array_map(function($m) { return $m->id; }, $ms));
         }
 
         foreach ($ms as $m) {

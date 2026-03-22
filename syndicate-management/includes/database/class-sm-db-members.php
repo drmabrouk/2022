@@ -40,16 +40,12 @@ class SM_DB_Members {
     public static function get_members($args = array()) {
         global $wpdb;
         $table_name = $wpdb->prefix . 'sm_members';
-        $query = "SELECT * FROM $table_name WHERE 1=1";
+        $where = "1=1";
         $params = array();
 
         $limit = isset($args['limit']) ? intval($args['limit']) : 20;
         $offset = isset($args['offset']) ? intval($args['offset']) : 0;
-
-        // Ensure we don't have negative limits unless specifically -1
-        if ($limit < -1) {
-            $limit = 20;
-        }
+        if ($limit < -1) $limit = 20;
 
         // Role-based filtering (Governorate)
         $user = wp_get_current_user();
@@ -57,34 +53,49 @@ class SM_DB_Members {
         if (!$has_full_access) {
             $gov = get_user_meta($user->ID, 'sm_governorate', true);
             if ($gov) {
-                $query .= " AND governorate = %s";
+                $where .= " AND governorate = %s";
                 $params[] = $gov;
             } else {
-                $query .= " AND 1=0"; // No access if no governorate assigned
+                $where .= " AND 1=0";
             }
         }
 
-        if (isset($args['professional_grade']) && !empty($args['professional_grade'])) {
-            $query .= " AND professional_grade = %s";
+        if (!empty($args['professional_grade'])) {
+            $where .= " AND professional_grade = %s";
             $params[] = $args['professional_grade'];
         }
 
-        if (isset($args['specialization']) && !empty($args['specialization'])) {
-            $query .= " AND specialization = %s";
+        if (!empty($args['specialization'])) {
+            $where .= " AND specialization = %s";
             $params[] = $args['specialization'];
         }
 
-        if (isset($args['membership_status']) && !empty($args['membership_status'])) {
-            $query .= " AND membership_status = %s";
+        if (!empty($args['membership_status'])) {
+            $where .= " AND membership_status = %s";
             $params[] = $args['membership_status'];
         }
 
-        if (isset($args['governorate']) && !empty($args['governorate'])) {
-            $query .= " AND governorate = %s";
+        if (!empty($args['governorate'])) {
+            $where .= " AND governorate = %s";
             $params[] = $args['governorate'];
         }
 
-        if (isset($args['search']) && !empty($args['search'])) {
+        if (!empty($args['include'])) {
+            $include_ids = array_map('intval', (array)$args['include']);
+            if (!empty($include_ids)) {
+                $where .= " AND id IN (" . implode(',', $include_ids) . ")";
+            }
+        }
+
+        if (!empty($args['only_with_license'])) {
+            $where .= " AND license_number IS NOT NULL AND license_number != ''";
+        }
+
+        if (!empty($args['only_with_facility'])) {
+            $where .= " AND facility_number IS NOT NULL AND facility_number != ''";
+        }
+
+        if (!empty($args['search'])) {
             $s = '%' . $wpdb->esc_like($args['search']) . '%';
             $search_conds = ["name LIKE %s", "national_id LIKE %s", "membership_number LIKE %s"];
             $search_params = [$s, $s, $s];
@@ -100,25 +111,15 @@ class SM_DB_Members {
                 $search_params[] = $s;
             }
 
-            $query .= " AND (" . implode(" OR ", $search_conds) . ")";
+            $where .= " AND (" . implode(" OR ", $search_conds) . ")";
             $params = array_merge($params, $search_params);
         }
 
-        if (!empty($args['only_with_license'])) {
-            $query .= " AND license_number != ''";
-        }
-
-        if (!empty($args['only_with_facility'])) {
-            $query .= " AND facility_number != ''";
-        }
-
         $orderby = $args['orderby'] ?? 'sort_order ASC, name ASC';
-        $query .= " ORDER BY $orderby";
+        $query = "SELECT * FROM $table_name WHERE $where ORDER BY $orderby";
 
         if ($limit != -1) {
-            $query .= " LIMIT %d OFFSET %d";
-            $params[] = $limit;
-            $params[] = $offset;
+            $query .= $wpdb->prepare(" LIMIT %d OFFSET %d", $limit, $offset);
         }
 
         if (!empty($params)) {
@@ -231,13 +232,19 @@ class SM_DB_Members {
             require_once(ABSPATH . 'wp-includes/user.php');
         }
 
-        $wp_user_id = wp_insert_user(array(
-            'user_login' => $national_id,
-            'user_email' => $email ?: $national_id . '@irseg.org',
-            'display_name' => $name,
-            'user_pass' => null, // Account needs activation/password set
-            'role' => 'sm_syndicate_member'
-        ));
+        // Check if WP user already exists by login
+        if (username_exists($national_id)) {
+            $existing_user = get_user_by('login', $national_id);
+            $wp_user_id = $existing_user->ID;
+        } else {
+            $wp_user_id = wp_insert_user(array(
+                'user_login' => $national_id,
+                'user_email' => $email ?: $national_id . '@irseg.org',
+                'display_name' => $name,
+                'user_pass' => '', // Account needs activation/password set
+                'role' => 'sm_syndicate_member'
+            ));
+        }
 
         if (!is_wp_error($wp_user_id)) {
             if (!empty($data['governorate'])) {
@@ -257,22 +264,22 @@ class SM_DB_Members {
             'university' => sanitize_text_field($data['university'] ?? ''),
             'faculty' => sanitize_text_field($data['faculty'] ?? ''),
             'department' => sanitize_text_field($data['department'] ?? ''),
-            'graduation_date' => sanitize_text_field($data['graduation_date'] ?? null),
+            'graduation_date' => !empty($data['graduation_date']) ? sanitize_text_field($data['graduation_date']) : null,
             'residence_street' => sanitize_textarea_field($data['residence_street'] ?? ''),
             'residence_city' => sanitize_text_field($data['residence_city'] ?? ''),
             'residence_governorate' => sanitize_text_field($data['residence_governorate'] ?? ''),
             'governorate' => sanitize_text_field($data['governorate'] ?? ''),
             'membership_number' => sanitize_text_field($data['membership_number'] ?? ''),
-            'membership_start_date' => sanitize_text_field($data['membership_start_date'] ?? null),
-            'membership_expiration_date' => sanitize_text_field($data['membership_expiration_date'] ?? null),
+            'membership_start_date' => !empty($data['membership_start_date']) ? sanitize_text_field($data['membership_start_date']) : null,
+            'membership_expiration_date' => !empty($data['membership_expiration_date']) ? sanitize_text_field($data['membership_expiration_date']) : null,
             'membership_status' => sanitize_text_field($data['membership_status'] ?? ''),
             'license_number' => sanitize_text_field($data['license_number'] ?? ''),
-            'license_issue_date' => sanitize_text_field($data['license_issue_date'] ?? null),
-            'license_expiration_date' => sanitize_text_field($data['license_expiration_date'] ?? null),
+            'license_issue_date' => !empty($data['license_issue_date']) ? sanitize_text_field($data['license_issue_date']) : null,
+            'license_expiration_date' => !empty($data['license_expiration_date']) ? sanitize_text_field($data['license_expiration_date']) : null,
             'facility_number' => sanitize_text_field($data['facility_number'] ?? ''),
             'facility_name' => sanitize_text_field($data['facility_name'] ?? ''),
-            'facility_license_issue_date' => sanitize_text_field($data['facility_license_issue_date'] ?? null),
-            'facility_license_expiration_date' => sanitize_text_field($data['facility_license_expiration_date'] ?? null),
+            'facility_license_issue_date' => !empty($data['facility_license_issue_date']) ? sanitize_text_field($data['facility_license_issue_date']) : null,
+            'facility_license_expiration_date' => !empty($data['facility_license_expiration_date']) ? sanitize_text_field($data['facility_license_expiration_date']) : null,
             'facility_address' => sanitize_textarea_field($data['facility_address'] ?? ''),
             'sub_syndicate' => sanitize_text_field($data['sub_syndicate'] ?? ''),
             'facility_category' => sanitize_text_field($data['facility_category'] ?? 'C'),
@@ -316,9 +323,17 @@ class SM_DB_Members {
             'last_paid_license_year', 'email', 'phone', 'alt_phone', 'notes', 'province_of_birth'
         ];
 
+        $date_fields = [
+            'graduation_date', 'membership_start_date', 'membership_expiration_date',
+            'license_issue_date', 'license_expiration_date',
+            'facility_license_issue_date', 'facility_license_expiration_date'
+        ];
+
         foreach ($fields as $f) {
             if (isset($data[$f])) {
-                if (in_array($f, ['facility_address', 'notes', 'residence_street'])) {
+                if (in_array($f, $date_fields)) {
+                    $update_data[$f] = !empty($data[$f]) ? sanitize_text_field($data[$f]) : null;
+                } elseif (in_array($f, ['facility_address', 'notes', 'residence_street'])) {
                     $update_data[$f] = sanitize_textarea_field($data[$f]);
                 } elseif ($f === 'email') {
                     $update_data[$f] = sanitize_email($data[$f]);

@@ -373,7 +373,7 @@ class SM_Finance {
         $members = $wpdb->get_results($wpdb->prepare("SELECT * FROM {$wpdb->prefix}sm_members WHERE $w_m", ...$p_m));
 
         if (!empty($members)) {
-            self::prefetch_data(array_map(fn($m) => $m->id, $members));
+            self::prefetch_data(array_map(function($m) { return $m->id; }, $members));
         }
 
         $owed = 0;
@@ -423,7 +423,7 @@ class SM_Finance {
         $ms = $wpdb->get_results($wpdb->prepare("SELECT * FROM {$wpdb->prefix}sm_members WHERE $w_m LIMIT 200", ...$params));
 
         if (!empty($ms)) {
-            self::prefetch_data(array_map(fn($m) => $m->id, $ms));
+            self::prefetch_data(array_map(function($m) { return $m->id; }, $ms));
         }
 
         $delayed = [];

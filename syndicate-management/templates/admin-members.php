@@ -139,7 +139,7 @@ if ($import_results) {
                 ));
 
                 if (!empty($members)) {
-                    SM_Finance::prefetch_data(array_map(fn($m) => $m->id, $members));
+                    SM_Finance::prefetch_data(array_map(function($m) { return $m->id; }, $members));
                 }
 
                 if (empty($members)): ?>
