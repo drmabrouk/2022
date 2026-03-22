@@ -37,6 +37,7 @@ class SM_Member_Manager {
     public static function ajax_add_member() {
         self::check_capability('sm_manage_members');
         check_ajax_referer('sm_add_member', 'sm_nonce');
+        require_once(ABSPATH . 'wp-admin/includes/user.php');
         $res = SM_DB::add_member($_POST);
         if (is_wp_error($res)) {
             wp_send_json_error(['message' => $res->get_error_message()]);
@@ -52,6 +53,7 @@ class SM_Member_Manager {
     public static function ajax_update_member() {
         self::check_capability('sm_manage_members');
         check_ajax_referer('sm_add_member', 'sm_nonce');
+        require_once(ABSPATH . 'wp-admin/includes/user.php');
         $id = intval($_POST['member_id']);
         self::validate_member_access($id);
         $old = SM_DB::get_member_by_id($id);
@@ -63,6 +65,106 @@ class SM_Member_Manager {
         SM_Finance::invalidate_financial_caches($old ? $old->governorate : null);
 
         wp_send_json_success(['message' => 'Updated']);
+    }
+
+    public static function ajax_import_staffs_csv() {
+        self::check_capability('sm_manage_users');
+        check_ajax_referer('sm_admin_action', 'sm_admin_nonce');
+
+        if (empty($_FILES['csv_file']['tmp_name'])) {
+            wp_send_json_error(['message' => 'لم يتم رفع أي ملف.']);
+        }
+
+        if (!function_exists('wp_insert_user')) {
+            require_once(ABSPATH . 'wp-admin/includes/user.php');
+        }
+
+        $file = $_FILES['csv_file']['tmp_name'];
+        $handle = fopen($file, 'r');
+        if (!$handle) {
+            wp_send_json_error(['message' => 'فشل في فتح الملف.']);
+        }
+
+        $success = 0;
+        $header = fgetcsv($handle); // Skip header
+
+        while (($row = fgetcsv($handle)) !== false) {
+            if (empty($row[0]) || empty($row[1])) continue;
+
+            $user_data = [
+                'user_login' => sanitize_user($row[0]),
+                'user_email' => sanitize_email($row[1]),
+                'display_name' => sanitize_text_field($row[2]),
+                'user_pass' => $row[6] ?? null,
+                'role' => 'sm_syndicate_member' // Default
+            ];
+
+            if (username_exists($user_data['user_login']) || email_exists($user_data['user_email'])) {
+                continue;
+            }
+
+            $uid = wp_insert_user($user_data);
+            if (!is_wp_error($uid)) {
+                update_user_meta($uid, 'sm_syndicateMemberIdAttr', sanitize_text_field($row[3]));
+                update_user_meta($uid, 'sm_phone', sanitize_text_field($row[5]));
+                update_user_meta($uid, 'sm_account_status', 'active');
+                $success++;
+            }
+        }
+        fclose($handle);
+        wp_redirect(add_query_arg(['sm_tab' => 'staff', 'import_success' => $success], wp_get_referer()));
+        exit;
+    }
+
+    public static function ajax_import_members_csv() {
+        self::check_capability('sm_manage_members');
+        check_ajax_referer('sm_admin_action', 'sm_admin_nonce');
+
+        if (empty($_FILES['member_csv_file']['tmp_name'])) {
+            wp_send_json_error(['message' => 'لم يتم رفع أي ملف.']);
+        }
+
+        require_once(ABSPATH . 'wp-admin/includes/user.php');
+        require_once(ABSPATH . 'wp-admin/includes/file.php');
+
+        $file = $_FILES['member_csv_file']['tmp_name'];
+        $handle = fopen($file, 'r');
+        if (!$handle) {
+            wp_send_json_error(['message' => 'فشل في فتح الملف.']);
+        }
+
+        $results = ['total' => 0, 'success' => 0, 'error' => 0, 'warning' => 0];
+        $header = fgetcsv($handle); // Skip header
+
+        while (($row = fgetcsv($handle)) !== false) {
+            if (empty($row[0]) || empty($row[1])) {
+                $results['warning']++;
+                continue;
+            }
+
+            $results['total']++;
+            $data = [
+                'national_id' => sanitize_text_field($row[0]),
+                'name' => sanitize_text_field($row[1]),
+                'professional_grade' => sanitize_text_field($row[2] ?? ''),
+                'specialization' => sanitize_text_field($row[3] ?? ''),
+                'governorate' => sanitize_text_field($row[4] ?? ''),
+                'phone' => sanitize_text_field($row[5] ?? ''),
+                'email' => sanitize_email($row[6] ?? '')
+            ];
+
+            $res = SM_DB::add_member($data);
+            if (!is_wp_error($res) && $res) {
+                $results['success']++;
+            } else {
+                $results['error']++;
+            }
+        }
+        fclose($handle);
+
+        set_transient('sm_import_results_' . get_current_user_id(), $results, HOUR_IN_SECONDS);
+        wp_redirect(add_query_arg(['sm_tab' => 'members', 'import_complete' => 1], wp_get_referer()));
+        exit;
     }
 
     public static function ajax_delete_member() {
@@ -83,7 +185,9 @@ class SM_Member_Manager {
     public static function ajax_update_member_account() {
         self::check_capability('sm_manage_members');
         check_ajax_referer('sm_admin_action', 'nonce');
-        require_once(ABSPATH . 'wp-admin/includes/user.php');
+        if (!function_exists('wp_update_user')) {
+            require_once(ABSPATH . 'wp-admin/includes/user.php');
+        }
         $mid = intval($_POST['member_id']);
         $uid = intval($_POST['wp_user_id']);
         $email = sanitize_email($_POST['email']);
@@ -153,9 +257,11 @@ class SM_Member_Manager {
         check_ajax_referer('sm_photo_action', 'sm_photo_nonce');
         $mid = intval($_POST['member_id']);
         self::validate_member_access($mid);
-        require_once(ABSPATH . 'wp-admin/includes/file.php');
-        require_once(ABSPATH . 'wp-admin/includes/image.php');
-        require_once(ABSPATH . 'wp-admin/includes/media.php');
+        if (!function_exists('media_handle_upload')) {
+            require_once(ABSPATH . 'wp-admin/includes/file.php');
+            require_once(ABSPATH . 'wp-admin/includes/image.php');
+            require_once(ABSPATH . 'wp-admin/includes/media.php');
+        }
         $att_id = media_handle_upload('member_photo', 0);
         if (is_wp_error($att_id)) {
             wp_send_json_error(['message' => $att_id->get_error_message()]);
@@ -167,7 +273,9 @@ class SM_Member_Manager {
 
     public static function ajax_add_staff() {
         self::check_capability('sm_manage_users');
-        require_once(ABSPATH . 'wp-admin/includes/user.php');
+        if (!function_exists('wp_insert_user')) {
+            require_once(ABSPATH . 'wp-admin/includes/user.php');
+        }
         if (!wp_verify_nonce($_POST['sm_nonce'], 'sm_syndicateMemberAction')) {
             wp_send_json_error(['message' => 'Security check failed']);
         }
@@ -216,7 +324,9 @@ class SM_Member_Manager {
 
     public static function ajax_update_staff() {
         self::check_capability('sm_manage_users');
-        require_once(ABSPATH . 'wp-admin/includes/user.php');
+        if (!function_exists('wp_update_user')) {
+            require_once(ABSPATH . 'wp-admin/includes/user.php');
+        }
         if (!wp_verify_nonce($_POST['sm_nonce'], 'sm_syndicateMemberAction')) {
             wp_send_json_error(['message' => 'Security check failed']);
         }
@@ -253,7 +363,9 @@ class SM_Member_Manager {
 
     public static function ajax_delete_staff() {
         self::check_capability('sm_manage_users');
-        require_once(ABSPATH . 'wp-admin/includes/user.php');
+        if (!function_exists('wp_delete_user')) {
+            require_once(ABSPATH . 'wp-admin/includes/user.php');
+        }
         if (!wp_verify_nonce($_POST['nonce'], 'sm_syndicateMemberAction')) {
             wp_send_json_error(['message' => 'Security check failed']);
         }
@@ -267,7 +379,9 @@ class SM_Member_Manager {
 
     public static function ajax_bulk_delete_users() {
         self::check_capability('sm_manage_users');
-        require_once(ABSPATH . 'wp-admin/includes/user.php');
+        if (!function_exists('wp_delete_user')) {
+            require_once(ABSPATH . 'wp-admin/includes/user.php');
+        }
         if (!wp_verify_nonce($_POST['nonce'], 'sm_syndicateMemberAction')) {
             wp_send_json_error(['message' => 'Security check failed']);
         }
@@ -309,7 +423,9 @@ class SM_Member_Manager {
     public static function ajax_submit_membership_request_stage3() {
         $nid = sanitize_text_field($_POST['national_id']);
         if (!empty($_FILES)) {
-            require_once(ABSPATH . 'wp-admin/includes/file.php');
+            if (!function_exists('wp_handle_upload')) {
+                require_once(ABSPATH . 'wp-admin/includes/file.php');
+            }
             $upd = ['status' => 'Awaiting Physical Documents', 'current_stage' => 3];
             $map = [
                 'doc_qualification' => 'doc_qualification_url',
@@ -425,9 +541,11 @@ class SM_Member_Manager {
         if (empty($_FILES['document_file']['name'])) {
             wp_send_json_error(['message' => 'No file']);
         }
-        require_once(ABSPATH . 'wp-admin/includes/file.php');
-        require_once(ABSPATH . 'wp-admin/includes/image.php');
-        require_once(ABSPATH . 'wp-admin/includes/media.php');
+        if (!function_exists('media_handle_upload')) {
+            require_once(ABSPATH . 'wp-admin/includes/file.php');
+            require_once(ABSPATH . 'wp-admin/includes/image.php');
+            require_once(ABSPATH . 'wp-admin/includes/media.php');
+        }
         $aid = media_handle_upload('document_file', 0);
         if (is_wp_error($aid)) {
             wp_send_json_error(['message' => $aid->get_error_message()]);

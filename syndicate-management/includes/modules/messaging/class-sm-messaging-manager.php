@@ -44,9 +44,11 @@ class SM_Messaging_Manager {
 
         $url = null;
         if (!empty($_FILES['message_file']['name'])) {
-            require_once(ABSPATH . 'wp-admin/includes/file.php');
-            require_once(ABSPATH . 'wp-admin/includes/image.php');
-            require_once(ABSPATH . 'wp-admin/includes/media.php');
+            if (!function_exists('media_handle_upload')) {
+                require_once(ABSPATH . 'wp-admin/includes/file.php');
+                require_once(ABSPATH . 'wp-admin/includes/image.php');
+                require_once(ABSPATH . 'wp-admin/includes/media.php');
+            }
             $att_id = media_handle_upload('message_file', 0);
             if (!is_wp_error($att_id)) {
                 $url = wp_get_attachment_url($att_id);
@@ -172,9 +174,11 @@ class SM_Messaging_Manager {
         $url = null;
         $attachment_path = null;
         if (!empty($_FILES['attachment']['name'])) {
-            require_once(ABSPATH . 'wp-admin/includes/file.php');
-            require_once(ABSPATH . 'wp-admin/includes/image.php');
-            require_once(ABSPATH . 'wp-admin/includes/media.php');
+            if (!function_exists('media_handle_upload')) {
+                require_once(ABSPATH . 'wp-admin/includes/file.php');
+                require_once(ABSPATH . 'wp-admin/includes/image.php');
+                require_once(ABSPATH . 'wp-admin/includes/media.php');
+            }
             $att_id = media_handle_upload('attachment', 0);
             if (!is_wp_error($att_id)) {
                 $url = wp_get_attachment_url($att_id);
@@ -244,9 +248,11 @@ class SM_Messaging_Manager {
         $url = null;
         $attachment_path = null;
         if (!empty($_FILES['attachment']['name'])) {
-            require_once(ABSPATH . 'wp-admin/includes/file.php');
-            require_once(ABSPATH . 'wp-admin/includes/image.php');
-            require_once(ABSPATH . 'wp-admin/includes/media.php');
+            if (!function_exists('media_handle_upload')) {
+                require_once(ABSPATH . 'wp-admin/includes/file.php');
+                require_once(ABSPATH . 'wp-admin/includes/image.php');
+                require_once(ABSPATH . 'wp-admin/includes/media.php');
+            }
             $att_id = media_handle_upload('attachment', 0);
             if (!is_wp_error($att_id)) {
                 $url = wp_get_attachment_url($att_id);
@@ -313,9 +319,11 @@ class SM_Messaging_Manager {
         $attachment_paths = [];
         $attachment_urls = [];
         if (!empty($_FILES['attachments']['name'][0])) {
-            require_once(ABSPATH . 'wp-admin/includes/file.php');
-            require_once(ABSPATH . 'wp-admin/includes/image.php');
-            require_once(ABSPATH . 'wp-admin/includes/media.php');
+            if (!function_exists('media_handle_upload')) {
+                require_once(ABSPATH . 'wp-admin/includes/file.php');
+                require_once(ABSPATH . 'wp-admin/includes/image.php');
+                require_once(ABSPATH . 'wp-admin/includes/media.php');
+            }
 
             foreach ($_FILES['attachments']['name'] as $key => $value) {
                 if ($_FILES['attachments']['error'][$key] === UPLOAD_ERR_OK) {
