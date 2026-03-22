@@ -19,7 +19,9 @@
             console.error('SM_AJAX_ERROR:', err);
             let msg = '';
             if (err === 0 || err === "0") {
-                msg = 'WordPress returned 0 (Check AJAX action name or nonce validation)';
+                msg = 'WordPress returned 0. Check if the user is logged in, permissions are correct, or the AJAX action is registered.';
+            } else if (err === -1 || err === "-1") {
+                msg = 'WordPress returned -1. This is a security error (Nonce expired). Try refreshing the page.';
             } else if (typeof err === 'string') {
                 msg = err;
             } else if (err && err.message) {

@@ -21,11 +21,17 @@ class SM_License_Manager {
         check_ajax_referer('sm_add_member', 'nonce');
         $mid = intval($_POST['member_id']);
         self::validate_member_access($mid);
-        SM_DB::update_member($mid, [
+
+        $res = SM_DB::update_member($mid, [
             'license_number' => sanitize_text_field($_POST['license_number']),
             'license_issue_date' => sanitize_text_field($_POST['license_issue_date']),
             'license_expiration_date' => sanitize_text_field($_POST['license_expiration_date'])
         ]);
+
+        if ($res === false) {
+            wp_send_json_error(['message' => 'فشل في تحديث بيانات الترخيص في قاعدة البيانات.']);
+        }
+
         SM_DB::add_document([
             'member_id' => $mid,
             'category' => 'licenses',
@@ -42,7 +48,8 @@ class SM_License_Manager {
         check_ajax_referer('sm_add_member', 'nonce');
         $mid = intval($_POST['member_id']);
         self::validate_member_access($mid);
-        SM_DB::update_member($mid, [
+
+        $res = SM_DB::update_member($mid, [
             'facility_name' => sanitize_text_field($_POST['facility_name']),
             'facility_number' => sanitize_text_field($_POST['facility_number']),
             'facility_category' => sanitize_text_field($_POST['facility_category']),
@@ -50,6 +57,11 @@ class SM_License_Manager {
             'facility_license_expiration_date' => sanitize_text_field($_POST['facility_license_expiration_date']),
             'facility_address' => sanitize_textarea_field($_POST['facility_address'])
         ]);
+
+        if ($res === false) {
+            wp_send_json_error(['message' => 'فشل في تحديث بيانات المنشأة في قاعدة البيانات.']);
+        }
+
         SM_DB::add_document([
             'member_id' => $mid,
             'category' => 'licenses',

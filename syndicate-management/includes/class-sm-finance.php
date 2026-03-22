@@ -369,8 +369,10 @@ class SM_Finance {
             }
         }
 
-        $paid = $wpdb->get_var($wpdb->prepare("SELECT SUM(p.amount) FROM {$wpdb->prefix}sm_payments p $j_p WHERE $w_p", ...$p_p)) ?: 0;
-        $members = $wpdb->get_results($wpdb->prepare("SELECT * FROM {$wpdb->prefix}sm_members WHERE $w_m", ...$p_m));
+        $paid = !empty($p_p) ? $wpdb->get_var($wpdb->prepare("SELECT SUM(p.amount) FROM {$wpdb->prefix}sm_payments p $j_p WHERE $w_p", ...$p_p)) : $wpdb->get_var("SELECT SUM(p.amount) FROM {$wpdb->prefix}sm_payments p $j_p WHERE $w_p");
+        $paid = $paid ?: 0;
+
+        $members = !empty($p_m) ? $wpdb->get_results($wpdb->prepare("SELECT * FROM {$wpdb->prefix}sm_members WHERE $w_m", ...$p_m)) : $wpdb->get_results("SELECT * FROM {$wpdb->prefix}sm_members WHERE $w_m");
 
         if (!empty($members)) {
             self::prefetch_data(array_map(function($m) { return $m->id; }, $members));
@@ -420,7 +422,7 @@ class SM_Finance {
             }
         }
 
-        $ms = $wpdb->get_results($wpdb->prepare("SELECT * FROM {$wpdb->prefix}sm_members WHERE $w_m LIMIT 200", ...$params));
+        $ms = !empty($params) ? $wpdb->get_results($wpdb->prepare("SELECT * FROM {$wpdb->prefix}sm_members WHERE $w_m LIMIT 200", ...$params)) : $wpdb->get_results("SELECT * FROM {$wpdb->prefix}sm_members WHERE $w_m LIMIT 200");
 
         if (!empty($ms)) {
             self::prefetch_data(array_map(function($m) { return $m->id; }, $ms));

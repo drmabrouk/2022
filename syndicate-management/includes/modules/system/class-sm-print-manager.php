@@ -42,23 +42,25 @@ class SM_Print_Manager {
                     $dues = null;
                     foreach ($fields as $f) {
                         switch ($f) {
-                            case 'name': $item['الاسم'] = $row->name; break;
-                            case 'national_id': $item['الرقم القومي'] = $row->national_id; break;
-                            case 'membership_number': $item['رقم العضوية'] = $row->membership_number; break;
+                            case 'name': $item['الاسم'] = $row->name ?? '---'; break;
+                            case 'national_id': $item['الرقم القومي'] = $row->national_id ?? '---'; break;
+                            case 'membership_number': $item['رقم العضوية'] = $row->membership_number ?? '---'; break;
                             case 'professional_grade':
                                 $grades = SM_Settings::get_professional_grades();
-                                $item['الدرجة'] = $grades[$row->professional_grade] ?? $row->professional_grade;
+                                $grade_val = $row->professional_grade ?? '';
+                                $item['الدرجة'] = $grades[$grade_val] ?? $grade_val;
                                 break;
                             case 'specialization':
                                 $specs = SM_Settings::get_specializations();
-                                $item['التخصص'] = $specs[$row->specialization] ?? $row->specialization;
+                                $spec_val = $row->specialization ?? '';
+                                $item['التخصص'] = $specs[$spec_val] ?? $spec_val;
                                 break;
-                            case 'governorate': $item['الفرع'] = SM_Settings::get_branch_name($row->governorate); break;
+                            case 'governorate': $item['الفرع'] = SM_Settings::get_branch_name($row->governorate ?? ''); break;
                             case 'outstanding_fees':
                                 if ($dues === null) $dues = SM_Finance::calculate_member_dues($row);
-                                $item['المستحقات'] = number_format($dues['balance'], 2);
+                                $item['المستحقات'] = number_format($dues['balance'] ?? 0, 2);
                                 break;
-                            case 'phone': $item['الهاتف'] = $row->phone; break;
+                            case 'phone': $item['الهاتف'] = $row->phone ?? '---'; break;
                         }
                     }
                     $data[] = $item;
@@ -72,16 +74,15 @@ class SM_Print_Manager {
                 $results = SM_DB::get_payments($args);
 
                 foreach ($results as $row) {
-                    $member = SM_DB::get_member_by_id($row->member_id);
                     $item = [];
                     foreach ($fields as $f) {
                         switch ($f) {
-                            case 'invoice_code': $item['رقم الفاتورة'] = $row->digital_invoice_code; break;
-                            case 'member_name': $item['اسم العضو'] = $member ? $member->name : 'N/A'; break;
-                            case 'amount': $item['المبلغ'] = number_format($row->amount, 2); break;
-                            case 'payment_type': $item['النوع'] = $row->payment_type; break;
-                            case 'payment_date': $item['التاريخ'] = $row->payment_date; break;
-                            case 'governorate': $item['الفرع'] = $member ? SM_Settings::get_branch_name($member->governorate) : 'N/A'; break;
+                            case 'invoice_code': $item['رقم الفاتورة'] = $row->digital_invoice_code ?? '---'; break;
+                            case 'member_name': $item['اسم العضو'] = $row->member_name ?? 'N/A'; break;
+                            case 'amount': $item['المبلغ'] = number_format($row->amount ?? 0, 2); break;
+                            case 'payment_type': $item['النوع'] = $row->payment_type ?? '---'; break;
+                            case 'payment_date': $item['التاريخ'] = $row->payment_date ?? '---'; break;
+                            case 'governorate': $item['الفرع'] = !empty($row->member_gov) ? SM_Settings::get_branch_name($row->member_gov) : 'N/A'; break;
                         }
                     }
                     $data[] = $item;
@@ -99,14 +100,15 @@ class SM_Print_Manager {
                     $item = [];
                     foreach ($fields as $f) {
                         switch ($f) {
-                            case 'license_number': $item['رقم الترخيص'] = $row->license_number; break;
-                            case 'member_name': $item['اسم العضو'] = $row->name; break;
-                            case 'issue_date': $item['تاريخ الإصدار'] = $row->license_issue_date; break;
-                            case 'expiry_date': $item['تاريخ الانتهاء'] = $row->license_expiration_date; break;
-                            case 'governorate': $item['الفرع'] = SM_Settings::get_branch_name($row->governorate); break;
+                            case 'license_number': $item['رقم الترخيص'] = $row->license_number ?? '---'; break;
+                            case 'member_name': $item['اسم العضو'] = $row->name ?? '---'; break;
+                            case 'issue_date': $item['تاريخ الإصدار'] = $row->license_issue_date ?? '---'; break;
+                            case 'expiry_date': $item['تاريخ الانتهاء'] = $row->license_expiration_date ?? '---'; break;
+                            case 'governorate': $item['الفرع'] = SM_Settings::get_branch_name($row->governorate ?? ''); break;
                             case 'specialization':
                                 $specs = SM_Settings::get_specializations();
-                                $item['التخصص'] = $specs[$row->specialization] ?? $row->specialization;
+                                $spec_val = $row->specialization ?? '';
+                                $item['التخصص'] = $specs[$spec_val] ?? $spec_val;
                                 break;
                         }
                     }
@@ -125,12 +127,12 @@ class SM_Print_Manager {
                     $item = [];
                     foreach ($fields as $f) {
                         switch ($f) {
-                            case 'facility_number': $item['رقم الترخيص'] = $row->facility_number; break;
-                            case 'facility_name': $item['اسم المنشأة'] = $row->facility_name; break;
-                            case 'owner_name': $item['المالك'] = $row->name; break;
-                            case 'facility_category': $item['الفئة'] = $row->facility_category; break;
-                            case 'expiry_date': $item['تاريخ الانتهاء'] = $row->facility_license_expiration_date; break;
-                            case 'governorate': $item['الفرع'] = SM_Settings::get_branch_name($row->governorate); break;
+                            case 'facility_number': $item['رقم الترخيص'] = $row->facility_number ?? '---'; break;
+                            case 'facility_name': $item['اسم المنشأة'] = $row->facility_name ?? '---'; break;
+                            case 'owner_name': $item['المالك'] = $row->name ?? '---'; break;
+                            case 'facility_category': $item['الفئة'] = $row->facility_category ?? '---'; break;
+                            case 'expiry_date': $item['تاريخ الانتهاء'] = $row->facility_license_expiration_date ?? '---'; break;
+                            case 'governorate': $item['الفرع'] = SM_Settings::get_branch_name($row->governorate ?? ''); break;
                         }
                     }
                     $data[] = $item;

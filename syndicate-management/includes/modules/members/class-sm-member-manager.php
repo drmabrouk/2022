@@ -83,6 +83,7 @@ class SM_Member_Manager {
     public static function ajax_update_member_account() {
         self::check_capability('sm_manage_members');
         check_ajax_referer('sm_admin_action', 'nonce');
+        require_once(ABSPATH . 'wp-admin/includes/user.php');
         $mid = intval($_POST['member_id']);
         $uid = intval($_POST['wp_user_id']);
         $email = sanitize_email($_POST['email']);
@@ -166,6 +167,7 @@ class SM_Member_Manager {
 
     public static function ajax_add_staff() {
         self::check_capability('sm_manage_users');
+        require_once(ABSPATH . 'wp-admin/includes/user.php');
         if (!wp_verify_nonce($_POST['sm_nonce'], 'sm_syndicateMemberAction')) {
             wp_send_json_error(['message' => 'Security check failed']);
         }
@@ -214,6 +216,7 @@ class SM_Member_Manager {
 
     public static function ajax_update_staff() {
         self::check_capability('sm_manage_users');
+        require_once(ABSPATH . 'wp-admin/includes/user.php');
         if (!wp_verify_nonce($_POST['sm_nonce'], 'sm_syndicateMemberAction')) {
             wp_send_json_error(['message' => 'Security check failed']);
         }
@@ -250,6 +253,7 @@ class SM_Member_Manager {
 
     public static function ajax_delete_staff() {
         self::check_capability('sm_manage_users');
+        require_once(ABSPATH . 'wp-admin/includes/user.php');
         if (!wp_verify_nonce($_POST['nonce'], 'sm_syndicateMemberAction')) {
             wp_send_json_error(['message' => 'Security check failed']);
         }
@@ -263,6 +267,7 @@ class SM_Member_Manager {
 
     public static function ajax_bulk_delete_users() {
         self::check_capability('sm_manage_users');
+        require_once(ABSPATH . 'wp-admin/includes/user.php');
         if (!wp_verify_nonce($_POST['nonce'], 'sm_syndicateMemberAction')) {
             wp_send_json_error(['message' => 'Security check failed']);
         }

@@ -349,6 +349,14 @@ class SM_DB_System {
             $slug = 'branch-' . mt_rand(1000, 9999);
         }
 
+        // Check if slug already exists for NEW branches
+        if (empty($data['id'])) {
+            $exists = $wpdb->get_var($wpdb->prepare("SELECT id FROM $table WHERE slug = %s", $slug));
+            if ($exists) {
+                $slug .= '-' . mt_rand(100, 999);
+            }
+        }
+
         $branch_data = [
             'slug' => $slug,
             'name' => sanitize_text_field($data['name']),

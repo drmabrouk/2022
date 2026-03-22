@@ -482,15 +482,5 @@ class SM_Public {
         }
     }
 
-    public function ajax_print_invoice() {
-        $pid = intval($_GET['payment_id'] ?? 0);
-        global $wpdb;
-        $pmt = $wpdb->get_row($wpdb->prepare("SELECT member_id FROM {$wpdb->prefix}sm_payments WHERE id = %d", $pid));
-        if (!$pmt || !SM_Member_Manager::can_access_member($pmt->member_id)) {
-            wp_die('Unauthorized');
-        }
-        include SM_PLUGIN_DIR . 'templates/print-invoice.php';
-        exit;
-    }
 
 }
