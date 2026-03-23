@@ -5,11 +5,29 @@
  * Standard linking and routing fix.
  */
 (function(window) {
-    // Ensure ajaxurl is available globally
-    if (typeof window.ajaxurl === 'undefined' && typeof ajaxurl !== 'undefined') {
-        window.ajaxurl = ajaxurl;
-    } else if (typeof window.ajaxurl === 'undefined') {
-        window.ajaxurl = '/wp-admin/admin-ajax.php';
+    // Ensure ajaxurl is available globally with absolute path detection
+    if (typeof window.ajaxurl === 'undefined' || !window.ajaxurl) {
+        if (typeof ajaxurl !== 'undefined' && ajaxurl) {
+            window.ajaxurl = ajaxurl;
+        } else {
+            // Try to detect from existing scripts or default to standard WP path
+            const scripts = document.getElementsByTagName('script');
+            for (let i = 0; i < scripts.length; i++) {
+                if (scripts[i].src && scripts[i].src.includes('/wp-includes/js/jquery/jquery')) {
+                    window.ajaxurl = scripts[i].src.split('/wp-includes/')[0] + '/wp-admin/admin-ajax.php';
+                    break;
+                }
+            }
+            if (!window.ajaxurl) {
+                // Last resort: use current location to guess
+                const pathParts = window.location.pathname.split('/');
+                if (pathParts.includes('wp-admin')) {
+                    window.ajaxurl = 'admin-ajax.php';
+                } else {
+                    window.ajaxurl = '/wp-admin/admin-ajax.php';
+                }
+            }
+        }
     }
 
     const SM_UI = {
@@ -33,11 +51,22 @@
                     console.error('Server Response Body:', body);
                     let finalMsg = customMsg + `: (Status ${status} ${statusText})`;
                     if (body.trim() === "0") {
-                        finalMsg += " - WordPress returned 0. This means the action is not registered or the user lacks permissions.";
+                        finalMsg += " - WordPress Error 0: Action not found or Permission denied. Check registration of hooks.";
+                        // Connectivity Check
+                        fetch(ajaxurl + '?action=sm_ping').then(r => r.json()).then(p => {
+                            if (p.success) console.log('Connectivity Test: OK', p.data);
+                            else console.error('Connectivity Test: FAILED', p);
+                        }).catch(e => console.error('Ping Error:', e));
                     } else if (body.trim() === "-1") {
-                        finalMsg += " - WordPress returned -1. Security nonce verification failed.";
+                        finalMsg += " - WordPress Error -1: Security nonce verification failed.";
                     } else if (body.length > 0) {
-                        finalMsg += " - Response: " + (body.length > 100 ? body.substring(0, 100) + '...' : body);
+                        try {
+                           const json = JSON.parse(body);
+                           if (json.data && json.data.message) finalMsg += " - " + json.data.message;
+                           else if (json.message) finalMsg += " - " + json.message;
+                        } catch(e) {
+                           finalMsg += " - Response: " + (body.length > 100 ? body.substring(0, 100) + '...' : body);
+                        }
                     }
                     this.showNotification(finalMsg, true);
                 }).catch(() => {
@@ -83,6 +112,18 @@
     window.smHandleAjaxError = SM_UI.handleAjaxError.bind(SM_UI);
     window.smOpenInternalTab = SM_UI.openInternalTab;
 
+    window.smRefreshDashboard = function() {
+        const action = 'sm_refresh_dashboard';
+        fetch(ajaxurl + '?action=' + action)
+        .then(r => r.json())
+        .then(res => {
+            if (res.success) {
+                // Update specific UI metrics if they exist
+                smShowNotification('تم تحديث البيانات');
+            }
+        });
+    };
+
     window.smViewLogDetails = function(log) {
         const detailsBody = document.getElementById('log-details-body');
         let detailsText = log.details;
@@ -110,12 +151,13 @@
     window.smRollbackLog = function(logId) {
         if (!confirm('هل أنت متأكد من رغبتك في استعادة هذه البيانات؟ سيتم محاولة عكس العملية.')) return;
 
+        const action = 'sm_rollback_log_ajax';
         const fd = new FormData();
-        fd.append('action', 'sm_rollback_log_ajax');
+        fd.append('action', action);
         fd.append('log_id', logId);
         fd.append('nonce', '<?php echo wp_create_nonce("sm_admin_action"); ?>');
 
-        fetch('<?php echo admin_url('admin-ajax.php'); ?>?_=' + Date.now(), { method: 'POST', body: fd })
+        fetch(ajaxurl + '?action=' + action, { method: 'POST', body: fd })
         .then(r => r.json())
         .then(res => {
             if (res.success) {
@@ -134,14 +176,15 @@
     window.smSubmitPayment = function(btn) {
         const form = document.getElementById('record-payment-form');
         if (!form) return;
+        const action = 'sm_record_payment_ajax';
         const formData = new FormData(form);
-        formData.append('action', 'sm_record_payment_ajax');
-        formData.append('nonce', '<?php echo wp_create_nonce("sm_finance_action"); ?>');
+        if (!formData.has('action')) formData.append('action', action);
+        if (!formData.has('nonce')) formData.append('nonce', '<?php echo wp_create_nonce("sm_finance_action"); ?>');
 
         btn.disabled = true;
         btn.innerText = 'جاري المعالجة...';
 
-        fetch('<?php echo admin_url('admin-ajax.php'); ?>?_=' + Date.now(), { method: 'POST', body: formData })
+        fetch(ajaxurl + '?action=' + action, { method: 'POST', body: formData })
         .then(r => r.json())
         .then(res => {
             if (res.success) {
@@ -174,12 +217,13 @@
         }
         if (!confirm('هل أنت متأكد من حذف كافة بيانات فرع ' + gov + '؟ لا يمكن التراجع عن هذا الإجراء.')) return;
 
+        const action = 'sm_delete_gov_data_ajax';
         const fd = new FormData();
-        fd.append('action', 'sm_delete_gov_data_ajax');
+        fd.append('action', action);
         fd.append('governorate', gov);
         fd.append('nonce', '<?php echo wp_create_nonce("sm_admin_action"); ?>');
 
-        fetch('<?php echo admin_url('admin-ajax.php'); ?>?_=' + Date.now(), { method: 'POST', body: fd })
+        fetch(ajaxurl + '?action=' + action, { method: 'POST', body: fd })
         .then(r => r.json())
         .then(res => {
             if (res.success) {
@@ -194,13 +238,14 @@
     window.smSubmitProfRequest = function(type, memberId) {
         if (!confirm('هل أنت متأكد من إرسال هذا الطلب؟')) return;
 
+        const action = 'sm_submit_professional_request';
         const fd = new FormData();
-        fd.append('action', 'sm_submit_professional_request');
+        fd.append('action', action);
         fd.append('member_id', memberId);
         fd.append('request_type', type);
         fd.append('nonce', '<?php echo wp_create_nonce("sm_professional_action"); ?>');
 
-        fetch('<?php echo admin_url('admin-ajax.php'); ?>', { method: 'POST', body: fd })
+        fetch(ajaxurl + '?action=' + action, { method: 'POST', body: fd })
         .then(r => r.json())
         .then(res => {
             if (res.success) {
@@ -222,13 +267,14 @@
         }
         if (!input.files.length) return;
 
+        const action = 'sm_merge_gov_data_ajax';
         const fd = new FormData();
-        fd.append('action', 'sm_merge_gov_data_ajax');
+        fd.append('action', action);
         fd.append('governorate', gov);
         fd.append('backup_file', input.files[0]);
         fd.append('nonce', '<?php echo wp_create_nonce("sm_admin_action"); ?>');
 
-        fetch('<?php echo admin_url('admin-ajax.php'); ?>', { method: 'POST', body: fd })
+        fetch(ajaxurl + '?action=' + action, { method: 'POST', body: fd })
         .then(r => r.json())
         .then(res => {
             if (res.success) {
@@ -246,12 +292,13 @@
 
         if (!confirm('هل أنت متأكد تماماً؟ لا يمكن التراجع عن هذا الإجراء.')) return;
 
+        const action = 'sm_reset_system_ajax';
         const fd = new FormData();
-        fd.append('action', 'sm_reset_system_ajax');
+        fd.append('action', action);
         fd.append('admin_password', password);
         fd.append('nonce', '<?php echo wp_create_nonce("sm_admin_action"); ?>');
 
-        fetch('<?php echo admin_url('admin-ajax.php'); ?>', { method: 'POST', body: fd })
+        fetch(ajaxurl + '?action=' + action, { method: 'POST', body: fd })
         .then(r => r.json())
         .then(res => {
             if (res.success) {
@@ -266,11 +313,12 @@
 
     window.smDeleteLog = function(logId) {
         if (!confirm('هل أنت متأكد من حذف هذا السجل؟')) return;
+        const action = 'sm_delete_log';
         const fd = new FormData();
-        fd.append('action', 'sm_delete_log');
+        fd.append('action', action);
         fd.append('log_id', logId);
         fd.append('nonce', '<?php echo wp_create_nonce("sm_admin_action"); ?>');
-        fetch('<?php echo admin_url('admin-ajax.php'); ?>?_=' + Date.now(), { method: 'POST', body: fd })
+        fetch(ajaxurl + '?action=' + action, { method: 'POST', body: fd })
         .then(r => r.json()).then(res => {
             if (res.success) location.reload();
             else smHandleAjaxError(res.data);
@@ -278,12 +326,13 @@
     };
 
     window.smDownloadBackupNow = function(modules = 'all') {
+        const action = 'sm_download_backup';
         const fd = new FormData();
-        fd.append('action', 'sm_download_backup');
+        fd.append('action', action);
         fd.append('modules', modules);
         fd.append('nonce', '<?php echo wp_create_nonce("sm_admin_action"); ?>');
 
-        fetch('<?php echo admin_url('admin-ajax.php'); ?>', { method: 'POST', body: fd })
+        fetch(ajaxurl + '?action=' + action, { method: 'POST', body: fd })
         .then(r => r.blob())
         .then(blob => {
             const url = window.URL.createObjectURL(blob);
@@ -301,7 +350,8 @@
         const body = document.getElementById('sm-backup-history-body');
         if (!body) return;
 
-        fetch('<?php echo admin_url('admin-ajax.php'); ?>?action=sm_get_backup_history')
+        const action = 'sm_get_backup_history';
+        fetch(ajaxurl + '?action=' + action)
         .then(r => r.json())
         .then(res => {
             if (res.success) {
@@ -336,7 +386,8 @@
         if (!confirm('تحذير: سيتم مسح كافة البيانات الحالية واستبدالها بالبيانات الموجودة في الملف. هل أنت متأكد؟')) return;
 
         const fd = new FormData(e.target);
-        fd.append('action', 'sm_restore_backup_ajax');
+        const action = 'sm_restore_backup_ajax';
+        fd.append('action', action);
         fd.append('backup_file', fileInput.files[0]);
         fd.append('nonce', '<?php echo wp_create_nonce("sm_admin_action"); ?>');
 
@@ -346,7 +397,7 @@
             btn.innerText = 'جاري المعالجة والاستعادة...';
         }
 
-        fetch('<?php echo admin_url('admin-ajax.php'); ?>', { method: 'POST', body: fd })
+        fetch(ajaxurl + '?action=' + action, { method: 'POST', body: fd })
         .then(r => r.json())
         .then(res => {
             if (res.success) {
@@ -376,10 +427,11 @@
         results.innerHTML = '<div style="grid-column: 1/-1; text-align:center; padding:50px;"><div class="sm-loader-mini" style="margin-bottom:15px;"></div><p>يتم الآن إجراء تدقيق شامل لكافة سجلات النظام...</p></div>';
 
         const fd = new FormData();
-        fd.append('action', 'sm_run_health_check');
+        const action = 'sm_run_health_check';
+        fd.append('action', action);
         fd.append('nonce', '<?php echo wp_create_nonce("sm_admin_action"); ?>');
 
-        fetch(ajaxurl, { method: 'POST', body: fd })
+        fetch(ajaxurl + '?action=' + action, { method: 'POST', body: fd })
         .then(r => r.json())
         .then(res => {
             btn.disabled = false; btn.innerText = 'بدء الفحص الشامل الآن';
@@ -444,12 +496,13 @@
     };
 
     window.smUpdateBackupFreq = function(freq) {
+        const action = 'sm_update_backup_freq';
         const fd = new FormData();
-        fd.append('action', 'sm_update_backup_freq');
+        fd.append('action', action);
         fd.append('frequency', freq);
         fd.append('nonce', '<?php echo wp_create_nonce("sm_admin_action"); ?>');
 
-        fetch('<?php echo admin_url('admin-ajax.php'); ?>', { method: 'POST', body: fd })
+        fetch(ajaxurl + '?action=' + action, { method: 'POST', body: fd })
         .then(r => r.json())
         .then(res => {
             if (res.success) {
@@ -462,10 +515,11 @@
 
     window.smDeleteAllLogs = function() {
         if (!confirm('هل أنت متأكد من مسح كافة السجلات؟')) return;
+        const action = 'sm_clear_all_logs';
         const fd = new FormData();
-        fd.append('action', 'sm_clear_all_logs');
+        fd.append('action', action);
         fd.append('nonce', '<?php echo wp_create_nonce("sm_admin_action"); ?>');
-        fetch('<?php echo admin_url('admin-ajax.php'); ?>?_=' + Date.now(), { method: 'POST', body: fd })
+        fetch(ajaxurl + '?action=' + action, { method: 'POST', body: fd })
         .then(r => r.json()).then(res => {
             if (res.success) location.reload();
             else smHandleAjaxError(res.data);
@@ -516,7 +570,8 @@
         modal.style.display = 'flex';
         body.innerHTML = '<div style="text-align:center; padding: 15px;">جاري تحميل البيانات...</div>';
 
-        fetch('<?php echo admin_url('admin-ajax.php'); ?>?action=sm_get_member_finance_html&member_id=' + memberId)
+        const action = 'sm_get_member_finance_html';
+        fetch(ajaxurl + '?action=' + action + '&member_id=' + memberId)
         .then(r => r.json())
         .then(res => {
             if (res.success) {
@@ -541,15 +596,16 @@
         const email = document.getElementById('sm_edit_user_email').value;
         const pass = document.getElementById('sm_edit_user_pass').value;
         const nonce = '<?php echo wp_create_nonce("sm_profile_action"); ?>';
+        const action = 'sm_update_profile_ajax';
 
         const formData = new FormData();
-        formData.append('action', 'sm_update_profile_ajax');
+        formData.append('action', action);
         formData.append('display_name', name);
         formData.append('user_email', email);
         formData.append('user_pass', pass);
         formData.append('nonce', nonce);
 
-        fetch('<?php echo admin_url('admin-ajax.php'); ?>', { method: 'POST', body: formData })
+        fetch(ajaxurl + '?action=' + action, { method: 'POST', body: formData })
         .then(r => r.json())
         .then(res => {
             if (res.success) {
@@ -622,14 +678,15 @@
         const notes = prompt('ملاحظات إضافية (اختياري):');
         if (notes === null) return;
 
+        const action = 'sm_process_professional_request';
         const fd = new FormData();
-        fd.append('action', 'sm_process_professional_request');
+        fd.append('action', action);
         fd.append('request_id', id);
         fd.append('status', status);
         fd.append('notes', notes);
         fd.append('nonce', '<?php echo wp_create_nonce("sm_admin_action"); ?>');
 
-        fetch('<?php echo admin_url('admin-ajax.php'); ?>', { method: 'POST', body: fd })
+        fetch(ajaxurl + '?action=' + action, { method: 'POST', body: fd })
         .then(r => r.json())
         .then(res => {
             if (res.success) {
@@ -643,11 +700,12 @@
 
     window.smDeleteAlert = function(id) {
         if(!confirm('هل أنت متأكد من حذف هذا التنبيه؟')) return;
+        const action = 'sm_delete_alert';
         const fd = new FormData();
-        fd.append('action', 'sm_delete_alert');
+        fd.append('action', action);
         fd.append('id', id);
         fd.append('nonce', '<?php echo wp_create_nonce("sm_admin_action"); ?>');
-        fetch('<?php echo admin_url('admin-ajax.php'); ?>', {method: 'POST', body: fd})
+        fetch(ajaxurl + '?action=' + action, {method: 'POST', body: fd})
         .then(r=>r.json())
         .then(res=>{
             if(res.success) {
@@ -684,11 +742,12 @@
         const btn = this.querySelector('button[type="submit"]');
         if (btn) { btn.disabled = true; btn.innerText = 'جاري الحفظ...'; }
 
+        const action = 'sm_save_alert';
         const fd = new FormData(this);
-        fd.append('action', 'sm_save_alert');
+        fd.append('action', action);
         fd.append('nonce', '<?php echo wp_create_nonce("sm_admin_action"); ?>');
 
-        fetch('<?php echo admin_url('admin-ajax.php'); ?>', {method: 'POST', body: fd})
+        fetch(ajaxurl + '?action=' + action, {method: 'POST', body: fd})
         .then(r=>r.json())
         .then(res=>{
             if(res.success) {
@@ -781,7 +840,8 @@
         }
 
         const fd = new FormData();
-        fd.append('action', 'sm_get_custom_print');
+        const action = 'sm_get_custom_print';
+        fd.append('action', action);
         fd.append('nonce', '<?php echo wp_create_nonce("sm_admin_action"); ?>');
         fd.append('module', module);
         fd.append('all_records', recordMode === 'all');
@@ -791,7 +851,7 @@
         const btn = modal.querySelector('.sm-btn');
         btn.disabled = true; btn.innerText = 'جاري التجهيز...';
 
-        fetch(ajaxurl, { method: 'POST', body: fd })
+        fetch(ajaxurl + '?action=' + action, { method: 'POST', body: fd })
         .then(r => {
             if (!r.ok) throw r;
             return r.text();

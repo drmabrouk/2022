@@ -126,7 +126,8 @@ function smDeleteTransaction(id) {
     formData.append('transaction_id', id);
     formData.append('nonce', '<?php echo wp_create_nonce("sm_admin_action"); ?>');
 
-    fetch('<?php echo admin_url('admin-ajax.php'); ?>', { method: 'POST', body: formData })
+    const action = 'sm_delete_transaction_ajax';
+    fetch(ajaxurl + '?action=' + action, { method: 'POST', body: formData })
     .then(r => r.json())
     .then(res => {
         if (res.success) {

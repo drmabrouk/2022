@@ -376,7 +376,8 @@ window.smViewBranchDetailedPage = function(id) {
     modal.style.display = 'flex';
     body.innerHTML = '<div style="text-align:center; padding:50px;"><div class="sm-loader-mini"></div><p>جاري تحميل البيانات التفصيلية...</p></div>';
 
-    fetch(ajaxurl + '?action=sm_get_branch_details&id=' + id)
+    const action = 'sm_get_branch_details';
+    fetch(ajaxurl + '?action=' + action + '&id=' + id)
     .then(r => r.json())
     .then(res => {
         if (res.success && res.data && res.data.branch) {
@@ -449,14 +450,20 @@ window.smHandleBranchSearch = function() {
 
 document.getElementById('sm-branch-form')?.addEventListener('submit', function(e) {
     e.preventDefault();
+    const action = 'sm_save_branch';
     const fd = new FormData(this);
-    fd.append('action', 'sm_save_branch');
+    fd.append('action', action);
     fd.append('nonce', '<?php echo wp_create_nonce("sm_admin_action"); ?>');
 
     const btn = document.getElementById('sm-save-branch-btn');
     btn.disabled = true; btn.innerText = 'جاري الحفظ...';
 
-    fetch(ajaxurl, { method: 'POST', body: fd }).then(r => r.json()).then(res => {
+    fetch(ajaxurl + '?action=' + action, { method: 'POST', body: fd })
+    .then(r => {
+        if (!r.ok) throw r;
+        return r.json();
+    })
+    .then(res => {
         if (res.success) {
             smShowNotification('تم حفظ بيانات الفرع بنجاح');
             setTimeout(() => location.reload(), 1000);

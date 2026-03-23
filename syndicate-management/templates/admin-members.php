@@ -409,7 +409,8 @@ if ($import_results) {
 
             const roleSelect = document.getElementById('acc_role');
             if (roleSelect && data.wp_user_id) {
-                fetch('<?php echo admin_url('admin-ajax.php'); ?>?action=sm_get_user_role&user_id=' + data.wp_user_id)
+                const action = 'sm_get_user_role';
+                fetch(ajaxurl + '?action=' + action + '&user_id=' + data.wp_user_id)
                 .then(r => r.json()).then(res => {
                     if (res.success && res.data && res.data.role) roleSelect.value = res.data.role;
                     else smHandleAjaxError(res);
@@ -424,10 +425,15 @@ if ($import_results) {
         if (addMemberForm) {
             addMemberForm.onsubmit = function(e) {
                 e.preventDefault();
+                const action = 'sm_add_member_ajax';
                 const formData = new FormData(this);
-                formData.append('action', 'sm_add_member_ajax');
-                fetch('<?php echo admin_url('admin-ajax.php'); ?>', { method: 'POST', body: formData })
-                .then(r => r.json()).then(res => {
+                if (!formData.has('action')) formData.append('action', action);
+                fetch(ajaxurl + '?action=' + action, { method: 'POST', body: formData })
+                .then(r => {
+                    if (!r.ok) throw r;
+                    return r.json();
+                })
+                .then(res => {
                     if(res.success) location.reload();
                     else smHandleAjaxError(res);
                 }).catch(err => smHandleAjaxError(err));
@@ -438,10 +444,15 @@ if ($import_results) {
         if (accMemberForm) {
             accMemberForm.onsubmit = function(e) {
                 e.preventDefault();
+                const action = 'sm_update_member_account_ajax';
                 const formData = new FormData(this);
-                formData.append('action', 'sm_update_member_account_ajax');
-                fetch('<?php echo admin_url('admin-ajax.php'); ?>', { method: 'POST', body: formData })
-                .then(r => r.json()).then(res => {
+                if (!formData.has('action')) formData.append('action', action);
+                fetch(ajaxurl + '?action=' + action, { method: 'POST', body: formData })
+                .then(r => {
+                    if (!r.ok) throw r;
+                    return r.json();
+                })
+                .then(res => {
                     if(res.success) {
                         smShowNotification('تم تحديث بيانات الحساب بنجاح');
                         setTimeout(() => location.reload(), 1000);
@@ -456,10 +467,15 @@ if ($import_results) {
         if (editMemberForm) {
             editMemberForm.onsubmit = function(e) {
                 e.preventDefault();
+                const action = 'sm_update_member_ajax';
                 const formData = new FormData(this);
-                formData.append('action', 'sm_update_member_ajax');
-                fetch('<?php echo admin_url('admin-ajax.php'); ?>', { method: 'POST', body: formData })
-                .then(r => r.json()).then(res => {
+                if (!formData.has('action')) formData.append('action', action);
+                fetch(ajaxurl + '?action=' + action, { method: 'POST', body: formData })
+                .then(r => {
+                    if (!r.ok) throw r;
+                    return r.json();
+                })
+                .then(res => {
                     if(res.success) location.reload();
                     else smHandleAjaxError(res);
                 }).catch(err => smHandleAjaxError(err));

@@ -370,12 +370,13 @@
 
     window.deleteSmUser = function(id, name) {
         if (!confirm('هل أنت متأكد من حذف حساب: ' + name + '؟')) return;
+        const action = 'sm_delete_staff_ajax';
         const formData = new FormData();
-        formData.append('action', 'sm_delete_staff_ajax');
+        formData.append('action', action);
         formData.append('user_id', id);
         formData.append('nonce', '<?php echo wp_create_nonce("sm_syndicateMemberAction"); ?>');
 
-        fetch('<?php echo admin_url('admin-ajax.php'); ?>', { method: 'POST', body: formData })
+        fetch(ajaxurl + '?action=' + action, { method: 'POST', body: formData })
         .then(r => r.json())
         .then(res => {
             if (res.success) {
@@ -395,12 +396,13 @@
         }
         if (!confirm('هل أنت متأكد من حذف ' + ids.length + ' مستخدم؟')) return;
 
+        const action = 'sm_bulk_delete_users_ajax';
         const formData = new FormData();
-        formData.append('action', 'sm_bulk_delete_users_ajax');
+        formData.append('action', action);
         formData.append('user_ids', ids.join(','));
         formData.append('nonce', '<?php echo wp_create_nonce("sm_syndicateMemberAction"); ?>');
 
-        fetch('<?php echo admin_url('admin-ajax.php'); ?>', { method: 'POST', body: formData })
+        fetch(ajaxurl + '?action=' + action, { method: 'POST', body: formData })
         .then(r => r.json())
         .then(res => {
             if (res.success) {
@@ -424,15 +426,16 @@
 
         window.saveInlineEdit = function(e, userId) {
             e.preventDefault();
+            const action = 'sm_update_staff_ajax';
             const form = e.target;
             const formData = new FormData(form);
-            formData.append('action', 'sm_update_staff_ajax');
+            if (!formData.has('action')) formData.append('action', action);
 
             const btn = form.querySelector('button[type="submit"]');
             btn.disabled = true;
             btn.innerText = 'جاري الحفظ...';
 
-            fetch('<?php echo admin_url('admin-ajax.php'); ?>', { method: 'POST', body: formData })
+            fetch(ajaxurl + '?action=' + action, { method: 'POST', body: formData })
             .then(r => r.json())
             .then(res => {
                 if (res.success) {
@@ -454,9 +457,10 @@
         if (addForm) {
             addForm.onsubmit = function(e) {
                 e.preventDefault();
+                const action = 'sm_add_staff_ajax';
                 const formData = new FormData(this);
-                formData.append('action', 'sm_add_staff_ajax');
-                fetch('<?php echo admin_url('admin-ajax.php'); ?>', { method: 'POST', body: formData })
+                if (!formData.has('action')) formData.append('action', action);
+                fetch(ajaxurl + '?action=' + action, { method: 'POST', body: formData })
                 .then(r => r.json())
                 .then(res => {
                     if (res.success) {

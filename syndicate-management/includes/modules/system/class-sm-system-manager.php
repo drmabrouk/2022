@@ -11,13 +11,14 @@ class SM_System_Manager {
     }
 
     public static function ajax_save_branch() {
-        $can_manage_all = current_user_can('sm_full_access') || current_user_can('manage_options');
-        $is_officer = in_array('sm_syndicate_admin', (array)wp_get_current_user()->roles);
+        try {
+            $can_manage_all = current_user_can('sm_full_access') || current_user_can('manage_options');
+            $is_officer = in_array('sm_syndicate_admin', (array)wp_get_current_user()->roles);
 
-        if (!$can_manage_all && !$is_officer) {
-            wp_send_json_error(['message' => 'Unauthorized']);
-        }
-        check_ajax_referer('sm_admin_action', 'nonce');
+            if (!$can_manage_all && !$is_officer) {
+                wp_send_json_error(['message' => 'Unauthorized: User lacks required management capabilities.']);
+            }
+            check_ajax_referer('sm_admin_action', 'nonce');
 
         if (empty($_POST['name'])) {
             wp_send_json_error(['message' => 'اسم الفرع مطلوب.']);
@@ -48,7 +49,6 @@ class SM_System_Manager {
              wp_send_json_error(['message' => 'البريد الإلكتروني غير صحيح.']);
         }
 
-        try {
             $res = SM_DB::save_branch($data);
             if ($res !== false) {
                 SM_Logger::log('حفظ بيانات فرع', "تم حفظ بيانات الفرع: " . sanitize_text_field($data['name'] ?? ''));
@@ -80,33 +80,43 @@ class SM_System_Manager {
     }
 
     public static function ajax_delete_alert() {
-        self::check_capability('sm_manage_system');
-        check_ajax_referer('sm_admin_action', 'nonce');
-        $id = intval($_POST['id']);
-        if (SM_DB::delete_alert($id)) {
-            wp_send_json_success('Alert deleted');
-        } else {
-            wp_send_json_error(['message' => 'Failed to delete alert']);
+        try {
+            self::check_capability('sm_manage_system');
+            check_ajax_referer('sm_admin_action', 'nonce');
+            $id = intval($_POST['id']);
+            if (SM_DB::delete_alert($id)) {
+                wp_send_json_success('Alert deleted');
+            } else {
+                wp_send_json_error(['message' => 'Failed to delete alert']);
+            }
+        } catch (Throwable $e) {
+            wp_send_json_error(['message' => $e->getMessage()]);
         }
     }
 
     public static function ajax_acknowledge_alert() {
-        if (!is_user_logged_in()) {
-            wp_send_json_error(['message' => 'Unauthorized']);
-        }
-        check_ajax_referer('sm_admin_action', 'nonce');
-        $aid = intval($_POST['alert_id']);
-        $uid = get_current_user_id();
-        if (SM_DB::acknowledge_alert($aid, $uid)) {
-            wp_send_json_success('Alert acknowledged');
-        } else {
-            wp_send_json_error(['message' => 'Failed to acknowledge alert']);
+        try {
+            if (!is_user_logged_in()) {
+                wp_send_json_error(['message' => 'Unauthorized']);
+            }
+            check_ajax_referer('sm_admin_action', 'nonce');
+            $aid = intval($_POST['alert_id']);
+            $uid = get_current_user_id();
+            if (SM_DB::acknowledge_alert($aid, $uid)) {
+                wp_send_json_success('Alert acknowledged');
+            } else {
+                wp_send_json_error(['message' => 'Failed to acknowledge alert']);
+            }
+        } catch (Throwable $e) {
+            wp_send_json_error(['message' => $e->getMessage()]);
         }
     }
 
     public static function ajax_save_alert() {
         try {
-            self::check_capability('sm_manage_system');
+            if (!current_user_can('sm_manage_system') && !current_user_can('manage_options')) {
+                 wp_send_json_error(['message' => 'Unauthorized access.']);
+            }
             check_ajax_referer('sm_admin_action', 'nonce');
 
             $data = [
@@ -239,10 +249,14 @@ class SM_System_Manager {
     }
 
     public static function ajax_get_counts() {
-        if (!is_user_logged_in()) {
-            wp_send_json_error(['message' => 'Unauthorized']);
+        try {
+            if (!is_user_logged_in()) {
+                wp_send_json_error(['message' => 'Unauthorized']);
+            }
+            wp_send_json_success(['pending_reports' => SM_DB::get_pending_reports_count()]);
+        } catch (Throwable $e) {
+            wp_send_json_error(['message' => 'Critical Error: ' . $e->getMessage()]);
         }
-        wp_send_json_success(['pending_reports' => SM_DB::get_pending_reports_count()]);
     }
 
     public static function ajax_delete_gov_data() {
@@ -321,28 +335,40 @@ class SM_System_Manager {
     }
 
     public static function ajax_delete_log() {
-        self::check_capability('manage_options');
-        check_ajax_referer('sm_admin_action', 'nonce');
-        SM_DB::delete_log(intval($_POST['log_id']));
-        wp_send_json_success('Log deleted');
+        try {
+            self::check_capability('manage_options');
+            check_ajax_referer('sm_admin_action', 'nonce');
+            SM_DB::delete_log(intval($_POST['log_id']));
+            wp_send_json_success('Log deleted');
+        } catch (Throwable $e) {
+            wp_send_json_error(['message' => $e->getMessage()]);
+        }
     }
 
     public static function ajax_clear_all_logs() {
-        self::check_capability('manage_options');
-        check_ajax_referer('sm_admin_action', 'nonce');
-        SM_DB::truncate_logs();
-        wp_send_json_success('Logs cleared');
+        try {
+            self::check_capability('manage_options');
+            check_ajax_referer('sm_admin_action', 'nonce');
+            SM_DB::truncate_logs();
+            wp_send_json_success('Logs cleared');
+        } catch (Throwable $e) {
+            wp_send_json_error(['message' => $e->getMessage()]);
+        }
     }
 
     public static function ajax_get_pub_template() {
-        if (!current_user_can('sm_manage_system')) {
-            wp_send_json_error(['message' => 'Unauthorized']);
-        }
-        $t = SM_DB::get_pub_template(intval($_GET['id']));
-        if ($t) {
-            wp_send_json_success($t);
-        } else {
-            wp_send_json_error(['message' => 'Not found']);
+        try {
+            if (!current_user_can('sm_manage_system') && !current_user_can('manage_options')) {
+                wp_send_json_error(['message' => 'Unauthorized']);
+            }
+            $t = SM_DB::get_pub_template(intval($_GET['id']));
+            if ($t) {
+                wp_send_json_success($t);
+            } else {
+                wp_send_json_error(['message' => 'Not found']);
+            }
+        } catch (Throwable $e) {
+            wp_send_json_error(['message' => 'Critical Error: ' . $e->getMessage()]);
         }
     }
 
@@ -372,10 +398,11 @@ class SM_System_Manager {
     }
 
     public static function ajax_save_pub_identity() {
-        if (!current_user_can('sm_manage_system')) {
-            wp_send_json_error(['message' => 'Unauthorized']);
-        }
-        check_ajax_referer('sm_pub_action', 'nonce');
+        try {
+            if (!current_user_can('sm_manage_system') && !current_user_can('manage_options')) {
+                wp_send_json_error(['message' => 'Unauthorized']);
+            }
+            check_ajax_referer('sm_pub_action', 'nonce');
         $info = SM_Settings::get_syndicate_info();
         $info['syndicate_name'] = sanitize_text_field($_POST['syndicate_name']);
         $info['authority_name'] = sanitize_text_field($_POST['authority_name']);
@@ -384,17 +411,27 @@ class SM_System_Manager {
         $info['address'] = sanitize_text_field($_POST['address']);
         $info['syndicate_logo'] = esc_url_raw($_POST['syndicate_logo']);
         $info['authority_logo'] = esc_url_raw($_POST['authority_logo']);
-        SM_Settings::save_syndicate_info($info);
-        wp_send_json_success('Identity saved');
+            SM_Settings::save_syndicate_info($info);
+            wp_send_json_success('Identity saved');
+        } catch (Throwable $e) {
+            wp_send_json_error(['message' => 'Critical Error: ' . $e->getMessage()]);
+        }
     }
 
     public static function ajax_save_pub_template() {
-        self::check_capability('sm_manage_system');
-        check_ajax_referer('sm_pub_action', 'nonce');
-        if (SM_DB::save_pub_template($_POST)) {
+        try {
+            if (!current_user_can('sm_manage_system') && !current_user_can('manage_options')) {
+                 wp_send_json_error(['message' => 'Unauthorized access.']);
+            }
+            check_ajax_referer('sm_pub_action', 'nonce');
+            if (SM_DB::save_pub_template($_POST)) {
             wp_send_json_success('Template saved');
-        } else {
-            wp_send_json_error(['message' => 'Failed to save template']);
+                wp_send_json_success('Template saved');
+            } else {
+                wp_send_json_error(['message' => 'Failed to save template']);
+            }
+        } catch (Throwable $e) {
+            wp_send_json_error(['message' => 'Critical Error saving template: ' . $e->getMessage()]);
         }
     }
 
@@ -428,16 +465,20 @@ class SM_System_Manager {
     }
 
     public static function ajax_get_branch_details() {
-        if (!is_user_logged_in()) wp_send_json_error(['message' => 'Unauthorized']);
-        $id = intval($_GET['id']);
+        try {
+            if (!is_user_logged_in()) wp_send_json_error(['message' => 'Unauthorized']);
+            $id = intval($_GET['id']);
         $branch = SM_DB::get_branch_by_id($id);
         if (!$branch) wp_send_json_error(['message' => 'Branch not found']);
 
         $stats = SM_DB_Finance::get_statistics(['governorate' => $branch->slug]);
-        wp_send_json_success([
-            'branch' => $branch,
-            'stats' => $stats
-        ]);
+            wp_send_json_success([
+                'branch' => $branch,
+                'stats' => $stats
+            ]);
+        } catch (Throwable $e) {
+            wp_send_json_error(['message' => 'Critical Error: ' . $e->getMessage()]);
+        }
     }
 
     public static function ajax_download_backup() {
@@ -474,9 +515,12 @@ class SM_System_Manager {
     }
 
     public static function ajax_get_backup_history() {
-        if (!current_user_can('manage_options')) wp_send_json_error(['message' => 'Unauthorized']);
+        try {
+            if (!current_user_can('manage_options') && !current_user_can('sm_full_access')) {
+                 wp_send_json_error(['message' => 'Unauthorized']);
+            }
 
-        $upload_dir = wp_upload_dir();
+            $upload_dir = wp_upload_dir();
         $dir = $upload_dir['basedir'] . '/sm-backups';
         $files = glob($dir . '/*.smb');
         $history = [];
@@ -489,8 +533,11 @@ class SM_System_Manager {
             ];
         }
 
-        usort($history, function($a, $b) { return strcmp($b['date'], $a['date']); });
-        wp_send_json_success($history);
+            usort($history, function($a, $b) { return strcmp($b['date'], $a['date']); });
+            wp_send_json_success($history);
+        } catch (Throwable $e) {
+            wp_send_json_error(['message' => 'Critical Error: ' . $e->getMessage()]);
+        }
     }
 
     public static function ajax_download_stored_backup() {
@@ -511,8 +558,11 @@ class SM_System_Manager {
     }
 
     public static function ajax_update_backup_freq() {
-        if (!current_user_can('manage_options')) wp_send_json_error(['message' => 'Unauthorized']);
-        check_ajax_referer('sm_admin_action', 'nonce');
+        try {
+            if (!current_user_can('manage_options') && !current_user_can('sm_full_access')) {
+                 wp_send_json_error(['message' => 'Unauthorized']);
+            }
+            check_ajax_referer('sm_admin_action', 'nonce');
 
         $freq = sanitize_text_field($_POST['frequency'] ?? 'weekly');
         update_option('sm_backup_frequency', $freq);
@@ -520,6 +570,9 @@ class SM_System_Manager {
         wp_clear_scheduled_hook('sm_scheduled_backup');
         SM_Backup_Manager::schedule_automated_backup();
 
-        wp_send_json_success('Backup frequency updated');
+            wp_send_json_success('Backup frequency updated');
+        } catch (Throwable $e) {
+            wp_send_json_error(['message' => 'Critical Error: ' . $e->getMessage()]);
+        }
     }
 }

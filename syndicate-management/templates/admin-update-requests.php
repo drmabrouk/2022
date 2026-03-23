@@ -108,13 +108,14 @@ $degrees = SM_Settings::get_academic_degrees();
 function processRequest(id, status) {
     if (!confirm('هل أنت متأكد من ' + (status === 'approved' ? 'اعتماد' : 'رفض') + ' هذا الطلب؟')) return;
 
+    const action = 'sm_process_update_request_ajax';
     const formData = new FormData();
-    formData.append('action', 'sm_process_update_request_ajax');
+    formData.append('action', action);
     formData.append('request_id', id);
     formData.append('status', status);
     formData.append('nonce', '<?php echo wp_create_nonce("sm_update_request"); ?>');
 
-    fetch('<?php echo admin_url('admin-ajax.php'); ?>', {
+    fetch(ajaxurl + '?action=' + action, {
         method: 'POST',
         body: formData
     })

@@ -30,10 +30,12 @@ class SM_Loader {
 
     public function run() {
         foreach ($this->filters as $hook) {
-            add_filter($hook['hook'], array($hook['component'], $hook['callback']), $hook['priority'], $hook['accepted_args']);
+            $callback = (is_string($hook['component'])) ? array($hook['component'], $hook['callback']) : array($hook['component'], $hook['callback']);
+            add_filter($hook['hook'], $callback, $hook['priority'], $hook['accepted_args']);
         }
         foreach ($this->actions as $hook) {
-            add_action($hook['hook'], array($hook['component'], $hook['callback']), $hook['priority'], $hook['accepted_args']);
+            $callback = (is_string($hook['component'])) ? array($hook['component'], $hook['callback']) : array($hook['component'], $hook['callback']);
+            add_action($hook['hook'], $callback, $hook['priority'], $hook['accepted_args']);
         }
     }
 }

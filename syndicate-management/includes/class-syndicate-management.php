@@ -9,6 +9,7 @@ class Syndicate_Management {
         $this->plugin_name = 'syndicate-management';
         $this->version = SM_VERSION;
         $this->load_dependencies();
+        $this->register_ajax_hooks();
         $this->define_admin_hooks();
         $this->define_public_hooks();
     }
@@ -58,25 +59,11 @@ class Syndicate_Management {
         $this->loader->add_action('admin_enqueue_scripts', $plugin_admin, 'enqueue_styles');
     }
 
-    private function define_public_hooks() {
-        $plugin_public = new SM_Public($this->get_plugin_name(), $this->get_version());
-        $this->loader->add_filter('show_admin_bar', $plugin_public, 'hide_admin_bar_for_non_admins');
-        $this->loader->add_action('admin_init', $plugin_public, 'restrict_admin_access');
-        $this->loader->add_action('template_redirect', $plugin_public, 'handle_frontend_redirection');
-        $this->loader->add_filter('login_redirect', $plugin_public, 'custom_login_redirect', 10, 3);
-        $this->loader->add_action('wp_enqueue_scripts', $plugin_public, 'enqueue_styles');
-        $this->loader->add_action('wp_footer', $plugin_public, 'inject_global_alerts');
-        $this->loader->add_action('init', $plugin_public, 'register_shortcodes');
-        $this->loader->add_action('template_redirect', $plugin_public, 'handle_form_submission');
-        $this->loader->add_action('wp_login_failed', $plugin_public, 'login_failed');
-        $this->loader->add_action('wp_login', $plugin_public, 'log_successful_login', 10, 2);
-        $this->loader->add_action('admin_init', $this, 'handle_form_imports');
-
-        // Backup & Maintenance
-        $this->loader->add_action('sm_scheduled_backup', 'SM_Backup_Manager', 'handle_scheduled_backup');
-
-        // Map AJAX Hooks to Modules
+    private function register_ajax_hooks() {
         $ajax_map = [
+            'sm_ping' => [__CLASS__, 'ajax_ping'],
+            'sm_get_user_role' => ['SM_Public', 'ajax_get_user_role'],
+            'sm_refresh_dashboard' => ['SM_Public', 'ajax_refresh_dashboard'],
             'sm_get_member' => ['SM_Member_Manager', 'ajax_get_member'],
             'sm_search_members' => ['SM_Member_Manager', 'ajax_search_members'],
             'sm_add_member_ajax' => ['SM_Member_Manager', 'ajax_add_member'],
@@ -103,7 +90,6 @@ class Syndicate_Management {
             'sm_update_staff_ajax' => ['SM_Member_Manager', 'ajax_update_staff'],
             'sm_delete_staff_ajax' => ['SM_Member_Manager', 'ajax_delete_staff'],
             'sm_bulk_delete_users_ajax' => ['SM_Member_Manager', 'ajax_bulk_delete_users'],
-
             'sm_add_service' => ['SM_Service_Manager', 'ajax_add_service'],
             'sm_submit_service_request' => ['SM_Service_Manager', 'ajax_submit_service_request'],
             'sm_process_service_request' => ['SM_Service_Manager', 'ajax_process_service_request'],
@@ -113,20 +99,17 @@ class Syndicate_Management {
             'sm_delete_service' => ['SM_Service_Manager', 'ajax_delete_service'],
             'sm_restore_service' => ['SM_Service_Manager', 'ajax_restore_service'],
             'sm_print_service_request' => ['SM_Service_Manager', 'ajax_print_service_request'],
-
             'sm_record_payment_ajax' => ['SM_Finance_Manager', 'ajax_record_payment'],
             'sm_delete_transaction_ajax' => ['SM_Finance_Manager', 'ajax_delete_transaction'],
             'sm_get_member_finance_html' => ['SM_Finance_Manager', 'ajax_get_member_finance_html'],
             'sm_export_finance_report' => ['SM_Finance_Manager', 'ajax_export_finance_report'],
             'sm_print_invoice' => ['SM_Finance_Manager', 'ajax_print_invoice'],
-
             'sm_update_license_ajax' => ['SM_License_Manager', 'ajax_update_license'],
             'sm_update_facility_ajax' => ['SM_License_Manager', 'ajax_update_facility'],
             'sm_verify_document' => ['SM_License_Manager', 'ajax_verify_document'],
             'sm_verify_suggest' => ['SM_License_Manager', 'ajax_verify_suggest'],
             'sm_print_license' => ['SM_License_Manager', 'ajax_print_license'],
             'sm_print_facility' => ['SM_License_Manager', 'ajax_print_facility'],
-
             'sm_send_message_ajax' => ['SM_Messaging_Manager', 'ajax_send_message'],
             'sm_get_conversation_ajax' => ['SM_Messaging_Manager', 'ajax_get_conversation'],
             'sm_submit_contact_form' => ['SM_Messaging_Manager', 'ajax_submit_contact_form'],
@@ -140,7 +123,6 @@ class Syndicate_Management {
             'sm_get_ticket_details' => ['SM_Messaging_Manager', 'ajax_get_ticket_details'],
             'sm_add_ticket_reply' => ['SM_Messaging_Manager', 'ajax_add_ticket_reply'],
             'sm_close_ticket' => ['SM_Messaging_Manager', 'ajax_close_ticket'],
-
             'sm_add_survey' => ['SM_Education_Manager', 'ajax_add_survey'],
             'sm_update_survey' => ['SM_Education_Manager', 'ajax_update_survey'],
             'sm_add_test_question' => ['SM_Education_Manager', 'ajax_add_test_question'],
@@ -151,7 +133,6 @@ class Syndicate_Management {
             'sm_get_survey_results' => ['SM_Education_Manager', 'ajax_get_survey_results'],
             'sm_export_survey_results' => ['SM_Education_Manager', 'ajax_export_survey_results'],
             'sm_get_test_questions' => ['SM_Education_Manager', 'ajax_get_test_questions'],
-
             'sm_save_branch' => ['SM_System_Manager', 'ajax_save_branch'],
             'sm_delete_branch' => ['SM_System_Manager', 'ajax_delete_branch'],
             'sm_save_alert' => ['SM_System_Manager', 'ajax_save_alert'],
@@ -176,41 +157,55 @@ class Syndicate_Management {
             'sm_get_backup_history' => ['SM_System_Manager', 'ajax_get_backup_history'],
             'sm_update_backup_freq' => ['SM_System_Manager', 'ajax_update_backup_freq'],
             'sm_download_stored_backup' => ['SM_System_Manager', 'ajax_download_stored_backup'],
-
             'sm_get_custom_print' => ['SM_Print_Manager', 'ajax_get_custom_print'],
-
             'sm_update_profile_ajax' => ['SM_Auth', 'ajax_update_profile'],
             'sm_forgot_password_otp' => ['SM_Auth', 'ajax_forgot_password_otp'],
             'sm_reset_password_otp' => ['SM_Auth', 'ajax_reset_password_otp'],
             'sm_activate_account_step1' => ['SM_Auth', 'ajax_activate_account_step1'],
             'sm_activate_account_final' => ['SM_Auth', 'ajax_activate_account_final'],
             'sm_submit_membership_request' => ['SM_Auth', 'ajax_submit_membership_request'],
-
             'sm_get_template_ajax' => ['SM_Notifications', 'ajax_get_template_ajax'],
             'sm_run_health_check' => ['SM_Health_Check', 'ajax_run_health_check'],
         ];
 
+        $public_actions = [
+            'sm_ping', 'sm_submit_contact_form', 'sm_verify_document', 'sm_verify_suggest',
+            'sm_submit_service_request', 'sm_track_service_request',
+            'sm_forgot_password_otp', 'sm_reset_password_otp',
+            'sm_activate_account_step1', 'sm_activate_account_final',
+            'sm_submit_membership_request',
+            'sm_submit_membership_request_stage3', 'sm_get_test_questions',
+            'sm_track_membership_request'
+        ];
+
         foreach ($ajax_map as $action => $callback) {
-            $this->loader->add_action('wp_ajax_' . $action, $callback[0], $callback[1]);
-
-            // Register nopriv for public-facing features
-            $public_actions = [
-                'sm_submit_contact_form', 'sm_verify_document', 'sm_verify_suggest',
-                'sm_submit_service_request', 'sm_track_service_request',
-                'sm_forgot_password_otp', 'sm_reset_password_otp',
-                'sm_activate_account_step1', 'sm_activate_account_final',
-                'sm_submit_membership_request',
-                'sm_submit_membership_request_stage3', 'sm_get_test_questions'
-            ];
-
+            add_action('wp_ajax_' . $action, $callback);
             if (in_array($action, $public_actions)) {
-                $this->loader->add_action('wp_ajax_nopriv_' . $action, $callback[0], $callback[1]);
+                add_action('wp_ajax_nopriv_' . $action, $callback);
             }
         }
+    }
 
-        // Dashboard & Specific User Role Hooks
-        $this->loader->add_action('wp_ajax_sm_refresh_dashboard', $plugin_public, 'ajax_refresh_dashboard');
-        $this->loader->add_action('wp_ajax_sm_get_user_role', $plugin_public, 'ajax_get_user_role');
+    public static function ajax_ping() {
+        wp_send_json_success(['pong' => true, 'time' => current_time('mysql'), 'user_id' => get_current_user_id()]);
+    }
+
+    private function define_public_hooks() {
+        $plugin_public = new SM_Public($this->get_plugin_name(), $this->get_version());
+        $this->loader->add_filter('show_admin_bar', $plugin_public, 'hide_admin_bar_for_non_admins');
+        $this->loader->add_action('admin_init', $plugin_public, 'restrict_admin_access');
+        $this->loader->add_action('template_redirect', $plugin_public, 'handle_frontend_redirection');
+        $this->loader->add_filter('login_redirect', $plugin_public, 'custom_login_redirect', 10, 3);
+        $this->loader->add_action('wp_enqueue_scripts', $plugin_public, 'enqueue_styles');
+        $this->loader->add_action('wp_footer', $plugin_public, 'inject_global_alerts');
+        $this->loader->add_action('init', $plugin_public, 'register_shortcodes');
+        $this->loader->add_action('template_redirect', $plugin_public, 'handle_form_submission');
+        $this->loader->add_action('wp_login_failed', $plugin_public, 'login_failed');
+        $this->loader->add_action('wp_login', $plugin_public, 'log_successful_login', 10, 2);
+        $this->loader->add_action('admin_init', $this, 'handle_form_imports');
+
+        // Backup & Maintenance
+        $this->loader->add_action('sm_scheduled_backup', 'SM_Backup_Manager', 'handle_scheduled_backup');
 
         $this->loader->add_action('sm_daily_maintenance', 'SM_DB', 'delete_expired_messages');
         $this->loader->add_action('sm_daily_maintenance', 'SM_Notifications', 'run_daily_checks');

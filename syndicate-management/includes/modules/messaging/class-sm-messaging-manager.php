@@ -64,10 +64,11 @@ class SM_Messaging_Manager {
     }
 
     public static function ajax_get_conversation() {
-        if (!is_user_logged_in()) {
-            wp_send_json_error(['message' => 'Unauthorized']);
-        }
-        check_ajax_referer('sm_message_action', 'nonce');
+        try {
+            if (!is_user_logged_in()) {
+                wp_send_json_error(['message' => 'Unauthorized']);
+            }
+            check_ajax_referer('sm_message_action', 'nonce');
 
         $mid = intval($_POST['member_id'] ?? 0);
         if (!$mid) {
@@ -79,7 +80,10 @@ class SM_Messaging_Manager {
 
         self::validate_member_access($mid);
 
-        wp_send_json_success(SM_DB::get_ticket_messages($mid));
+            wp_send_json_success(SM_DB::get_ticket_messages($mid));
+        } catch (Throwable $e) {
+            wp_send_json_error(['message' => 'Critical Error: ' . $e->getMessage()]);
+        }
     }
 
     public static function ajax_submit_contact_form() {
@@ -113,10 +117,11 @@ class SM_Messaging_Manager {
     }
 
     public static function ajax_get_conversations() {
-        if (!is_user_logged_in()) {
-            wp_send_json_error(['message' => 'Unauthorized']);
-        }
-        check_ajax_referer('sm_message_action', 'nonce');
+        try {
+            if (!is_user_logged_in()) {
+                wp_send_json_error(['message' => 'Unauthorized']);
+            }
+            check_ajax_referer('sm_message_action', 'nonce');
         $user = wp_get_current_user();
         $gov = get_user_meta($user->ID, 'sm_governorate', true);
         $has_full = current_user_can('sm_full_access') || current_user_can('manage_options');
@@ -138,13 +143,16 @@ class SM_Messaging_Manager {
                 ];
             }
             wp_send_json_success(['type' => 'member_view', 'officials' => $data]);
-        } else {
-            $t_gov = $has_full ? null : $gov;
-            $convs = SM_DB::get_governorate_conversations($t_gov);
-            foreach($convs as &$c) {
-                $c['member']->avatar = $c['member']->photo_url ?: get_avatar_url($c['member']->wp_user_id ?: 0);
+            } else {
+                $t_gov = $has_full ? null : $gov;
+                $convs = SM_DB::get_governorate_conversations($t_gov);
+                foreach($convs as &$c) {
+                    $c['member']->avatar = $c['member']->photo_url ?: get_avatar_url($c['member']->wp_user_id ?: 0);
+                }
+                wp_send_json_success(['type' => 'official_view', 'conversations' => $convs]);
             }
-            wp_send_json_success(['type' => 'official_view', 'conversations' => $convs]);
+        } catch (Throwable $e) {
+            wp_send_json_error(['message' => 'Critical Error fetching conversations: ' . $e->getMessage()]);
         }
     }
 

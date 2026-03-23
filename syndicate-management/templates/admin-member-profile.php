@@ -427,13 +427,14 @@ function smUploadMemberPhoto(memberId) {
     const file = document.getElementById('member-photo-input').files[0];
     if (!file) return;
 
+    const action = 'sm_update_member_photo';
     const formData = new FormData();
-    formData.append('action', 'sm_update_member_photo');
+    formData.append('action', action);
     formData.append('member_id', memberId);
     formData.append('member_photo', file);
     formData.append('sm_photo_nonce', '<?php echo wp_create_nonce("sm_photo_action"); ?>');
 
-    fetch('<?php echo admin_url('admin-ajax.php'); ?>', { method: 'POST', body: formData })
+    fetch(ajaxurl + '?action=' + action, { method: 'POST', body: formData })
     .then(r => r.json())
     .then(res => {
         if (res.success && res.data && res.data.photo_url) {
@@ -451,11 +452,12 @@ function smOpenUpdateMemberRequestModal() {
 
 document.getElementById('member-update-request-form').onsubmit = function(e) {
     e.preventDefault();
+    const action = 'sm_submit_update_request_ajax';
     const formData = new FormData(this);
-    formData.append('action', 'sm_submit_update_request_ajax');
+    formData.append('action', action);
     formData.append('nonce', '<?php echo wp_create_nonce("sm_update_request"); ?>');
 
-    fetch('<?php echo admin_url('admin-ajax.php'); ?>', { method: 'POST', body: formData })
+    fetch(ajaxurl + '?action=' + action, { method: 'POST', body: formData })
     .then(r => r.json())
     .then(res => {
         if (res.success) {
@@ -469,12 +471,13 @@ document.getElementById('member-update-request-form').onsubmit = function(e) {
 
 function deleteMember(id, name) {
     if (!confirm('هل أنت متأكد من حذف العضو: ' + name + ' نهائياً من النظام؟ لا يمكن التراجع عن هذا الإجراء.')) return;
+    const action = 'sm_delete_member_ajax';
     const formData = new FormData();
-    formData.append('action', 'sm_delete_member_ajax');
+    formData.append('action', action);
     formData.append('member_id', id);
     formData.append('nonce', '<?php echo wp_create_nonce("sm_delete_member"); ?>');
 
-    fetch('<?php echo admin_url('admin-ajax.php'); ?>', { method: 'POST', body: formData })
+    fetch(ajaxurl + '?action=' + action, { method: 'POST', body: formData })
     .then(r => r.json())
     .then(res => {
         if (res.success) {
@@ -538,9 +541,10 @@ applyCascading("#member-update-request-form .academic-cascading");
 
 document.getElementById('edit-member-form').onsubmit = function(e) {
     e.preventDefault();
+    const action = 'sm_update_member_ajax';
     const formData = new FormData(this);
-    formData.append('action', 'sm_update_member_ajax');
-    fetch('<?php echo admin_url('admin-ajax.php'); ?>', { method: 'POST', body: formData })
+    if (!formData.has('action')) formData.append('action', action);
+    fetch(ajaxurl + '?action=' + action, { method: 'POST', body: formData })
     .then(r => r.json()).then(res => {
         if(res.success) {
             smShowNotification('تم تحديث البيانات بنجاح');

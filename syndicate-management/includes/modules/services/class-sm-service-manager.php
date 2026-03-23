@@ -80,11 +80,15 @@ class SM_Service_Manager {
     }
 
     public static function ajax_get_services_html() {
-        self::check_capability('sm_manage_system');
-        check_ajax_referer('sm_admin_action', 'nonce');
-        ob_start();
-        include SM_PLUGIN_DIR . 'templates/admin-services.php';
-        wp_send_json_success(['html' => ob_get_clean()]);
+        try {
+            self::check_capability('sm_manage_system');
+            check_ajax_referer('sm_admin_action', 'nonce');
+            ob_start();
+            include SM_PLUGIN_DIR . 'templates/admin-services.php';
+            wp_send_json_success(['html' => ob_get_clean()]);
+        } catch (Throwable $e) {
+            wp_send_json_error(['message' => $e->getMessage()]);
+        }
     }
 
     public static function ajax_delete_service() {
@@ -102,12 +106,16 @@ class SM_Service_Manager {
     }
 
     public static function ajax_restore_service() {
-        self::check_capability('sm_manage_system');
-        check_ajax_referer('sm_admin_action', 'nonce');
-        if (SM_DB::restore_service(intval($_POST['id']))) {
-            wp_send_json_success();
-        } else {
-            wp_send_json_error(['message' => 'Failed']);
+        try {
+            self::check_capability('sm_manage_system');
+            check_ajax_referer('sm_admin_action', 'nonce');
+            if (SM_DB::restore_service(intval($_POST['id']))) {
+                wp_send_json_success();
+            } else {
+                wp_send_json_error(['message' => 'Failed']);
+            }
+        } catch (Throwable $e) {
+            wp_send_json_error(['message' => $e->getMessage()]);
         }
     }
 
@@ -201,7 +209,8 @@ class SM_Service_Manager {
     }
 
     public static function ajax_track_service_request() {
-        check_ajax_referer('sm_contact_action');
+        try {
+            check_ajax_referer('sm_contact_action');
         $code = trim(sanitize_text_field($_POST['tracking_code'] ?? ''));
         if (empty($code)) {
             wp_send_json_error(['message' => 'يرجى إدخال كود التتبع']);
@@ -287,17 +296,20 @@ class SM_Service_Manager {
             'needs_info' => 'نقص في البيانات'
         ];
 
-        wp_send_json_success([
-            'id' => $req->id,
-            'service' => $req->service_name,
-            'status' => $statuses[$req->status] ?? $req->status,
-            'notes' => $req->admin_notes ?? '',
-            'date' => date('Y-m-d', strtotime($req->created_at)),
-            'member' => $req->member_name ?: 'طلب خارجي',
-            'email' => $contact['email'],
-            'phone' => $contact['phone'],
-            'branch' => $contact['branch']
-        ]);
+            wp_send_json_success([
+                'id' => $req->id,
+                'service' => $req->service_name,
+                'status' => $statuses[$req->status] ?? $req->status,
+                'notes' => $req->admin_notes ?? '',
+                'date' => date('Y-m-d', strtotime($req->created_at)),
+                'member' => $req->member_name ?: 'طلب خارجي',
+                'email' => $contact['email'],
+                'phone' => $contact['phone'],
+                'branch' => $contact['branch']
+            ]);
+        } catch (Throwable $e) {
+            wp_send_json_error(['message' => $e->getMessage()]);
+        }
     }
 
     public static function ajax_print_service_request() {

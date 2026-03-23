@@ -166,11 +166,12 @@ function smOpenSubTab(tabId, btn) {
 
 function smLoadTemplate(type) {
     const labels = <?php echo json_encode($templates); ?>;
+    const action = 'sm_get_template_ajax';
     const formData = new FormData();
-    formData.append('action', 'sm_get_template_ajax');
+    formData.append('action', action);
     formData.append('type', type);
 
-    fetch(ajaxurl, { method: 'POST', body: formData })
+    fetch(ajaxurl + '?action=' + action, { method: 'POST', body: formData })
     .then(r => r.json())
     .then(res => {
         if (res.success) {

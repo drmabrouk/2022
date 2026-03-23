@@ -344,7 +344,8 @@ function smSaveSurvey() {
     fd.append('branch', document.getElementById('survey_branch').value);
     fd.append('nonce', '<?php echo wp_create_nonce("sm_admin_action"); ?>');
 
-    fetch(ajaxurl, { method: 'POST', body: fd }).then(r=>r.json()).then(res => {
+    const action = document.getElementById('survey_id').value ? 'sm_update_survey' : 'sm_add_survey';
+    fetch(ajaxurl + '?action=' + action, { method: 'POST', body: fd }).then(r=>r.json()).then(res => {
         if (res.success) {
             smShowNotification('تم حفظ بيانات الاختبار');
             setTimeout(() => location.reload(), 1000);
@@ -429,7 +430,8 @@ document.getElementById('add-question-form').onsubmit = function(e) {
         fd.append('correct_answer', document.getElementById('q_correct_short').value);
     }
 
-    fetch(ajaxurl, { method: 'POST', body: fd }).then(r=>r.json()).then(res => {
+    const action = 'sm_add_test_question';
+    fetch(ajaxurl + '?action=' + action, { method: 'POST', body: fd }).then(r=>r.json()).then(res => {
         if (res.success) {
             smShowNotification('تم إضافة السؤال');
             this.reset();
@@ -442,11 +444,12 @@ document.getElementById('add-question-form').onsubmit = function(e) {
 
 function smDeleteQuestion(id, testId) {
     if (!confirm('حذف هذا السؤال نهائياً؟')) return;
+    const action = 'sm_delete_test_question';
     const fd = new FormData();
-    fd.append('action', 'sm_delete_test_question');
+    fd.append('action', action);
     fd.append('id', id);
     fd.append('nonce', '<?php echo wp_create_nonce("sm_admin_action"); ?>');
-    fetch(ajaxurl, {method:'POST', body:fd}).then(r=>r.json()).then(res => {
+    fetch(ajaxurl + '?action=' + action, {method:'POST', body:fd}).then(r=>r.json()).then(res => {
         if(res.success) {
             smShowNotification('تم حذف السؤال');
             smLoadBankQuestions(testId);
@@ -478,7 +481,8 @@ function smSubmitAssignment() {
     user_ids.forEach(id => fd.append('user_ids[]', id));
     fd.append('nonce', '<?php echo wp_create_nonce("sm_admin_action"); ?>');
 
-    fetch(ajaxurl, { method: 'POST', body: fd })
+    const action = 'sm_assign_test';
+    fetch(ajaxurl + '?action=' + action, { method: 'POST', body: fd })
     .then(r => r.json())
     .then(res => {
         if (res.success) {
@@ -493,12 +497,13 @@ function smSubmitAssignment() {
 function smCancelSurvey(id) {
     if (!confirm('هل أنت متأكد من إلغاء هذا الاختبار؟ لن يتمكن أحد من التقديم عليه بعد الآن.')) return;
 
+    const action = 'sm_cancel_survey';
     const formData = new FormData();
-    formData.append('action', 'sm_cancel_survey');
+    formData.append('action', action);
     formData.append('id', id);
     formData.append('nonce', '<?php echo wp_create_nonce("sm_admin_action"); ?>');
 
-    fetch('<?php echo admin_url('admin-ajax.php'); ?>', { method: 'POST', body: formData })
+    fetch(ajaxurl + '?action=' + action, { method: 'POST', body: formData })
     .then(r => r.json())
     .then(res => {
         if (res.success) {
@@ -541,7 +546,8 @@ function smViewSurveyResults(id, title) {
     body.innerHTML = '<p style="text-align:center;">جاري تحميل النتائج...</p>';
     document.getElementById('survey-results-modal').style.display = 'flex';
 
-    fetch('<?php echo admin_url('admin-ajax.php'); ?>?action=sm_get_survey_results&id=' + id)
+    const action = 'sm_get_survey_results';
+    fetch(ajaxurl + '?action=' + action + '&id=' + id)
     .then(r => r.json())
     .then(res => {
         if (res.success && res.data) {

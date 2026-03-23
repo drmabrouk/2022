@@ -86,7 +86,8 @@ window.smTrackServiceRequest = function() {
     area.style.display = 'block';
     area.innerHTML = '<div style="text-align:center; padding:20px; color:#64748b;">جاري البحث عن الطلب...</div>';
 
-    fetch(ajaxurl, {method:'POST', body:fd}).then(r=>r.json()).then(res=>{
+    const action = 'sm_track_service_request';
+    fetch(ajaxurl + '?action=' + action, {method:'POST', body:fd}).then(r=>r.json()).then(res=>{
         if(res.success) {
             const r = res.data;
             area.innerHTML = `
@@ -253,7 +254,8 @@ window.smOpenProgressiveForm = function(btn, s) {
         const btn = document.querySelector('#service-step-3 .sm-btn:last-child');
         btn.disabled = true; btn.innerText = 'جاري التقديم...';
 
-        fetch(ajaxurl, {method:'POST', body:fd}).then(r=>r.json()).then(res=>{
+        const action = 'sm_submit_service_request';
+        fetch(ajaxurl + '?action=' + action, {method:'POST', body:fd}).then(r=>r.json()).then(res=>{
             if(res.success) {
                 body.innerHTML = `<div style="text-align:center; padding:20px;"><div style="font-size:60px; margin-bottom:20px;">✅</div><h3 style="font-weight:900; font-size:1.8em;">تم تقديم طلبك بنجاح!</h3><p style="color:#64748b; margin-bottom:20px;">كود تتبع الطلب الخاص بك:</p><div style="background:#f8fafc; border:2px dashed var(--sm-primary-color); padding:15px; font-size:24px; font-weight:900; color:var(--sm-primary-color); border-radius:15px; margin-bottom:30px;">${res.data}</div><button onclick="location.reload()" class="sm-btn" style="width:100%;">إغلاق</button></div>`;
             } else {

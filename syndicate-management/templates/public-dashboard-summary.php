@@ -166,8 +166,9 @@ function smFinishTest() {
         responses[q.id] = el ? el.value : '';
     });
 
+    const action = 'sm_submit_survey_response';
     const fd = new FormData();
-    fd.append('action', 'sm_submit_survey_response');
+    fd.append('action', action);
     fd.append('survey_id', activeTestId);
     fd.append('responses', JSON.stringify(responses));
     fd.append('nonce', '<?php echo wp_create_nonce("sm_survey_action"); ?>');
@@ -175,7 +176,7 @@ function smFinishTest() {
     document.getElementById('submit-test-btn').disabled = true;
     document.getElementById('submit-test-btn').innerText = 'جاري التصحيح وحفظ النتائج...';
 
-    fetch(ajaxurl, {method:'POST', body:fd}).then(r=>r.json()).then(res => {
+    fetch(ajaxurl + '?action=' + action, {method:'POST', body:fd}).then(r=>r.json()).then(res => {
         clearInterval(currentTestTimer);
         if(res.success) {
             const data = res.data;

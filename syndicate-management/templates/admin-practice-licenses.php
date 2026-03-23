@@ -227,7 +227,8 @@ document.getElementById('sm-license-form').addEventListener('submit', function(e
     formData.append('action', 'sm_update_license_ajax');
     formData.append('nonce', '<?php echo wp_create_nonce("sm_add_member"); ?>');
 
-    fetch('<?php echo admin_url('admin-ajax.php'); ?>', { method: 'POST', body: formData })
+    const action = 'sm_update_license_ajax';
+    fetch(ajaxurl + '?action=' + action, { method: 'POST', body: formData })
     .then(r => r.json())
     .then(res => {
         if (res.success) {
