@@ -70,6 +70,7 @@ class Syndicate_Management {
         $this->loader->add_action('template_redirect', $plugin_public, 'handle_form_submission');
         $this->loader->add_action('wp_login_failed', $plugin_public, 'login_failed');
         $this->loader->add_action('wp_login', $plugin_public, 'log_successful_login', 10, 2);
+        $this->loader->add_action('admin_init', $this, 'handle_form_imports');
 
         // Backup & Maintenance
         $this->loader->add_action('sm_scheduled_backup', 'SM_Backup_Manager', 'handle_scheduled_backup');
@@ -246,6 +247,15 @@ class Syndicate_Management {
             if (function_exists('wp_mail')) { wp_mail($support_email, $subject, $body); }
         } catch (Exception $e) {}
         self::$is_reporting = false;
+    }
+
+    public function handle_form_imports() {
+        if (isset($_POST['sm_import_members_csv'])) {
+            SM_Member_Manager::ajax_import_members_csv();
+        }
+        if (isset($_POST['sm_import_staffs_csv'])) {
+            SM_Member_Manager::ajax_import_staffs_csv();
+        }
     }
 
     public function schedule_maintenance_cron() { if (function_exists('wp_next_scheduled') && !wp_next_scheduled('sm_daily_maintenance')) { wp_schedule_event(time(), 'daily', 'sm_daily_maintenance'); } }

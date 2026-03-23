@@ -203,7 +203,8 @@ class SM_Auth {
     }
 
     public static function ajax_forgot_password_otp() {
-        check_ajax_referer('sm_registration_nonce');
+        try {
+            check_ajax_referer('sm_registration_nonce');
         $national_id = sanitize_text_field($_POST['national_id'] ?? '');
         $member = SM_DB::get_member_by_national_id($national_id);
         if (!$member || !$member->wp_user_id) {
@@ -220,12 +221,16 @@ class SM_Auth {
         $syndicate = SM_Settings::get_syndicate_info();
         $subject = "رمز استعادة كلمة المرور - " . $syndicate['syndicate_name'];
         $message = "عزيزي العضو " . $member->name . ",\n\n" . "رمز التحقق الخاص بك هو: " . $otp . "\n" . "هذا الرمز صالح لمدة 10 دقائق فقط ولمرة واحدة.\n\n" . "إذا لم تطلب هذا الرمز، يرجى تجاهل هذه الرسالة.\n";
-        wp_mail($member->email, $subject, $message);
-        wp_send_json_success('تم إرسال رمز التحقق إلى بريدك الإلكتروني المسجل');
+            wp_mail($member->email, $subject, $message);
+            wp_send_json_success('تم إرسال رمز التحقق إلى بريدك الإلكتروني المسجل');
+        } catch (Throwable $e) {
+            wp_send_json_error(['message' => 'Critical Error sending OTP: ' . $e->getMessage()]);
+        }
     }
 
     public static function ajax_reset_password_otp() {
-        check_ajax_referer('sm_registration_nonce');
+        try {
+            check_ajax_referer('sm_registration_nonce');
         $national_id = sanitize_text_field($_POST['national_id'] ?? '');
         $otp = sanitize_text_field($_POST['otp'] ?? '');
         $new_pass = $_POST['new_password'] ?? '';
@@ -244,14 +249,18 @@ class SM_Auth {
         if (strlen($new_pass) < 10 || !preg_match('/^[a-zA-Z0-9]+$/', $new_pass)) {
             wp_send_json_error(['message' => 'كلمة المرور يجب أن تكون 10 أحرف على الأقل وتتكون من حروف وأرقام فقط بدون رموز']);
         }
-        wp_set_password($new_pass, $user_id);
-        update_user_meta($user_id, 'sm_recovery_otp_used', 1);
-        wp_send_json_success('تمت إعادة تعيين كلمة المرور بنجاح. يمكنك الآن تسجيل الدخول');
+            wp_set_password($new_pass, $user_id);
+            update_user_meta($user_id, 'sm_recovery_otp_used', 1);
+            wp_send_json_success('تمت إعادة تعيين كلمة المرور بنجاح. يمكنك الآن تسجيل الدخول');
+        } catch (Throwable $e) {
+            wp_send_json_error(['message' => 'Critical Error resetting password: ' . $e->getMessage()]);
+        }
     }
 
     public static function ajax_activate_account_step1() {
-        check_ajax_referer('sm_registration_nonce');
-        $national_id = sanitize_text_field($_POST['national_id'] ?? '');
+        try {
+            check_ajax_referer('sm_registration_nonce');
+            $national_id = sanitize_text_field($_POST['national_id'] ?? '');
         $membership_number = sanitize_text_field($_POST['membership_number'] ?? '');
         $branch_slug = sanitize_text_field($_POST['branch'] ?? '');
 
@@ -266,11 +275,15 @@ class SM_Auth {
             wp_send_json_error(['message' => 'العضو غير مسجل في الفرع المختار. يرجى اختيار الفرع الصحيح.']);
         }
 
-        wp_send_json_success('تم التحقق بنجاح. يرجى إكمال بيانات التواصل');
+            wp_send_json_success('تم التحقق بنجاح. يرجى إكمال بيانات التواصل');
+        } catch (Throwable $e) {
+            wp_send_json_error(['message' => 'Critical Error in activation step 1: ' . $e->getMessage()]);
+        }
     }
 
     public static function ajax_activate_account_final() {
-        check_ajax_referer('sm_registration_nonce');
+        try {
+            check_ajax_referer('sm_registration_nonce');
         $national_id = sanitize_text_field($_POST['national_id'] ?? '');
         $membership_number = sanitize_text_field($_POST['membership_number'] ?? '');
         $new_email = sanitize_email($_POST['email'] ?? '');
@@ -291,12 +304,16 @@ class SM_Auth {
             wp_update_user(['ID' => $member->wp_user_id, 'user_email' => $new_email, 'user_pass' => $new_pass]);
             update_user_meta($member->wp_user_id, 'sm_phone', $new_phone);
         }
-        wp_send_json_success('تم تفعيل الحساب بنجاح. يمكنك الآن تسجيل الدخول');
-        SM_Notifications::send_template_notification($member->id, 'welcome_activation');
+            wp_send_json_success('تم تفعيل الحساب بنجاح. يمكنك الآن تسجيل الدخول');
+            SM_Notifications::send_template_notification($member->id, 'welcome_activation');
+        } catch (Throwable $e) {
+            wp_send_json_error(['message' => 'Critical Error activating account: ' . $e->getMessage()]);
+        }
     }
 
     public static function ajax_submit_membership_request() {
-        check_ajax_referer('sm_registration_nonce', 'nonce');
+        try {
+            check_ajax_referer('sm_registration_nonce', 'nonce');
         $nid = sanitize_text_field($_POST['national_id']);
         if (SM_DB::member_exists($nid)) {
             wp_send_json_error(['message' => 'عذراً، هذا الرقم القومي مسجل مسبقاً في النظام كعضو مفعل.']);
@@ -307,19 +324,23 @@ class SM_Auth {
         }
 
         $res = SM_DB::add_membership_request($_POST);
-        if ($res) {
-            $tracking_code = 'REG-' . date('Ymd') . $res;
-            wp_send_json_success($tracking_code);
-        } else {
-            wp_send_json_error(['message' => 'فشل في إرسال الطلب']);
+            if ($res) {
+                $tracking_code = 'REG-' . date('Ymd') . $res;
+                wp_send_json_success($tracking_code);
+            } else {
+                wp_send_json_error(['message' => 'فشل في إرسال الطلب']);
+            }
+        } catch (Throwable $e) {
+            wp_send_json_error(['message' => 'Critical Error submitting request: ' . $e->getMessage()]);
         }
     }
 
     public static function ajax_update_profile() {
-        if (!is_user_logged_in()) {
-            wp_send_json_error(['message' => 'يجب تسجيل الدخول أولاً']);
-        }
-        check_ajax_referer('sm_profile_action', 'nonce');
+        try {
+            if (!is_user_logged_in()) {
+                wp_send_json_error(['message' => 'يجب تسجيل الدخول أولاً']);
+            }
+            check_ajax_referer('sm_profile_action', 'nonce');
 
         $user_id = get_current_user_id();
         $user = get_userdata($user_id);
@@ -354,8 +375,11 @@ class SM_Auth {
             }
         }
 
-        SM_Logger::log('تحديث الملف الشخصي', "قام المستخدم بتحديث بياناته الشخصية");
-        wp_send_json_success('تم تحديث البيانات بنجاح');
+            SM_Logger::log('تحديث الملف الشخصي', "قام المستخدم بتحديث بياناته الشخصية");
+            wp_send_json_success('تم تحديث البيانات بنجاح');
+        } catch (Throwable $e) {
+            wp_send_json_error(['message' => 'Critical Error updating profile: ' . $e->getMessage()]);
+        }
     }
 
     public static function ajax_track_membership_request() {

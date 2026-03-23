@@ -238,11 +238,16 @@ class SM_Finance {
 
         $dcode = $prefix . '-' . $cy . str_pad($nseq, 5, '0', STR_PAD_LEFT);
 
+        $payment_date = sanitize_text_field($data['payment_date']);
+        if (empty($payment_date) || $payment_date === '0000-00-00') {
+            $payment_date = current_time('mysql', false);
+        }
+
         $ins = $wpdb->insert($wpdb->prefix . 'sm_payments', [
             'member_id' => intval($data['member_id']),
             'amount' => floatval($data['amount']),
             'payment_type' => sanitize_text_field($data['payment_type']),
-            'payment_date' => sanitize_text_field($data['payment_date']),
+            'payment_date' => $payment_date,
             'target_year' => isset($data['target_year']) ? intval($data['target_year']) : null,
             'digital_invoice_code' => $dcode,
             'paper_invoice_code' => sanitize_text_field($data['paper_invoice_code'] ?? ''),
