@@ -368,7 +368,8 @@ $all_requests = $is_official ? SM_DB::get_service_requests() : [];
     window.smRefreshServicesList = function() {
         const container = $('#available-services');
         container.css('opacity', '0.5');
-        fetch(ajaxurl + '?action=sm_get_services_html&nonce=<?php echo wp_create_nonce("sm_admin_action"); ?>&t=' + Date.now())
+        const action = 'sm_get_services_html';
+        fetch(ajaxurl + '?action=' + action + '&nonce=<?php echo wp_create_nonce("sm_admin_action"); ?>&t=' + Date.now())
             .then(r => r.json())
             .then(res => {
                 if (res.success) {
@@ -425,9 +426,10 @@ $all_requests = $is_official ? SM_DB::get_service_requests() : [];
             });
             fd.append('required_fields', JSON.stringify(reqFields));
 
-            fd.append('action', 'sm_add_service');
+            const action = 'sm_add_service';
+            fd.append('action', action);
             fd.append('nonce', '<?php echo wp_create_nonce("sm_admin_action"); ?>');
-            fetch(ajaxurl, {method: 'POST', body: fd}).then(r=>r.json()).then(res=>{
+            fetch(ajaxurl + '?action=' + action, {method: 'POST', body: fd}).then(r=>r.json()).then(res=>{
                 if (res.success) {
                     smShowNotification('تم إضافة الخدمة بنجاح');
                     smRefreshServicesList();
@@ -442,11 +444,13 @@ $all_requests = $is_official ? SM_DB::get_service_requests() : [];
 
     window.toggleServiceStatus = function(id, status) {
         const fd = new FormData();
-        fd.append('action', 'sm_update_service');
+        const action = 'sm_update_service';
+        fd.append('action', action);
         fd.append('id', id);
         fd.append('status', status);
         fd.append('nonce', '<?php echo wp_create_nonce("sm_admin_action"); ?>');
-        fetch(ajaxurl, {method: 'POST', body: fd}).then(r=>r.json()).then(res=>{
+
+        fetch(ajaxurl + '?action=' + action, {method: 'POST', body: fd}).then(r=>r.json()).then(res=>{
             if (res.success) {
                 smShowNotification('تم تحديث حالة الخدمة');
                 smRefreshServicesList();
@@ -459,10 +463,11 @@ $all_requests = $is_official ? SM_DB::get_service_requests() : [];
     window.deleteService = function(id) {
         if (!confirm('هل أنت متأكد من نقل هذه الخدمة إلى سلة المحذوفات؟')) return;
         const fd = new FormData();
-        fd.append('action', 'sm_delete_service');
+        const action = 'sm_delete_service';
+        fd.append('action', action);
         fd.append('id', id);
         fd.append('nonce', '<?php echo wp_create_nonce("sm_admin_action"); ?>');
-        fetch(ajaxurl, {method: 'POST', body: fd}).then(r=>r.json()).then(res=>{
+        fetch(ajaxurl + '?action=' + action, {method: 'POST', body: fd}).then(r=>r.json()).then(res=>{
             if (res.success) {
                 smShowNotification('تم نقل الخدمة إلى سلة المحذوفات');
                 setTimeout(() => location.reload(), 1000);
@@ -475,10 +480,11 @@ $all_requests = $is_official ? SM_DB::get_service_requests() : [];
     window.restoreService = function(id) {
         if (!confirm('هل أنت متأكد من استعادة هذه الخدمة؟')) return;
         const fd = new FormData();
-        fd.append('action', 'sm_restore_service');
+        const action = 'sm_restore_service';
+        fd.append('action', action);
         fd.append('id', id);
         fd.append('nonce', '<?php echo wp_create_nonce("sm_admin_action"); ?>');
-        fetch(ajaxurl, {method: 'POST', body: fd}).then(r=>r.json()).then(res=>{
+        fetch(ajaxurl + '?action=' + action, {method: 'POST', body: fd}).then(r=>r.json()).then(res=>{
             if (res.success) {
                 smShowNotification('تم استعادة الخدمة بنجاح');
                 setTimeout(() => location.reload(), 1000);
@@ -491,11 +497,12 @@ $all_requests = $is_official ? SM_DB::get_service_requests() : [];
     window.deleteServicePermanent = function(id) {
         if (!confirm('تحذير: سيتم حذف الخدمة نهائياً من قاعدة البيانات. هل أنت متأكد؟')) return;
         const fd = new FormData();
-        fd.append('action', 'sm_delete_service');
+        const action = 'sm_delete_service';
+        fd.append('action', action);
         fd.append('id', id);
         fd.append('permanent', 1);
         fd.append('nonce', '<?php echo wp_create_nonce("sm_admin_action"); ?>');
-        fetch(ajaxurl, {method: 'POST', body: fd}).then(r=>r.json()).then(res=>{
+        fetch(ajaxurl + '?action=' + action, {method: 'POST', body: fd}).then(r=>r.json()).then(res=>{
             if (res.success) {
                 smShowNotification('تم حذف الخدمة نهائياً');
                 setTimeout(() => location.reload(), 1000);
@@ -554,10 +561,11 @@ $all_requests = $is_official ? SM_DB::get_service_requests() : [];
             fd.append('required_fields', JSON.stringify(reqFields));
 
             fd.append('id', s.id);
-            fd.append('action', 'sm_update_service');
+            const action = 'sm_update_service';
+            fd.append('action', action);
             fd.append('nonce', '<?php echo wp_create_nonce("sm_admin_action"); ?>');
 
-            fetch(ajaxurl, {method: 'POST', body: fd}).then(r=>r.json()).then(res=>{
+            fetch(ajaxurl + '?action=' + action, {method: 'POST', body: fd}).then(r=>r.json()).then(res=>{
                 if (res.success) {
                     smShowNotification('تم تحديث الخدمة بنجاح');
                     smRefreshServicesList();
@@ -609,13 +617,14 @@ $all_requests = $is_official ? SM_DB::get_service_requests() : [];
         });
 
         const fd = new FormData();
-        fd.append('action', 'sm_submit_service_request');
+        const action = 'sm_submit_service_request';
+        fd.append('action', action);
         fd.append('service_id', $('#req-service-id').val());
         fd.append('member_id', $(this).find('[name="member_id"]').val());
         fd.append('request_data', JSON.stringify(data));
         fd.append('nonce', '<?php echo wp_create_nonce("sm_service_action"); ?>');
 
-        fetch(ajaxurl, {method: 'POST', body: fd}).then(r=>r.json()).then(res => {
+        fetch(ajaxurl + '?action=' + action, {method: 'POST', body: fd}).then(r=>r.json()).then(res => {
             if (res.success) {
                 smShowNotification('تم تقديم الطلب بنجاح');
                 setTimeout(() => location.reload(), 1000);
@@ -677,10 +686,11 @@ $all_requests = $is_official ? SM_DB::get_service_requests() : [];
     $('#process-request-form').on('submit', function(e) {
         e.preventDefault();
         const fd = new FormData(this);
-        fd.append('action', 'sm_process_service_request');
+        const action = 'sm_process_service_request';
+        fd.append('action', action);
         fd.append('nonce', '<?php echo wp_create_nonce("sm_admin_action"); ?>');
 
-        fetch(ajaxurl, {method: 'POST', body: fd}).then(r=>r.json()).then(res=>{
+        fetch(ajaxurl + '?action=' + action, {method: 'POST', body: fd}).then(r=>r.json()).then(res=>{
             if (res.success) {
                 smShowNotification('تم تحديث الطلب بنجاح');
                 setTimeout(() => location.reload(), 1000);
@@ -712,10 +722,11 @@ $all_requests = $is_official ? SM_DB::get_service_requests() : [];
     window.smRollbackLog = function(logId) {
         if (!confirm('هل أنت متأكد من استعادة هذه الخدمة؟')) return;
         const fd = new FormData();
-        fd.append('action', 'sm_rollback_log_ajax');
+        const action = 'sm_rollback_log_ajax';
+        fd.append('action', action);
         fd.append('log_id', logId);
         fd.append('nonce', '<?php echo wp_create_nonce("sm_admin_action"); ?>');
-        fetch(ajaxurl, {method: 'POST', body: fd}).then(r=>r.json()).then(res=>{
+        fetch(ajaxurl + '?action=' + action, {method: 'POST', body: fd}).then(r=>r.json()).then(res=>{
             if (res.success) {
                 smShowNotification('تمت الاستعادة بنجاح');
                 smRefreshServicesList();

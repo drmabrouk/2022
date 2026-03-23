@@ -97,8 +97,9 @@ function smLoadDocuments() {
     const search = document.getElementById('sm-doc-search').value;
     const category = document.getElementById('sm-doc-category').value;
     const grid = document.getElementById('sm-documents-grid');
+    const action = 'sm_get_documents';
 
-    fetch(`<?php echo admin_url('admin-ajax.php'); ?>?action=sm_get_documents&member_id=<?php echo $member_id; ?>&search=${search}&category=${category}`)
+    fetch(ajaxurl + `?action=${action}&member_id=<?php echo $member_id; ?>&search=${search}&category=${category}`)
     .then(r => r.json())
     .then(res => {
         if (res.success && res.data) {
@@ -155,12 +156,13 @@ function smCloseViewer() {
 
 function smDeleteDocument(id) {
     if (!confirm('هل أنت متأكد من حذف هذا المستند نهائياً؟')) return;
+    const action = 'sm_delete_document';
     const fd = new FormData();
-    fd.append('action', 'sm_delete_document');
+    fd.append('action', action);
     fd.append('doc_id', id);
     fd.append('nonce', '<?php echo wp_create_nonce("sm_document_action"); ?>');
 
-    fetch('<?php echo admin_url('admin-ajax.php'); ?>', { method: 'POST', body: fd })
+    fetch(ajaxurl + '?action=' + action, { method: 'POST', body: fd })
     .then(r => r.json()).then(res => {
         if (res.success) {
             smShowNotification('تم حذف المستند');
@@ -177,7 +179,8 @@ function smShowDocLogs() {
     body.innerHTML = 'جاري التحميل...';
     document.getElementById('sm-doc-logs-modal').style.display = 'flex';
 
-    fetch(`<?php echo admin_url('admin-ajax.php'); ?>?action=sm_get_document_logs&doc_id=${currentViewingDocId}`)
+    const action = 'sm_get_document_logs';
+    fetch(ajaxurl + `?action=${action}&doc_id=${currentViewingDocId}`)
     .then(r => r.json()).then(res => {
         if (res.success && res.data) {
             let html = '<div style="display:grid; gap:10px;">';
@@ -201,10 +204,11 @@ function smShowDocLogs() {
 
 function smLogAction(docId, action) {
     if (action !== 'view') return; // upload/delete are handled server-side
+    const apiAction = 'sm_log_document_view';
     const fd = new FormData();
-    fd.append('action', 'sm_log_document_view');
+    fd.append('action', apiAction);
     fd.append('doc_id', docId);
-    fetch('<?php echo admin_url('admin-ajax.php'); ?>', { method: 'POST', body: fd });
+    fetch(ajaxurl + '?action=' + apiAction, { method: 'POST', body: fd });
 }
 
 document.getElementById('sm-upload-doc-form').onsubmit = function(e) {
@@ -212,11 +216,12 @@ document.getElementById('sm-upload-doc-form').onsubmit = function(e) {
     const btn = this.querySelector('button');
     btn.disabled = true; btn.innerText = 'جاري الرفع...';
 
+    const action = 'sm_upload_document';
     const formData = new FormData(this);
-    formData.append('action', 'sm_upload_document');
+    formData.append('action', action);
     formData.append('nonce', '<?php echo wp_create_nonce("sm_document_action"); ?>');
 
-    fetch('<?php echo admin_url('admin-ajax.php'); ?>', { method: 'POST', body: formData })
+    fetch(ajaxurl + '?action=' + action, { method: 'POST', body: formData })
     .then(r => r.json()).then(res => {
         btn.disabled = false; btn.innerText = 'بدء الرفع والأرشفة';
         if (res.success) {

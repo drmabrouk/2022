@@ -18,7 +18,9 @@ class SM_Finance_Manager {
 
     public static function ajax_record_payment() {
         try {
-            self::check_capability('sm_manage_finance');
+            if (!current_user_can('sm_manage_finance') && !current_user_can('manage_options')) {
+                 wp_send_json_error(['message' => 'Unauthorized access.']);
+            }
             check_ajax_referer('sm_finance_action', 'nonce');
             $mid = intval($_POST['member_id']);
             self::validate_member_access($mid);
@@ -63,19 +65,23 @@ class SM_Finance_Manager {
     }
 
     public static function ajax_get_member_finance_html() {
-        if (!is_user_logged_in()) {
-            wp_send_json_error(['message' => 'Unauthorized']);
-        }
-        $mid = intval($_GET['member_id']);
-        self::validate_member_access($mid);
+        try {
+            if (!is_user_logged_in()) {
+                wp_send_json_error(['message' => 'Unauthorized']);
+            }
+            $mid = intval($_GET['member_id']);
+            self::validate_member_access($mid);
 
-        $member = SM_DB::get_member_by_id($mid);
-        $dues = SM_Finance::calculate_member_dues($member);
-        $history = SM_Finance::get_payment_history($mid);
-        ob_start();
-        include SM_PLUGIN_DIR . 'templates/modal-finance-details.php';
-        $html = ob_get_clean();
-        wp_send_json_success(['html' => $html]);
+            $member = SM_DB::get_member_by_id($mid);
+            $dues = SM_Finance::calculate_member_dues($member);
+            $history = SM_Finance::get_payment_history($mid);
+            ob_start();
+            include SM_PLUGIN_DIR . 'templates/modal-finance-details.php';
+            $html = ob_get_clean();
+            wp_send_json_success(['html' => $html]);
+        } catch (Throwable $e) {
+            wp_send_json_error(['message' => $e->getMessage()]);
+        }
     }
 
     public static function ajax_export_finance_report() {

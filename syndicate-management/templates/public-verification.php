@@ -163,7 +163,8 @@ $show_facility = get_option('sm_verify_show_facility', 1);
         if (val.length < 3) { suggestions.hide(); return; }
 
         typingTimer = setTimeout(() => {
-            fetch(`${ajaxurl}?action=sm_verify_suggest&query=${val}`)
+            const action = 'sm_verify_suggest';
+            fetch(`${ajaxurl}?action=${action}&query=${val}`)
             .then(r => r.json())
             .then(res => {
                 if (res.success && res.data && res.data.length > 0) {
@@ -198,11 +199,12 @@ $show_facility = get_option('sm_verify_show_facility', 1);
         const loading = $('#sm-verify-loading').show();
         suggestions.hide();
 
+        const action = 'sm_verify_document';
         const fd = new FormData();
-        fd.append('action', 'sm_verify_document');
+        fd.append('action', action);
         fd.append('search_value', val);
 
-        fetch(ajaxurl, { method: 'POST', body: fd })
+        fetch(ajaxurl + '?action=' + action, { method: 'POST', body: fd })
         .then(r => r.json())
         .then(res => {
             loading.hide();

@@ -18,7 +18,9 @@ class SM_License_Manager {
 
     public static function ajax_update_license() {
         try {
-            self::check_capability('sm_manage_licenses');
+            if (!current_user_can('sm_manage_licenses') && !current_user_can('manage_options')) {
+                 wp_send_json_error(['message' => 'Unauthorized access.']);
+            }
             check_ajax_referer('sm_add_member', 'nonce');
             $mid = intval($_POST['member_id']);
         self::validate_member_access($mid);
@@ -49,7 +51,9 @@ class SM_License_Manager {
 
     public static function ajax_update_facility() {
         try {
-            self::check_capability('sm_manage_licenses');
+            if (!current_user_can('sm_manage_licenses') && !current_user_can('manage_options')) {
+                 wp_send_json_error(['message' => 'Unauthorized access.']);
+            }
             check_ajax_referer('sm_add_member', 'nonce');
             $mid = intval($_POST['member_id']);
         self::validate_member_access($mid);
@@ -258,16 +262,20 @@ class SM_License_Manager {
     }
 
     public static function ajax_verify_suggest() {
-        $q = sanitize_text_field($_GET['query'] ?? '');
-        if (strlen($q) < 3) {
-            wp_send_json_success([]);
+        try {
+            $q = sanitize_text_field($_GET['query'] ?? '');
+            if (strlen($q) < 3) {
+                wp_send_json_success([]);
+            }
+            $res = SM_DB::get_member_suggestions($q, 5);
+            $sug = [];
+            foreach ($res as $r) {
+                $sug[] = $r->name;
+                $sug[] = $r->national_id;
+            }
+            wp_send_json_success(array_values(array_unique(array_filter($sug))));
+        } catch (Throwable $e) {
+            wp_send_json_error(['message' => $e->getMessage()]);
         }
-        $res = SM_DB::get_member_suggestions($q, 5);
-        $sug = [];
-        foreach ($res as $r) {
-            $sug[] = $r->name;
-            $sug[] = $r->national_id;
-        }
-        wp_send_json_success(array_values(array_unique(array_filter($sug))));
     }
 }

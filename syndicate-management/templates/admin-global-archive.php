@@ -266,10 +266,11 @@ function smGlobalViewDoc(url, title, id) {
 function smDeleteArchiveDoc(id) {
     if (!confirm('هل أنت متأكد من حذف هذا المستند نهائياً؟')) return;
     const fd = new FormData();
-    fd.append('action', 'sm_delete_document');
+    const action = 'sm_delete_document';
+    fd.append('action', action);
     fd.append('doc_id', id);
     fd.append('nonce', '<?php echo wp_create_nonce("sm_document_action"); ?>');
-    fetch(ajaxurl, { method: 'POST', body: fd }).then(r => r.json()).then(res => {
+    fetch(ajaxurl + '?action=' + action, { method: 'POST', body: fd }).then(r => r.json()).then(res => {
         if (res.success) location.reload();
         else smHandleAjaxError(res);
     }).catch(err => smHandleAjaxError(err));
@@ -278,10 +279,11 @@ function smDeleteArchiveDoc(id) {
 function smDeleteArchivePayment(id) {
     if (!confirm('هل أنت متأكد من حذف هذه العملية المالية نهائياً؟')) return;
     const fd = new FormData();
-    fd.append('action', 'sm_delete_transaction_ajax');
+    const action = 'sm_delete_transaction_ajax';
+    fd.append('action', action);
     fd.append('transaction_id', id);
     fd.append('nonce', '<?php echo wp_create_nonce("sm_admin_action"); ?>');
-    fetch(ajaxurl, { method: 'POST', body: fd }).then(r => r.json()).then(res => {
+    fetch(ajaxurl + '?action=' + action, { method: 'POST', body: fd }).then(r => r.json()).then(res => {
         if (res.success) location.reload();
         else smHandleAjaxError(res);
     }).catch(err => smHandleAjaxError(err));

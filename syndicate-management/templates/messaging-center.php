@@ -319,7 +319,8 @@ $statuses = array(
         const search = $('#ticket-search').val();
         const nonce = '<?php echo wp_create_nonce("sm_ticket_action"); ?>';
 
-        fetch(ajaxurl + `?action=sm_get_tickets&status=${status}&category=${category}&search=${search}&nonce=${nonce}`)
+        const action = 'sm_get_tickets';
+        fetch(ajaxurl + `?action=${action}&status=${status}&category=${category}&search=${search}&nonce=${nonce}`)
         .then(r => r.json())
         .then(res => {
             grid.css('opacity', '1').empty();
@@ -376,7 +377,8 @@ $statuses = array(
         }
         const nonce = '<?php echo wp_create_nonce("sm_ticket_action"); ?>';
 
-        fetch(ajaxurl + `?action=sm_get_ticket_details&id=${id}&nonce=${nonce}`)
+        const action = 'sm_get_ticket_details';
+        fetch(ajaxurl + `?action=${action}&id=${id}&nonce=${nonce}`)
         .then(r => r.json())
         .then(res => {
             if (res.success && res.data) {
@@ -448,7 +450,8 @@ $statuses = array(
                     fd.append('action', 'sm_add_ticket_reply');
                     fd.append('nonce', '<?php echo wp_create_nonce("sm_ticket_action"); ?>');
 
-                    fetch(ajaxurl, { method: 'POST', body: fd })
+        const action = 'sm_add_ticket_reply';
+        fetch(ajaxurl + '?action=' + action, { method: 'POST', body: fd })
                     .then(r => r.json())
                     .then(res => {
                         if (res.success) smViewTicket(t.id);
@@ -496,11 +499,12 @@ $statuses = array(
 
     window.smCloseTicket = function(id) {
         if (!confirm('هل أنت متأكد من إغلاق هذه التذكرة؟')) return;
+        const action = 'sm_close_ticket';
         const fd = new FormData();
-        fd.append('action', 'sm_close_ticket');
+        fd.append('action', action);
         fd.append('id', id);
         fd.append('nonce', '<?php echo wp_create_nonce("sm_ticket_action"); ?>');
-        fetch(ajaxurl, { method: 'POST', body: fd }).then(r => r.json()).then(res => {
+        fetch(ajaxurl + '?action=' + action, { method: 'POST', body: fd }).then(r => r.json()).then(res => {
             if(res.success) {
                 smShowNotification('تم إغلاق التذكرة');
                 smViewTicket(id);
@@ -512,7 +516,8 @@ $statuses = array(
 
     // DIRECT COMMUNICATION LOGIC
     window.smLoadCommTemplates = function() {
-        fetch(ajaxurl + '?action=sm_get_comm_templates')
+        const action = 'sm_get_comm_templates';
+        fetch(ajaxurl + '?action=' + action)
         .then(r => r.json())
         .then(res => {
             if (res.success && res.data) {
@@ -531,7 +536,8 @@ $statuses = array(
         const q = $('#member-search-comm').val();
         if (q.length < 3) return;
 
-        fetch(ajaxurl + `?action=sm_search_members&member_search=${q}`)
+        const action = 'sm_search_members';
+        fetch(ajaxurl + `?action=${action}&member_search=${q}`)
         .then(r => r.json())
         .then(res => {
             const results = $('#member-comm-results').empty();
@@ -659,15 +665,16 @@ $statuses = array(
             return;
         }
 
+        const action = 'sm_send_direct_message';
         const formData = new FormData(this);
-        formData.append('action', 'sm_send_direct_message');
+        formData.append('action', action);
         formData.append('nonce', '<?php echo wp_create_nonce("sm_message_action"); ?>');
         formData.append('template_type', $('#comm-template-select').val() || 'direct');
 
         const btn = $(this).find('button[type="submit"]');
         btn.prop('disabled', true).text('جاري المعالجة...');
 
-        fetch(ajaxurl, { method: 'POST', body: formData })
+        fetch(ajaxurl + '?action=' + action, { method: 'POST', body: formData })
         .then(r => r.json())
         .then(res => {
             btn.prop('disabled', false).html('<span class="dashicons dashicons-share-alt" style="margin-top: 4px;"></span> إرسال المراسلات الآن');
@@ -695,7 +702,8 @@ $statuses = array(
         const body = $('#comm-history-body').html('<div style="text-align: center; padding: 50px;"><div class="sm-loader-mini"></div></div>');
         $('#comm-history-modal').fadeIn().css('display', 'flex');
 
-        fetch(ajaxurl + `?action=sm_get_member_comms_log&member_id=${m.id}`)
+        const action = 'sm_get_member_comms_log';
+        fetch(ajaxurl + `?action=${action}&member_id=${m.id}`)
         .then(r => r.json())
         .then(res => {
             if (res.success && res.data && res.data.length > 0) {
@@ -727,10 +735,11 @@ $statuses = array(
 
     $('#create-ticket-form').on('submit', function(e) {
         e.preventDefault();
+        const action = 'sm_create_ticket';
         const fd = new FormData(this);
-        fd.append('action', 'sm_create_ticket');
+        fd.append('action', action);
         fd.append('nonce', '<?php echo wp_create_nonce("sm_ticket_action"); ?>');
-        fetch(ajaxurl, { method: 'POST', body: fd }).then(r=>r.json()).then(res => {
+        fetch(ajaxurl + '?action=' + action, { method: 'POST', body: fd }).then(r=>r.json()).then(res => {
             if(res.success) {
                 smShowNotification('تم فتح التذكرة بنجاح');
                 $('#create-ticket-modal').fadeOut();

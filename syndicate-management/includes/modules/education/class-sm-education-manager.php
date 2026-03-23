@@ -77,20 +77,24 @@ class SM_Education_Manager {
     }
 
     public static function ajax_assign_test() {
-        self::check_capability('sm_manage_system');
-        check_ajax_referer('sm_admin_action', 'nonce');
+        try {
+            self::check_capability('sm_manage_system');
+            check_ajax_referer('sm_admin_action', 'nonce');
 
-        $sid = intval($_POST['survey_id']);
-        $uids = array_map('intval', (array)$_POST['user_ids']);
+            $sid = intval($_POST['survey_id']);
+            $uids = array_map('intval', (array)$_POST['user_ids']);
 
-        if (empty($uids)) {
-            wp_send_json_error(['message' => 'يرجى اختيار مستخدم واحد على الأقل']);
+            if (empty($uids)) {
+                wp_send_json_error(['message' => 'يرجى اختيار مستخدم واحد على الأقل']);
+            }
+
+            foreach ($uids as $uid) {
+                SM_DB::assign_test($sid, $uid);
+            }
+            wp_send_json_success();
+        } catch (Throwable $e) {
+            wp_send_json_error(['message' => $e->getMessage()]);
         }
-
-        foreach ($uids as $uid) {
-            SM_DB::assign_test($sid, $uid);
-        }
-        wp_send_json_success();
     }
 
     public static function ajax_submit_survey_response() {
@@ -163,20 +167,28 @@ class SM_Education_Manager {
     }
 
     public static function ajax_cancel_survey() {
-        self::check_capability('manage_options');
-        check_ajax_referer('sm_admin_action', 'nonce');
-        if (SM_DB::update_survey_data(intval($_POST['id']), ['status' => 'cancelled'])) {
-            wp_send_json_success();
-        } else {
-            wp_send_json_error(['message' => 'Failed']);
+        try {
+            self::check_capability('manage_options');
+            check_ajax_referer('sm_admin_action', 'nonce');
+            if (SM_DB::update_survey_data(intval($_POST['id']), ['status' => 'cancelled'])) {
+                wp_send_json_success();
+            } else {
+                wp_send_json_error(['message' => 'Failed']);
+            }
+        } catch (Throwable $e) {
+            wp_send_json_error(['message' => $e->getMessage()]);
         }
     }
 
     public static function ajax_get_survey_results() {
-        if (!is_user_logged_in()) {
-            wp_send_json_error(['message' => 'Unauthorized']);
+        try {
+            if (!is_user_logged_in()) {
+                wp_send_json_error(['message' => 'Unauthorized']);
+            }
+            wp_send_json_success(SM_DB::get_survey_results(intval($_GET['id'])));
+        } catch (Throwable $e) {
+            wp_send_json_error(['message' => $e->getMessage()]);
         }
-        wp_send_json_success(SM_DB::get_survey_results(intval($_GET['id'])));
     }
 
     public static function ajax_export_survey_results() {
@@ -199,10 +211,11 @@ class SM_Education_Manager {
     }
 
     public static function ajax_get_test_questions() {
-        if (!is_user_logged_in()) {
-            wp_send_json_error(['message' => 'Unauthorized']);
-        }
-        $test_id = intval($_GET['test_id']);
+        try {
+            if (!is_user_logged_in()) {
+                wp_send_json_error(['message' => 'Unauthorized']);
+            }
+            $test_id = intval($_GET['test_id']);
         // Capability check: admins or the user assigned to the test
         $can_view = current_user_can('sm_manage_system');
         if (!$can_view) {
@@ -219,6 +232,9 @@ class SM_Education_Manager {
             wp_send_json_error(['message' => 'Access denied']);
         }
 
-        wp_send_json_success(SM_DB::get_test_questions($test_id));
+            wp_send_json_success(SM_DB::get_test_questions($test_id));
+        } catch (Throwable $e) {
+            wp_send_json_error(['message' => $e->getMessage()]);
+        }
     }
 }

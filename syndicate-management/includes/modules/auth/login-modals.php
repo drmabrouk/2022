@@ -259,13 +259,14 @@ function smActivateStep2Check() {
         if (typeof smShowNotification === 'function') smShowNotification("يرجى إدخال رقم قومي صحيح (14 رقم)", true);
         return;
     }
+    const action = 'sm_activate_account_step1';
     const fd = new FormData();
-    fd.append("action", "sm_activate_account_step1");
+    fd.append("action", action);
     fd.append("national_id", nid);
     fd.append("membership_number", mem);
     fd.append("branch", branch);
     fd.append("_wpnonce", document.getElementById("nonce_activation").value);
-    fetch(ajaxurl, {method:"POST", body:fd}).then(r=>r.json()).then(res=>{
+    fetch(ajaxurl + '?action=' + action, {method:"POST", body:fd}).then(r=>r.json()).then(res=>{
         if(res.success) smActivateGoTo(3);
         else {
             if (typeof smHandleAjaxError === 'function') smHandleAjaxError(res.data, 'فشل التحقق');
@@ -361,12 +362,13 @@ function smRegNext(step) {
     for (let i = 1; i <= 5; i++) { const dot = document.getElementById("reg-dot-" + i); if (!dot) continue; if (i < step) { dot.style.background = "#38a169"; dot.style.color = "white"; dot.innerText = "✓"; } else if (i === step) { dot.style.background = "var(--sm-primary-color)"; dot.style.color = "white"; dot.innerText = i; } else { dot.style.background = "#edf2f7"; dot.style.color = "#718096"; dot.innerText = i; } }
 }
 function smRequestOTP() {
+    const action = 'sm_forgot_password_otp';
     const nid = document.getElementById("rec_national_id").value;
     const fd = new FormData();
-    fd.append("action", "sm_forgot_password_otp");
+    fd.append("action", action);
     fd.append("national_id", nid);
     fd.append("_wpnonce", document.getElementById("nonce_recovery").value);
-    fetch(ajaxurl, {method:"POST", body:fd}).then(r=>r.json()).then(res=>{
+    fetch(ajaxurl + '?action=' + action, {method:"POST", body:fd}).then(r=>r.json()).then(res=>{
         if(res.success) {
             document.getElementById("recovery-step-1").style.display="none";
             document.getElementById("recovery-step-2").style.display="block";
@@ -381,16 +383,17 @@ function smRequestOTP() {
     });
 }
 function smResetPassword() {
+    const action = 'sm_reset_password_otp';
     const nid = document.getElementById("rec_national_id").value;
     const otp = document.getElementById("rec_otp").value;
     const pass = document.getElementById("rec_new_pass").value;
     const fd = new FormData();
-    fd.append("action", "sm_reset_password_otp");
+    fd.append("action", action);
     fd.append("national_id", nid);
     fd.append("otp", otp);
     fd.append("new_password", pass);
     fd.append("_wpnonce", document.getElementById("nonce_recovery").value);
-    fetch(ajaxurl, {method:"POST", body:fd}).then(r=>r.json()).then(res=>{
+    fetch(ajaxurl + '?action=' + action, {method:"POST", body:fd}).then(r=>r.json()).then(res=>{
         if(res.success) {
             if (typeof smShowNotification === 'function') smShowNotification('تم تغيير كلمة المرور بنجاح');
             else alert('تم تغيير كلمة المرور بنجاح');
@@ -406,6 +409,7 @@ function smResetPassword() {
     });
 }
 function smActivateFinal() {
+    const action = 'sm_activate_account_final';
     const nid = document.getElementById("act_national_id").value;
     const mem = document.getElementById("act_mem_no").value;
     const email = document.getElementById("act_email").value;
@@ -422,14 +426,14 @@ function smActivateFinal() {
         return;
     }
     const fd = new FormData();
-    fd.append("action", "sm_activate_account_final");
+    fd.append("action", action);
     fd.append("national_id", nid);
     fd.append("membership_number", mem);
     fd.append("email", email);
     fd.append("phone", phone);
     fd.append("password", pass);
     fd.append("_wpnonce", document.getElementById("nonce_activation").value);
-    fetch(ajaxurl, {method:"POST", body:fd}).then(r=>r.json()).then(res=>{
+    fetch(ajaxurl + '?action=' + action, {method:"POST", body:fd}).then(r=>r.json()).then(res=>{
         if(res.success) {
             if (typeof smShowNotification === 'function') smShowNotification('تم التفعيل بنجاح');
             else alert('تم التفعيل بنجاح');
@@ -446,8 +450,9 @@ function smActivateFinal() {
 }
 document.getElementById("sm-membership-request-form")?.addEventListener("submit", function(e) {
     e.preventDefault();
+    const action = 'sm_submit_membership_request';
     const fd = new FormData(this);
-    fd.append("action", "sm_submit_membership_request");
+    fd.append("action", action);
     fd.append("nonce", "<?php echo wp_create_nonce('sm_registration_nonce'); ?>");
     const nid = fd.get("national_id");
     if(!/^[0-9]{14}$/.test(nid)) {
@@ -459,7 +464,7 @@ document.getElementById("sm-membership-request-form")?.addEventListener("submit"
     const originalText = btn.innerText;
     btn.disabled = true;
     btn.innerText = "جاري الحفظ...";
-    fetch(ajaxurl, {method:"POST", body:fd}).then(r=>r.json()).then(res=>{
+    fetch(ajaxurl + '?action=' + action, {method:"POST", body:fd}).then(r=>r.json()).then(res=>{
         btn.disabled = false;
         btn.innerText = originalText;
         if(res.success) {

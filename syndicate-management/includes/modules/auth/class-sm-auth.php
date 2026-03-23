@@ -172,13 +172,14 @@ class SM_Auth {
                 const name = document.getElementById('sm_edit_display_name').value;
                 const email = document.getElementById('sm_edit_user_email').value;
                 const pass = document.getElementById('sm_edit_user_pass').value;
+                const action = 'sm_update_profile_ajax';
                 const formData = new FormData();
-                formData.append('action', 'sm_update_profile_ajax');
+                formData.append('action', action);
                 formData.append('display_name', name);
                 formData.append('user_email', email);
                 formData.append('user_pass', pass);
                 formData.append('nonce', '<?php echo wp_create_nonce("sm_profile_action"); ?>');
-                fetch('<?php echo admin_url('admin-ajax.php'); ?>', { method: 'POST', body: formData })
+                fetch(ajaxurl + '?action=' + action, { method: 'POST', body: formData })
                 .then(r => r.json())
                 .then(res => {
                     if (res.success) {
@@ -383,20 +384,24 @@ class SM_Auth {
     }
 
     public static function ajax_track_membership_request() {
-        $req = SM_DB::get_membership_request_by_national_id(sanitize_text_field($_POST['national_id']));
-        if (!$req) {
-            wp_send_json_error(['message' => 'Not found']);
+        try {
+            $req = SM_DB::get_membership_request_by_national_id(sanitize_text_field($_POST['national_id']));
+            if (!$req) {
+                wp_send_json_error(['message' => 'لم يتم العثور على طلب بهذا الرقم القومي']);
+            }
+            $map = [
+                'Pending Payment Verification' => 'قيد مراجعة الدفع',
+                'approved' => 'تم القبول',
+                'rejected' => 'مرفوض',
+                'pending' => 'قيد المراجعة'
+            ];
+            wp_send_json_success([
+                'status' => $map[$req->status] ?? $req->status,
+                'current_stage' => $req->current_stage,
+                'rejection_reason' => $req->notes ?? ''
+            ]);
+        } catch (Throwable $e) {
+            wp_send_json_error(['message' => $e->getMessage()]);
         }
-        $map = [
-            'Pending Payment Verification' => 'قيد مراجعة الدفع',
-            'approved' => 'تم القبول',
-            'rejected' => 'مرفوض',
-            'pending' => 'قيد المراجعة'
-        ];
-        wp_send_json_success([
-            'status' => $map[$req->status] ?? $req->status,
-            'current_stage' => $req->current_stage,
-            'rejection_reason' => $req->notes ?? ''
-        ]);
     }
 }

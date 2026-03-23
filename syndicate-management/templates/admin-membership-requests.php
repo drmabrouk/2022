@@ -221,13 +221,14 @@ function processMembership(requestId, status) {
 
     if (!confirm(msg)) return;
 
+    const action = 'sm_process_membership_request';
     const fd = new FormData();
-    fd.append('action', 'sm_process_membership_request');
+    fd.append('action', action);
     fd.append('request_id', requestId);
     fd.append('status', status);
     fd.append('nonce', '<?php echo wp_create_nonce("sm_admin_action"); ?>');
 
-    fetch(ajaxurl, { method: 'POST', body: fd })
+    fetch(ajaxurl + '?action=' + action, { method: 'POST', body: fd })
     .then(r => r.json())
     .then(res => {
         if (res.success) {
@@ -247,14 +248,15 @@ function rejectMembership(requestId) {
         return;
     }
 
+    const action = 'sm_process_membership_request';
     const fd = new FormData();
-    fd.append('action', 'sm_process_membership_request');
+    fd.append('action', action);
     fd.append('request_id', requestId);
     fd.append('status', 'rejected');
     fd.append('reason', reason);
     fd.append('nonce', '<?php echo wp_create_nonce("sm_admin_action"); ?>');
 
-    fetch(ajaxurl, { method: 'POST', body: fd })
+    fetch(ajaxurl + '?action=' + action, { method: 'POST', body: fd })
     .then(r => r.json())
     .then(res => {
         if (res.success) {
