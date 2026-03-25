@@ -207,7 +207,7 @@ window.smOpenProgressiveForm = function(btn, s, member) {
         } else if (step === 3) {
             const feesText = s.fees > 0 ? `${s.fees} ج.م` : 'مجانية';
             html += `<div class="sm-step-content" style="animation: smFadeIn 0.3s ease;">
-                <div style="background: #fffaf0; border: 1px solid #feebc8; border-radius: 20px; padding: 25px; margin-bottom: 25px; display: flex; justify-content: space-between; align-items: center;">
+                <div style="background: #fffaf0; border: 1px solid #feebc8; border-radius: 20px; padding: 15px 20px; margin-bottom: 20px; display: flex; justify-content: space-between; align-items: center;">
                     <div>
                         <div style="font-size: 11px; color: #9c4221; font-weight: 800; margin-bottom: 2px;">إجمالي رسوم الخدمة</div>
                         <div style="font-size: 1.8em; font-weight: 900; color: #c05621;">${feesText}</div>
@@ -218,15 +218,15 @@ window.smOpenProgressiveForm = function(btn, s, member) {
                     </div>
                 </div>
 
-                <h4 style="margin-bottom: 15px; font-weight: 800; color: var(--sm-dark-color); font-size: 14px;">بيانات التحويل الرسمي للفرع:</h4>
-                <div style="display: grid; gap: 10px; margin-bottom: 30px;">
-                    ${myBranch.bank_name ? `<div style="background:#f8fafc; padding:12px 15px; border-radius:12px; border:1px solid #e2e8f0; display:flex; justify-content:space-between; align-items:center;"><span style="font-size:12px; color:#64748b; font-weight:700;">البنك</span><span style="font-weight:800; color:var(--sm-dark-color); font-size:13px;">${myBranch.bank_name}</span></div>` : ''}
-                    ${myBranch.bank_iban ? `<div style="background:#f8fafc; padding:12px 15px; border-radius:12px; border:1px solid #e2e8f0; display:flex; justify-content:space-between; align-items:center;"><span style="font-size:12px; color:#64748b; font-weight:700;">IBAN</span><span style="font-weight:800; color:var(--sm-dark-color); font-family:monospace; font-size:13px;">${myBranch.bank_iban}</span></div>` : ''}
-                    ${myBranch.digital_wallet ? `<div style="background:#f8fafc; padding:12px 15px; border-radius:12px; border:1px solid #e2e8f0; display:flex; justify-content:space-between; align-items:center;"><span style="font-size:12px; color:#64748b; font-weight:700;">محفظة</span><span style="font-weight:800; color:var(--sm-dark-color); font-size:13px;">${myBranch.digital_wallet}</span></div>` : ''}
-                    ${myBranch.instapay_id ? `<div style="background:#f8fafc; padding:12px 15px; border-radius:12px; border:1px solid #e2e8f0; display:flex; justify-content:space-between; align-items:center;"><span style="font-size:12px; color:#64748b; font-weight:700;">Instapay</span><span style="font-weight:800; color:var(--sm-dark-color); font-size:13px;">${myBranch.instapay_id}</span></div>` : ''}
+                <h4 style="margin-bottom: 12px; font-weight: 800; color: var(--sm-dark-color); font-size: 14px;">بيانات التحويل الرسمي للفرع:</h4>
+                <div style="display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; margin-bottom: 20px;">
+                    ${myBranch.bank_name ? `<div style="background:#f8fafc; padding:10px 12px; border-radius:12px; border:1px solid #e2e8f0; display:flex; flex-direction:column; gap:4px;"><span style="font-size:11px; color:#64748b; font-weight:700;">البنك</span><span style="font-weight:800; color:var(--sm-dark-color); font-size:12px;">${myBranch.bank_name}</span></div>` : ''}
+                    ${myBranch.bank_iban ? `<div style="background:#f8fafc; padding:10px 12px; border-radius:12px; border:1px solid #e2e8f0; display:flex; flex-direction:column; gap:4px;"><span style="font-size:11px; color:#64748b; font-weight:700;">IBAN</span><span style="font-weight:800; color:var(--sm-dark-color); font-family:monospace; font-size:11px;">${myBranch.bank_iban}</span></div>` : ''}
+                    ${myBranch.digital_wallet ? `<div style="background:#f8fafc; padding:10px 12px; border-radius:12px; border:1px solid #e2e8f0; display:flex; flex-direction:column; gap:4px;"><span style="font-size:11px; color:#64748b; font-weight:700;">محفظة</span><span style="font-weight:800; color:var(--sm-dark-color); font-size:12px;">${myBranch.digital_wallet}</span></div>` : ''}
+                    ${myBranch.instapay_id ? `<div style="background:#f8fafc; padding:10px 12px; border-radius:12px; border:1px solid #e2e8f0; display:flex; flex-direction:column; gap:4px;"><span style="font-size:11px; color:#64748b; font-weight:700;">Instapay</span><span style="font-weight:800; color:var(--sm-dark-color); font-size:12px;">${myBranch.instapay_id}</span></div>` : ''}
                 </div>
 
-                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px; margin-bottom: 30px;">
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px; margin-bottom: 20px;">
                     <div class="sm-form-group">
                         <label class="sm-label" style="font-size:12px; font-weight:800;">رقم مرجع التحويل</label>
                         <input id="sm_trans_code" type="text" class="sm-input" style="height:48px; border-radius:12px;" value="${currentFormData.transaction_code || ''}" placeholder="رقم الإيصال">
@@ -248,10 +248,10 @@ window.smOpenProgressiveForm = function(btn, s, member) {
                     يرجى مراجعة ملخص طلبك بعناية قبل تقديمه رسمياً.
                 </div>
 
-                <div style="display: grid; gap: 15px; margin-bottom: 35px;">
+                <div style="display: grid; gap: 10px; margin-bottom: 25px;">
                     <div style="background: #fff; border: 1px solid #e2e8f0; border-radius: 15px; overflow: hidden;">
                         <div style="padding:12px 15px; background:#f8fafc; border-bottom:1px solid #f1f5f9; font-weight:800; font-size:12px; color:var(--sm-dark-color);">بيانات الخدمة والهوية</div>
-                        <div style="padding:15px; display:grid; gap:8px; font-size:12.5px;">
+                        <div style="padding:12px; display:grid; gap:8px; font-size:12.5px;">
                             <div style="display:flex; justify-content:space-between;"><span style="color:#64748b;">مقدم الطلب</span><span style="font-weight:700;">${member.name}</span></div>
                             <div style="display:flex; justify-content:space-between;"><span style="color:#64748b;">الخدمة</span><span style="font-weight:700;">${s.name}</span></div>
                             <div style="display:flex; justify-content:space-between;"><span style="color:#64748b;">الفرع</span><span style="font-weight:700;">${myBranch.name}</span></div>
@@ -261,14 +261,14 @@ window.smOpenProgressiveForm = function(btn, s, member) {
                     ${reqFields.length > 0 ? `
                     <div style="background: #fff; border: 1px solid #e2e8f0; border-radius: 15px; overflow: hidden;">
                         <div style="padding:12px 15px; background:#f8fafc; border-bottom:1px solid #f1f5f9; font-weight:800; font-size:12px; color:var(--sm-dark-color);">البيانات الإضافية للطلب</div>
-                        <div style="padding:15px; display:grid; gap:8px; font-size:12.5px;">
+                        <div style="padding:12px; display:grid; gap:8px; font-size:12.5px;">
                             ${reqFields.map(f => `<div style="display:flex; justify-content:space-between;"><span style="color:#64748b;">${f.label}</span><span style="font-weight:700;">${currentFormData[f.name] || '---'}</span></div>`).join('')}
                         </div>
                     </div>` : ''}
 
                     <div style="background: #fff; border: 1px solid #e2e8f0; border-radius: 15px; overflow: hidden;">
                         <div style="padding:12px 15px; background:#f8fafc; border-bottom:1px solid #f1f5f9; font-weight:800; font-size:12px; color:var(--sm-dark-color);">تأكيد السداد المالي</div>
-                        <div style="padding:15px; display:grid; gap:8px; font-size:12.5px;">
+                        <div style="padding:12px; display:grid; gap:8px; font-size:12.5px;">
                             <div style="display:flex; justify-content:space-between;"><span style="color:#64748b;">الرسوم</span><span style="font-weight:900; color:var(--sm-primary-color);">${s.fees} ج.م</span></div>
                             <div style="display:flex; justify-content:space-between;"><span style="color:#64748b;">رقم المرجع</span><span style="font-weight:700;">${currentFormData.transaction_code}</span></div>
                         </div>
