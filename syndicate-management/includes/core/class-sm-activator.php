@@ -157,10 +157,27 @@ class SM_Activator {
             test_id mediumint(9) NOT NULL,
             user_id bigint(20) NOT NULL,
             assigned_by bigint(20),
+            session_data text,
+            started_at datetime,
+            last_heartbeat datetime,
             status varchar(50) DEFAULT 'assigned',
             created_at datetime DEFAULT CURRENT_TIMESTAMP,
             PRIMARY KEY  (id),
             KEY test_id (test_id),
+            KEY user_id (user_id)
+        ) $charset_collate;\n";
+
+        // Test Action Logs Table
+        $table_name = $wpdb->prefix . 'sm_test_logs';
+        $sql .= "CREATE TABLE $table_name (
+            id bigint(20) NOT NULL AUTO_INCREMENT,
+            assignment_id mediumint(9) NOT NULL,
+            user_id bigint(20) NOT NULL,
+            action_type varchar(50) NOT NULL,
+            details text,
+            created_at datetime DEFAULT CURRENT_TIMESTAMP NOT NULL,
+            PRIMARY KEY  (id),
+            KEY assignment_id (assignment_id),
             KEY user_id (user_id)
         ) $charset_collate;\n";
 
@@ -485,6 +502,7 @@ class SM_Activator {
         self::fix_services_schema();
         self::fix_service_requests_schema();
         self::fix_surveys_schema();
+        self::fix_test_monitoring_schema();
         self::fix_alerts_schema();
         self::fix_membership_requests_schema();
         self::fix_notification_logs_schema();
@@ -872,6 +890,10 @@ class SM_Activator {
                 'title' => 'الفروع واللجان',
                 'content' => '[sm_branches]',
                 'shortcode' => 'sm_branches'
+            ),
+            'practice-test' => array(
+                'title' => 'الاختبارات المهنية',
+                'content' => '[test]'
             )
         );
 
@@ -1009,6 +1031,25 @@ class SM_Activator {
             $exists = $wpdb->get_results($wpdb->prepare("SHOW COLUMNS FROM $table_name LIKE %s", $col));
             if (empty($exists)) {
                 $wpdb->query("ALTER TABLE $table_name ADD $col $def");
+            }
+        }
+    }
+
+    private static function fix_test_monitoring_schema() {
+        global $wpdb;
+        $table_name = $wpdb->prefix . 'sm_test_assignments';
+        if ($wpdb->get_var("SHOW TABLES LIKE '$table_name'") != $table_name) return;
+
+        $cols = [
+            'session_data' => 'text',
+            'started_at' => 'datetime',
+            'last_heartbeat' => 'datetime'
+        ];
+
+        foreach ($cols as $col => $type) {
+            $exists = $wpdb->get_results($wpdb->prepare("SHOW COLUMNS FROM $table_name LIKE %s", $col));
+            if (empty($exists)) {
+                $wpdb->query("ALTER TABLE $table_name ADD $col $type AFTER assigned_by");
             }
         }
     }

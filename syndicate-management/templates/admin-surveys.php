@@ -8,6 +8,11 @@
         </div>
     </div>
 
+    <div class="sm-tabs-wrapper" style="display: flex; gap: 10px; margin-bottom: 30px; border-bottom: 2px solid #eee; padding-bottom: 10px;">
+        <button class="sm-tab-btn sm-active" onclick="smOpenInternalTab('tests-list', this)">الاختبارات المتاحة</button>
+        <button class="sm-tab-btn" onclick="smOpenInternalTab('active-sessions', this)">المراقبة المباشرة</button>
+    </div>
+
     <?php
     $user = wp_get_current_user();
     $roles = (array)$user->roles;
@@ -17,8 +22,10 @@
     $test_type_map = ['practice' => 'مزاولة مهنة', 'promotion' => 'ترقية درجة', 'training' => 'دورة تدريبية'];
     ?>
 
-    <!-- Advanced Filter & Search Engine -->
-    <div style="background: #f8fafc; padding: 30px; border-radius: 15px; margin-bottom: 30px; border: 1px solid #e2e8f0; display: grid; grid-template-columns: 2fr 1fr 1fr 1fr; gap: 15px; align-items: flex-end;">
+    <!-- TAB: Tests List -->
+    <div id="tests-list" class="sm-internal-tab">
+        <!-- Advanced Filter & Search Engine -->
+        <div style="background: #f8fafc; padding: 30px; border-radius: 15px; margin-bottom: 30px; border: 1px solid #e2e8f0; display: grid; grid-template-columns: 2fr 1fr 1fr 1fr; gap: 15px; align-items: flex-end;">
         <div>
             <label class="sm-label" style="font-size: 12px; margin-bottom: 8px; display: block; color: #64748b;">ابحث باسم الاختبار:</label>
             <div style="position: relative;">
@@ -47,74 +54,145 @@
         <button class="sm-btn sm-btn-outline" onclick="smResetTestFilters()" style="height: 45px;">إعادة تعيين</button>
     </div>
 
-    <div class="sm-table-container" style="border-radius: 15px; overflow: hidden; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.05); border: 1px solid #e2e8f0;">
-        <table class="sm-table" id="tests-admin-table">
-            <thead>
-                <tr style="background: #f1f5f9;">
-                    <th>بيانات الاختبار</th>
-                    <th>الإعدادات والوقت</th>
-                    <th>الفرع / التخصص</th>
-                    <th>تاريخ البدء</th>
-                    <th>الحالة</th>
-                    <th>المشاركات</th>
-                    <th style="text-align: left;">الإجراءات</th>
-                </tr>
-            </thead>
-            <tbody>
-                <?php
-                $surveys = SM_DB::get_surveys_admin();
+        <div class="sm-table-container" style="border-radius: 15px; overflow: hidden; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.05); border: 1px solid #e2e8f0;">
+            <table class="sm-table" id="tests-admin-table">
+                <thead>
+                    <tr style="background: #f1f5f9;">
+                        <th>بيانات الاختبار</th>
+                        <th>الإعدادات والوقت</th>
+                        <th>الفرع / التخصص</th>
+                        <th>تاريخ البدء</th>
+                        <th>الحالة</th>
+                        <th>المشاركات</th>
+                        <th style="text-align: left;">الإجراءات</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <?php
+                    $surveys = SM_DB::get_surveys_admin();
 
-                $specs_labels = SM_Settings::get_specializations();
-                foreach ($surveys as $s):
-                    $responses_count = count(SM_DB::get_survey_responses($s->id));
-                    $questions_count = count(SM_DB::get_test_questions($s->id));
-                    $branch_label = ($s->branch === 'all') ? 'كل الفروع' : (SM_Settings::get_branch_name($s->branch) ?: $s->branch);
-                ?>
-                <tr class="sm-test-row"
-                    data-title="<?php echo esc_attr($s->title); ?>"
-                    data-type="<?php echo esc_attr($s->test_type); ?>"
-                    data-branch="<?php echo esc_attr($s->branch); ?>">
-                    <td>
-                        <div style="font-weight: 800; color:var(--sm-dark-color); font-size: 1.1em;"><?php echo esc_html($s->title); ?></div>
-                        <div style="font-size: 11px; color:#64748b; margin-top:5px; display: flex; align-items: center; gap: 5px;">
-                            <span class="dashicons dashicons-editor-help" style="font-size:14px; width:14px; height:14px; color: var(--sm-primary-color);"></span> <?php echo $questions_count; ?> سؤال مدرج
-                        </div>
-                    </td>
-                    <td>
-                        <div style="font-size: 12px; margin-bottom: 3px;">⏰ <span style="font-weight: 700;"><?php echo $s->time_limit; ?></span> دقيقة</div>
-                        <div style="font-size: 12px; color:#38a169; font-weight:700;">🎯 نجاح: <?php echo $s->pass_score; ?>%</div>
-                    </td>
-                    <td>
-                        <div style="font-size: 12px; font-weight:800; color:var(--sm-primary-color);"><?php echo $branch_label; ?></div>
-                        <div style="font-size: 11px; color:#64748b; margin-top: 3px;"><?php echo !empty($s->specialty) ? ($specs_labels[$s->specialty] ?? $s->specialty) : 'تخصص عام'; ?></div>
-                    </td>
-                    <td style="font-size: 12px; color: #4a5568;"><?php echo date('Y-m-d', strtotime($s->created_at)); ?></td>
-                    <td>
-                        <?php if ($s->status === 'active'): ?>
-                            <span class="sm-badge sm-badge-high" style="font-size: 10px; padding: 4px 12px;">نشط</span>
-                        <?php else: ?>
-                            <span class="sm-badge sm-badge-urgent" style="font-size: 10px; padding: 4px 12px;">ملغى</span>
-                        <?php endif; ?>
-                    </td>
-                    <td>
-                        <button class="sm-btn sm-btn-outline" onclick="smViewSurveyResults(<?php echo $s->id; ?>, '<?php echo esc_js($s->title); ?>')" style="padding: 4px 12px; font-size: 11px; font-weight: 700; border-radius: 8px;">
-                            <?php echo $responses_count; ?> نتيجة
-                        </button>
-                    </td>
-                    <td>
-                        <div style="display:flex; gap:8px; justify-content: flex-end;">
-                            <button class="sm-btn" style="padding:6px 12px; font-size:11px; background:var(--sm-dark-color); border-radius: 8px;" onclick='smOpenQuestionBank(<?php echo esc_attr(json_encode($s)); ?>)'>الأسئلة</button>
-                            <button class="sm-btn sm-btn-outline" onclick="smOpenEditSurveyModal(<?php echo esc_attr(json_encode($s)); ?>)" style="padding: 6px 10px; font-size: 11px; border-radius: 8px;" title="تعديل"><span class="dashicons dashicons-edit"></span></button>
+                    $specs_labels = SM_Settings::get_specializations();
+                    foreach ($surveys as $s):
+                        $responses_count = count(SM_DB::get_survey_responses($s->id));
+                        $questions_count = count(SM_DB::get_test_questions($s->id));
+                        $branch_label = ($s->branch === 'all') ? 'كل الفروع' : (SM_Settings::get_branch_name($s->branch) ?: $s->branch);
+                    ?>
+                    <tr class="sm-test-row"
+                        data-title="<?php echo esc_attr($s->title); ?>"
+                        data-type="<?php echo esc_attr($s->test_type); ?>"
+                        data-branch="<?php echo esc_attr($s->branch); ?>">
+                        <td>
+                            <div style="font-weight: 800; color:var(--sm-dark-color); font-size: 1.1em;"><?php echo esc_html($s->title); ?></div>
+                            <div style="font-size: 11px; color:#64748b; margin-top:5px; display: flex; align-items: center; gap: 5px;">
+                                <span class="dashicons dashicons-editor-help" style="font-size:14px; width:14px; height:14px; color: var(--sm-primary-color);"></span> <?php echo $questions_count; ?> سؤال مدرج
+                            </div>
+                        </td>
+                        <td>
+                            <div style="font-size: 12px; margin-bottom: 3px;">⏰ <span style="font-weight: 700;"><?php echo $s->time_limit; ?></span> دقيقة</div>
+                            <div style="font-size: 12px; color:#38a169; font-weight:700;">🎯 نجاح: <?php echo $s->pass_score; ?>%</div>
+                        </td>
+                        <td>
+                            <div style="font-size: 12px; font-weight:800; color:var(--sm-primary-color);"><?php echo $branch_label; ?></div>
+                            <div style="font-size: 11px; color:#64748b; margin-top: 3px;"><?php echo !empty($s->specialty) ? ($specs_labels[$s->specialty] ?? $s->specialty) : 'تخصص عام'; ?></div>
+                        </td>
+                        <td style="font-size: 12px; color: #4a5568;"><?php echo date('Y-m-d', strtotime($s->created_at)); ?></td>
+                        <td>
                             <?php if ($s->status === 'active'): ?>
-                                <button class="sm-btn" style="padding: 6px 15px; font-size: 11px; border-radius: 8px; background: #3182ce;" onclick="smOpenAssignModal(<?php echo $s->id; ?>, '<?php echo esc_js($s->title); ?>')">تعيين للعضو</button>
+                                <span class="sm-badge sm-badge-high" style="font-size: 10px; padding: 4px 12px;">نشط</span>
+                            <?php else: ?>
+                                <span class="sm-badge sm-badge-urgent" style="font-size: 10px; padding: 4px 12px;">ملغى</span>
                             <?php endif; ?>
-                        </div>
-                    </td>
-                </tr>
-                <?php endforeach; ?>
-            </tbody>
-        </table>
+                        </td>
+                        <td>
+                            <button class="sm-btn sm-btn-outline" onclick="smViewSurveyResults(<?php echo $s->id; ?>, '<?php echo esc_js($s->title); ?>')" style="padding: 4px 12px; font-size: 11px; font-weight: 700; border-radius: 8px;">
+                                <?php echo $responses_count; ?> نتيجة
+                            </button>
+                        </td>
+                        <td>
+                            <div style="display:flex; gap:8px; justify-content: flex-end;">
+                                <button class="sm-btn" style="padding:6px 12px; font-size:11px; background:var(--sm-dark-color); border-radius: 8px;" onclick='smOpenQuestionBank(<?php echo esc_attr(json_encode($s)); ?>)'>الأسئلة</button>
+                                <button class="sm-btn sm-btn-outline" onclick="smOpenEditSurveyModal(<?php echo esc_attr(json_encode($s)); ?>)" style="padding: 6px 10px; font-size: 11px; border-radius: 8px;" title="تعديل"><span class="dashicons dashicons-edit"></span></button>
+                                <?php if ($s->status === 'active'): ?>
+                                    <button class="sm-btn" style="padding: 6px 15px; font-size: 11px; border-radius: 8px; background: #3182ce;" onclick="smOpenAssignModal(<?php echo $s->id; ?>, '<?php echo esc_js($s->title); ?>')">تعيين للعضو</button>
+                                <?php endif; ?>
+                            </div>
+                        </td>
+                    </tr>
+                    <?php endforeach; ?>
+                </tbody>
+            </table>
+        </div>
     </div>
+
+    <!-- TAB: Live Monitoring -->
+    <div id="active-sessions" class="sm-internal-tab" style="display:none;">
+        <div style="display:grid; grid-template-columns: 1fr 350px; gap:25px;">
+            <div class="sm-table-container">
+                <h4 style="margin-bottom:15px; font-weight:800; color:var(--sm-dark-color);">الجلسات النشطة حالياً</h4>
+                <table class="sm-table">
+                    <thead>
+                        <tr>
+                            <th>المختبر</th>
+                            <th>الاختبار</th>
+                            <th>بدأ في</th>
+                            <th>آخر نبض</th>
+                            <th>الحالة</th>
+                            <th>إجراء</th>
+                        </tr>
+                    </thead>
+                    <tbody id="live-sessions-body">
+                        <?php
+                        $active_sessions = $wpdb->get_results("
+                            SELECT a.*, s.title, m.name as member_name
+                            FROM {$wpdb->prefix}sm_test_assignments a
+                            JOIN {$wpdb->prefix}sm_surveys s ON a.test_id = s.id
+                            JOIN {$wpdb->prefix}sm_members m ON a.user_id = m.wp_user_id
+                            WHERE a.status = 'active'
+                            ORDER BY a.last_heartbeat DESC
+                        ");
+                        if(empty($active_sessions)): ?>
+                            <tr><td colspan="6" style="text-align:center; padding:30px; color:#94a3b8;">لا توجد جلسات نشطة حالياً.</td></tr>
+                        <?php else: foreach($active_sessions as $as):
+                            $diff = time() - strtotime($as->last_heartbeat);
+                            $pulse_color = ($diff < 60) ? '#38a169' : '#e53e3e';
+                        ?>
+                            <tr>
+                                <td><strong><?php echo $as->member_name; ?></strong></td>
+                                <td><?php echo $as->title; ?></td>
+                                <td><?php echo date('H:i:s', strtotime($as->started_at)); ?></td>
+                                <td style="color:<?php echo $pulse_color; ?>; font-weight:700;"><?php echo $diff; ?> ثانية</td>
+                                <td><span class="sm-badge sm-badge-high">نشط</span></td>
+                                <td><button onclick="smTerminateSession(<?php echo $as->id; ?>)" class="sm-btn sm-btn-outline" style="color:#e53e3e; border-color:#e53e3e; padding:4px 10px; font-size:10px;">إنهاء بقوة</button></td>
+                            </tr>
+                        <?php endforeach; endif; ?>
+                    </tbody>
+                </table>
+            </div>
+
+            <div style="background:#f8fafc; border:1px solid #e2e8f0; border-radius:15px; padding:25px;">
+                <h4 style="margin:0 0 20px 0; font-weight:800; color:var(--sm-dark-color);">سجل التنبيهات الأمنية (Live)</h4>
+                <div id="live-security-logs" style="max-height:500px; overflow-y:auto; display:grid; gap:10px;">
+                    <?php
+                    $logs = $wpdb->get_results("
+                        SELECT l.*, m.name as member_name
+                        FROM {$wpdb->prefix}sm_test_logs l
+                        JOIN {$wpdb->prefix}sm_members m ON l.user_id = m.wp_user_id
+                        ORDER BY l.created_at DESC LIMIT 20
+                    ");
+                    foreach($logs as $log):
+                        $color = ($log->action_type === 'start' || $log->action_type === 'submit') ? '#38a169' : '#e53e3e';
+                    ?>
+                        <div style="background:#fff; border:1px solid #eee; border-right:4px solid <?php echo $color; ?>; padding:12px; border-radius:8px;">
+                            <div style="display:flex; justify-content:space-between; margin-bottom:5px;">
+                                <span style="font-weight:800; font-size:11px;"><?php echo $log->member_name; ?></span>
+                                <span style="font-size:10px; color:#94a3b8;"><?php echo date('H:i:s', strtotime($log->created_at)); ?></span>
+                            </div>
+                            <div style="font-size:12px; font-weight:600;"><?php echo $log->details; ?></div>
+                        </div>
+                    <?php endforeach; ?>
+                </div>
+            </div>
+        </div>
 </div>
 
 <!-- NEW/EDIT SURVEY MODAL -->
@@ -516,6 +594,21 @@ function smCancelSurvey(id) {
             smHandleAjaxError(res.data);
         }
     }).catch(err => smHandleAjaxError(err));
+}
+
+function smTerminateSession(aid) {
+    if(!confirm('هل أنت متأكد من إنهاء جلسة هذا المختبر؟ سيتم منعه من الاستمرار وإغلاق الاختبار عليه.')) return;
+    const action = 'sm_terminate_test_admin';
+    const fd = new FormData();
+    fd.append('action', action);
+    fd.append('assignment_id', aid);
+    fd.append('nonce', '<?php echo wp_create_nonce("sm_admin_action"); ?>');
+    fetch(ajaxurl + '?action=' + action, {method:'POST', body:fd}).then(r=>r.json()).then(res => {
+        if(res.success) {
+            smShowNotification('تم إنهاء الجلسة بنجاح');
+            setTimeout(() => location.reload(), 1000);
+        }
+    });
 }
 
 function smApplyTestFilters() {
