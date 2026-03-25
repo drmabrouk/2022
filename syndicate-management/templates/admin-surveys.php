@@ -2,7 +2,10 @@
 <div class="sm-surveys-container">
     <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
         <h3 style="margin:0;">إدارة اختبارات الممارسة المهنية</h3>
-        <button class="sm-btn" onclick="smOpenNewSurveyModal()" style="width: auto;">+ إنشاء اختبار جديد</button>
+        <div style="display: flex; gap: 10px;">
+            <button onclick="smOpenPrintCustomizer('surveys')" class="sm-btn" style="background: #4a5568; width: auto;"><span class="dashicons dashicons-printer"></span> طباعة مخصصة</button>
+            <button class="sm-btn" onclick="smOpenNewSurveyModal()" style="width: auto;">+ إنشاء اختبار جديد</button>
+        </div>
     </div>
 
     <?php

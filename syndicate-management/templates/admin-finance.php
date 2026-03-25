@@ -2,7 +2,8 @@
 
 $stats = SM_Finance::get_financial_stats();
 $search = isset($_GET['member_search']) ? sanitize_text_field($_GET['member_search']) : '';
-$members = SM_DB::get_members(['search' => $search]);
+$gov_filter = isset($_GET['gov_filter']) ? sanitize_text_field($_GET['gov_filter']) : '';
+$members = SM_DB::get_members(['search' => $search, 'governorate' => $gov_filter]);
 
 if (!empty($members)) {
     SM_Finance::prefetch_data(array_map(function($m) { return $m->id; }, $members));
@@ -64,16 +65,28 @@ foreach ($members as $m) {
 
     <!-- Search & Filter -->
     <div style="background: #f8fafc; padding: 30px; border-radius: 12px; border: 1px solid #e2e8f0; margin-bottom: 20px;">
-        <form method="get" style="display: flex; gap: 12px; align-items: flex-end;">
+        <form method="get" style="display: grid; grid-template-columns: 2fr 1fr auto; gap: 15px; align-items: flex-end;">
             <input type="hidden" name="sm_tab" value="finance">
-            <div style="flex: 1;">
+            <div class="sm-form-group" style="margin:0;">
                 <label class="sm-label">البحث عن عضو (الاسم أو الرقم القومي):</label>
                 <input type="text" name="member_search" class="sm-input" value="<?php echo esc_attr($search); ?>" placeholder="أدخل بيانات العضو لتدقيق حسابه المالي...">
             </div>
-            <button type="submit" class="sm-btn" style="width: auto; height: 42px;">بحث وتدقيق</button>
-            <?php if ($search): ?>
-                <a href="<?php echo remove_query_arg(['member_search']); ?>" class="sm-btn sm-btn-outline" style="width: auto; height: 42px; text-decoration:none; display:flex; align-items:center;">إلغاء البحث</a>
-            <?php endif; ?>
+            <div class="sm-form-group" style="margin:0;">
+                <label class="sm-label">تصفية حسب الفرع:</label>
+                <select name="gov_filter" class="sm-select">
+                    <option value="">كل الفروع</option>
+                    <?php
+                    $db_branches = SM_DB::get_branches_data();
+                    foreach($db_branches as $db) echo "<option value='".esc_attr($db->slug)."' ".selected($_GET['gov_filter'] ?? '', $db->slug, false).">".esc_html($db->name)."</option>";
+                    ?>
+                </select>
+            </div>
+            <div style="display: flex; gap: 10px;">
+                <button type="submit" class="sm-btn" style="width: auto; height: 42px; padding: 0 25px;">بحث وتدقيق</button>
+                <?php if ($search || !empty($_GET['gov_filter'])): ?>
+                    <a href="<?php echo remove_query_arg(['member_search', 'gov_filter']); ?>" class="sm-btn sm-btn-outline" style="width: auto; height: 42px; text-decoration:none; display:flex; align-items:center; padding: 0 20px;">إلغاء البحث</a>
+                <?php endif; ?>
+            </div>
         </form>
     </div>
 

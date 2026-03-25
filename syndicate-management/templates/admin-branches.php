@@ -14,9 +14,12 @@ $current_user_gov = get_user_meta(get_current_user_id(), 'sm_governorate', true)
             <h2 style="margin:0; font-weight:800; color:var(--sm-dark-color);">إدارة فروع ولجان النقابة</h2>
             <p style="margin:5px 0 0 0; color:#64748b; font-size:13px;">إدارة التواجد الجغرافي، اللجان، والرسوم المالية الخاصة بالفروع.</p>
         </div>
-        <?php if ($can_manage_all): ?>
-            <button onclick="smOpenBranchModal()" class="sm-btn" style="width:auto; padding:0 25px; height:42px;">+ إضافة فرع جديد</button>
-        <?php endif; ?>
+        <div style="display: flex; gap: 10px;">
+            <button onclick="smOpenPrintCustomizer('branches')" class="sm-btn" style="background: #4a5568; width: auto; height: 42px; padding: 0 20px;"><span class="dashicons dashicons-printer"></span> طباعة مخصصة</button>
+            <?php if ($can_manage_all): ?>
+                <button onclick="smOpenBranchModal()" class="sm-btn" style="width:auto; padding:0 25px; height:42px;">+ إضافة فرع جديد</button>
+            <?php endif; ?>
+        </div>
     </div>
 
     <!-- Summary Stats (Exact Dashboard Layout) -->
