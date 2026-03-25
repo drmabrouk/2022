@@ -31,23 +31,31 @@ class SM_Logger {
         $my_gov = get_user_meta($user->ID, 'sm_governorate', true);
 
         $where = "1=1";
+        $params = array();
+
         if ($is_officer && !$has_full_access && $my_gov) {
-            $where = $wpdb->prepare("(
+            $where = "(
                 EXISTS (SELECT 1 FROM {$wpdb->prefix}usermeta um WHERE um.user_id = l.user_id AND um.meta_key = 'sm_governorate' AND um.meta_value = %s)
                 OR EXISTS (SELECT 1 FROM {$wpdb->prefix}sm_members m WHERE m.wp_user_id = l.user_id AND m.governorate = %s)
-            )", $my_gov, $my_gov);
+            )";
+            $params[] = $my_gov;
+            $params[] = $my_gov;
         }
 
         if (!empty($search)) {
             $s = '%' . $wpdb->esc_like($search) . '%';
-            $where .= $wpdb->prepare(" AND (l.action LIKE %s OR l.details LIKE %s OR u.display_name LIKE %s OR l.created_at LIKE %s)", $s, $s, $s, $s);
+            $where .= " AND (l.action LIKE %s OR l.details LIKE %s OR u.display_name LIKE %s OR l.created_at LIKE %s)";
+            $params[] = $s;
+            $params[] = $s;
+            $params[] = $s;
+            $params[] = $s;
         }
 
-        return $wpdb->get_results($wpdb->prepare(
-            "SELECT l.*, u.display_name FROM {$wpdb->prefix}sm_logs l LEFT JOIN {$wpdb->base_prefix}users u ON l.user_id = u.ID WHERE $where ORDER BY l.created_at DESC LIMIT %d OFFSET %d",
-            $limit,
-            $offset
-        ));
+        $query = "SELECT l.*, u.display_name FROM {$wpdb->prefix}sm_logs l LEFT JOIN {$wpdb->base_prefix}users u ON l.user_id = u.ID WHERE $where ORDER BY l.created_at DESC LIMIT %d OFFSET %d";
+        $params[] = $limit;
+        $params[] = $offset;
+
+        return $wpdb->get_results($wpdb->prepare($query, ...$params));
     }
 
     public static function get_total_logs($search = '') {
@@ -58,18 +66,31 @@ class SM_Logger {
         $my_gov = get_user_meta($user->ID, 'sm_governorate', true);
 
         $where = "1=1";
+        $params = array();
+
         if ($is_officer && !$has_full_access && $my_gov) {
-            $where = $wpdb->prepare("(
+            $where = "(
                 EXISTS (SELECT 1 FROM {$wpdb->prefix}usermeta um WHERE um.user_id = l.user_id AND um.meta_key = 'sm_governorate' AND um.meta_value = %s)
                 OR EXISTS (SELECT 1 FROM {$wpdb->prefix}sm_members m WHERE m.wp_user_id = l.user_id AND m.governorate = %s)
-            )", $my_gov, $my_gov);
+            )";
+            $params[] = $my_gov;
+            $params[] = $my_gov;
         }
 
         if (!empty($search)) {
             $s = '%' . $wpdb->esc_like($search) . '%';
-            $where .= $wpdb->prepare(" AND (l.action LIKE %s OR l.details LIKE %s OR EXISTS (SELECT 1 FROM {$wpdb->base_prefix}users u WHERE u.ID = l.user_id AND u.display_name LIKE %s) OR l.created_at LIKE %s)", $s, $s, $s, $s);
+            $where .= " AND (l.action LIKE %s OR l.details LIKE %s OR EXISTS (SELECT 1 FROM {$wpdb->base_prefix}users u WHERE u.ID = l.user_id AND u.display_name LIKE %s) OR l.created_at LIKE %s)";
+            $params[] = $s;
+            $params[] = $s;
+            $params[] = $s;
+            $params[] = $s;
         }
 
-        return (int)$wpdb->get_var("SELECT COUNT(*) FROM {$wpdb->prefix}sm_logs l WHERE $where");
+        $query = "SELECT COUNT(*) FROM {$wpdb->prefix}sm_logs l WHERE $where";
+
+        if (!empty($params)) {
+            return (int)$wpdb->get_var($wpdb->prepare($query, ...$params));
+        }
+        return (int)$wpdb->get_var($query);
     }
 }
