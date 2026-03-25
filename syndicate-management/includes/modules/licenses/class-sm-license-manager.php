@@ -98,14 +98,14 @@ class SM_License_Manager {
             $grades = SM_Settings::get_professional_grades();
             $specs = SM_Settings::get_specializations();
 
-            // Intelligent Detection with Validation logic
+            // Intelligent Detection
             if ($type === 'auto') {
                 if (preg_match('/^[0-9]{14}$/', $val)) $type = 'national_id';
                 elseif (strpos($val, 'REG-') === 0 || strpos($val, 'SR-') === 0 || (strlen($val) > 8 && is_numeric($val))) $type = 'tracking';
-                elseif (strlen($val) < 14 && is_numeric($val)) $type = 'numeric_short';
+                elseif (is_numeric($val)) $type = 'numeric_short';
             }
 
-            // 1. Search by National ID -> Profile + All Records
+            // 1. Search by National ID -> Full Aggregated Report
             if ($type === 'national_id') {
                 $member = SM_DB::get_member_by_national_id($val);
                 if ($member) {
@@ -119,60 +119,48 @@ class SM_License_Manager {
                 if (!empty($blocks)) wp_send_json_success($blocks);
             }
 
-            // 2. Search by Membership Number
-            if ($type === 'membership' || $type === 'numeric_short') {
+            // 2. Exact Match Searches (Display ONLY matching record)
+            if ($type === 'membership' || ($type === 'numeric_short' && empty($blocks))) {
                 $member = SM_DB::get_member_by_membership_number($val);
                 if ($member) {
-                    $blocks[] = ['type' => 'profile', 'owner' => self::format_owner_data($member, $grades, $specs)];
-                    $blocks[] = ['type' => 'membership', 'membership' => [ 'number' => $member->membership_number, 'status' => $member->membership_status ?: 'Active', 'expiry' => $member->membership_expiration_date ?: '---' ]];
-                    wp_send_json_success($blocks);
+                    wp_send_json_success([[ 'type' => 'membership', 'membership' => [ 'number' => $member->membership_number, 'status' => $member->membership_status ?: 'Active', 'expiry' => $member->membership_expiration_date ?: '---' ] ]]);
                 }
             }
 
-            // 3. Search by Practice License
             if ($type === 'practice' || ($type === 'numeric_short' && empty($blocks))) {
                 $member = SM_DB::get_member_by_license_number($val);
                 if ($member) {
-                    $blocks[] = ['type' => 'profile', 'owner' => self::format_owner_data($member, $grades, $specs)];
-                    $blocks[] = ['type' => 'practice', 'practice' => [ 'number' => $member->license_number, 'issue_date' => $member->license_issue_date ?: '---', 'expiry' => $member->license_expiration_date ?: '---' ]];
-                    wp_send_json_success($blocks);
+                    wp_send_json_success([[ 'type' => 'practice', 'practice' => [ 'number' => $member->license_number, 'issue_date' => $member->license_issue_date ?: '---', 'expiry' => $member->license_expiration_date ?: '---' ] ]]);
                 }
             }
 
-            // 4. Search by Facility License
             if ($type === 'facility' || ($type === 'numeric_short' && empty($blocks))) {
                 $member = SM_DB::get_member_by_facility_number($val);
                 if ($member) {
-                    $blocks[] = ['type' => 'profile', 'owner' => self::format_owner_data($member, $grades, $specs)];
-                    $blocks[] = ['type' => 'facility', 'facility' => [ 'name' => $member->facility_name, 'number' => $member->facility_number, 'category' => $member->facility_category, 'address' => $member->facility_address ?: '---', 'expiry' => $member->facility_license_expiration_date ?: '---' ]];
-                    wp_send_json_success($blocks);
+                    wp_send_json_success([[ 'type' => 'facility', 'facility' => [ 'name' => $member->facility_name, 'number' => $member->facility_number, 'category' => $member->facility_category, 'address' => $member->facility_address ?: '---', 'expiry' => $member->facility_license_expiration_date ?: '---' ] ]]);
                 }
             }
 
-            // 5. Search by Tracking Code
             if ($type === 'tracking') {
                 $track = self::find_tracking_by_code($val);
                 if ($track) {
-                    $blocks[] = ['type' => 'tracking', 'tracking' => $track];
-                    wp_send_json_success($blocks);
+                    wp_send_json_success([[ 'type' => 'tracking', 'tracking' => $track ]]);
                 }
             }
 
-            // Fallback: Search by Name (Partial)
-            if (($type === 'auto' || $type === 'name') && strlen($val) >= 3 && !is_numeric($val)) {
+            // Fallback: Partial Name search
+            if ($type === 'auto' && strlen($val) >= 3 && !is_numeric($val)) {
                 $members = SM_DB::get_members(['search' => $val, 'limit' => 1]);
-                $member = !empty($members) ? $members[0] : null;
-                if ($member) {
-                    $blocks[] = ['type' => 'profile', 'owner' => self::format_owner_data($member, $grades, $specs)];
-                    $blocks[] = ['type' => 'membership', 'membership' => [ 'number' => $member->membership_number ?: '---', 'status' => $member->membership_status ?: 'Active', 'expiry' => $member->membership_expiration_date ?: '---' ]];
-                    wp_send_json_success($blocks);
+                if (!empty($members)) {
+                    $m = $members[0];
+                    wp_send_json_success([[ 'type' => 'profile', 'owner' => self::format_owner_data($m, $grades, $specs) ]]);
                 }
             }
 
-            wp_send_json_error(['message' => 'عذراً، لم يتم العثور على أية بيانات مطابقة لقيمة البحث المدخلة في السجلات الرسمية.']);
+            wp_send_json_error(['message' => 'عذراً، لم يتم العثور على أية بيانات مطابقة لقيمة البحث المدخلة.']);
         } catch (Throwable $e) {
             SM_Logger::log('Verification Error', $e->getMessage());
-            wp_send_json_error(['message' => 'خطأ تقني في معالجة الطلب.']);
+            wp_send_json_error(['message' => 'خطأ تقني في معالجة البحث.']);
         }
     }
 
