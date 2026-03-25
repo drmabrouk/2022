@@ -205,8 +205,12 @@ class SM_Auth {
 
     public static function ajax_forgot_password_otp() {
         try {
-            check_ajax_referer('sm_registration_nonce');
-        $national_id = sanitize_text_field($_POST['national_id'] ?? '');
+            if (isset($_POST['_wpnonce'])) {
+                check_ajax_referer('sm_registration_nonce', '_wpnonce');
+            } else {
+                check_ajax_referer('sm_registration_nonce', 'nonce');
+            }
+            $national_id = sanitize_text_field($_POST['national_id'] ?? '');
         $member = SM_DB::get_member_by_national_id($national_id);
         if (!$member || !$member->wp_user_id) {
             wp_send_json_error(['message' => 'الرقم القومي غير مسجل في النظام']);
@@ -231,8 +235,12 @@ class SM_Auth {
 
     public static function ajax_reset_password_otp() {
         try {
-            check_ajax_referer('sm_registration_nonce');
-        $national_id = sanitize_text_field($_POST['national_id'] ?? '');
+            if (isset($_POST['_wpnonce'])) {
+                check_ajax_referer('sm_registration_nonce', '_wpnonce');
+            } else {
+                check_ajax_referer('sm_registration_nonce', 'nonce');
+            }
+            $national_id = sanitize_text_field($_POST['national_id'] ?? '');
         $otp = sanitize_text_field($_POST['otp'] ?? '');
         $new_pass = $_POST['new_password'] ?? '';
         $member = SM_DB::get_member_by_national_id($national_id);
@@ -260,7 +268,11 @@ class SM_Auth {
 
     public static function ajax_activate_account_step1() {
         try {
-            check_ajax_referer('sm_registration_nonce');
+            if (isset($_POST['_wpnonce'])) {
+                check_ajax_referer('sm_registration_nonce', '_wpnonce');
+            } else {
+                check_ajax_referer('sm_registration_nonce', 'nonce');
+            }
             $national_id = sanitize_text_field($_POST['national_id'] ?? '');
         $membership_number = sanitize_text_field($_POST['membership_number'] ?? '');
         $branch_slug = sanitize_text_field($_POST['branch'] ?? '');
@@ -284,8 +296,12 @@ class SM_Auth {
 
     public static function ajax_activate_account_final() {
         try {
-            check_ajax_referer('sm_registration_nonce');
-        $national_id = sanitize_text_field($_POST['national_id'] ?? '');
+            if (isset($_POST['_wpnonce'])) {
+                check_ajax_referer('sm_registration_nonce', '_wpnonce');
+            } else {
+                check_ajax_referer('sm_registration_nonce', 'nonce');
+            }
+            $national_id = sanitize_text_field($_POST['national_id'] ?? '');
         $membership_number = sanitize_text_field($_POST['membership_number'] ?? '');
         $new_email = sanitize_email($_POST['email'] ?? '');
         $new_phone = sanitize_text_field($_POST['phone'] ?? '');
@@ -314,7 +330,11 @@ class SM_Auth {
 
     public static function ajax_submit_membership_request() {
         try {
-            check_ajax_referer('sm_registration_nonce', 'nonce');
+            if (isset($_POST['nonce'])) {
+                check_ajax_referer('sm_registration_nonce', 'nonce');
+            } else {
+                check_ajax_referer('sm_registration_nonce', '_wpnonce');
+            }
         $nid = sanitize_text_field($_POST['national_id']);
         if (SM_DB::member_exists($nid)) {
             wp_send_json_error(['message' => 'عذراً، هذا الرقم القومي مسجل مسبقاً في النظام كعضو مفعل.']);
@@ -341,7 +361,11 @@ class SM_Auth {
             if (!is_user_logged_in()) {
                 wp_send_json_error(['message' => 'يجب تسجيل الدخول أولاً']);
             }
-            check_ajax_referer('sm_profile_action', 'nonce');
+            if (isset($_POST['nonce'])) {
+                check_ajax_referer('sm_profile_action', 'nonce');
+            } else {
+                check_ajax_referer('sm_profile_action', '_wpnonce');
+            }
 
         $user_id = get_current_user_id();
         $user = get_userdata($user_id);

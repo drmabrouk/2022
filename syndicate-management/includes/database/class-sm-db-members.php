@@ -14,26 +14,44 @@ class SM_DB_Members {
             'number' => 20,
             'offset' => 0,
             'orderby' => 'display_name',
-            'order' => 'ASC'
+            'order' => 'ASC',
+            'meta_query' => array('relation' => 'AND')
         );
 
-        // If not a full admin, restricted to branch
+        // Advanced Filtering from Args
+        if (!empty($args['governorate'])) {
+            $default_args['meta_query'][] = array(
+                'key' => 'sm_governorate',
+                'value' => sanitize_text_field($args['governorate']),
+                'compare' => '='
+            );
+        }
+
+        if (!empty($args['account_status'])) {
+            $default_args['meta_query'][] = array(
+                'key' => 'sm_account_status',
+                'value' => sanitize_text_field($args['account_status']),
+                'compare' => '='
+            );
+        }
+
+        // Security: If not a full admin, restricted to their own branch
         if (!$has_full_access) {
             if ($my_gov) {
-                $default_args['meta_query'] = array(
-                    array(
-                        'key' => 'sm_governorate',
-                        'value' => $my_gov,
-                        'compare' => '='
-                    )
+                $default_args['meta_query'][] = array(
+                    'key' => 'sm_governorate',
+                    'value' => $my_gov,
+                    'compare' => '='
                 );
             } else {
-                // Non-admin with no governorate cannot see staff
+                // Non-admin with no governorate can only see themselves
                 $default_args['include'] = array($user->ID);
             }
         }
 
         $args = wp_parse_args($args, $default_args);
+
+        // Handle search for meta fields if needed, but get_users handles basic search well
         return get_users($args);
     }
 

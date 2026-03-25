@@ -305,11 +305,12 @@ class SM_Public {
             e.preventDefault();
             const form = this;
             const btn = form.querySelector('button[type="submit"]');
+            const action = 'sm_submit_contact_form';
             const fd = new FormData(form);
-            fd.append('action', 'sm_submit_contact_form');
+            fd.append('action', action);
             btn.disabled = true;
             btn.innerText = 'جاري الإرسال...';
-            fetch(ajaxurl, { method: 'POST', body: fd })
+            fetch(ajaxurl + '?action=' + action, { method: 'POST', body: fd })
             .then(r => r.json())
             .then(res => {
                 if (res.success) {
@@ -370,11 +371,12 @@ class SM_Public {
         ?>
         <script>
         function smAcknowledgeAlert(aid) {
+            const action = 'sm_acknowledge_alert';
             const fd = new FormData();
-            fd.append('action', 'sm_acknowledge_alert');
+            fd.append('action', action);
             fd.append('alert_id', aid);
             fd.append('nonce', '<?php echo wp_create_nonce("sm_admin_action"); ?>');
-            fetch(ajaxurl, { method: 'POST', body: fd })
+            fetch(ajaxurl + '?action=' + action, { method: 'POST', body: fd })
             .then(r => r.json())
             .then(res => {
                 document.getElementById('sm-global-alert-' + aid).remove();

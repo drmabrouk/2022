@@ -21,7 +21,11 @@ class SM_License_Manager {
             if (!current_user_can('sm_manage_licenses') && !current_user_can('manage_options')) {
                  wp_send_json_error(['message' => 'Unauthorized access.']);
             }
-            check_ajax_referer('sm_add_member', 'nonce');
+            if (isset($_POST['nonce'])) {
+                check_ajax_referer('sm_add_member', 'nonce');
+            } else {
+                check_ajax_referer('sm_add_member', 'sm_nonce');
+            }
             $mid = intval($_POST['member_id']);
         self::validate_member_access($mid);
 
@@ -54,7 +58,11 @@ class SM_License_Manager {
             if (!current_user_can('sm_manage_licenses') && !current_user_can('manage_options')) {
                  wp_send_json_error(['message' => 'Unauthorized access.']);
             }
-            check_ajax_referer('sm_add_member', 'nonce');
+            if (isset($_POST['nonce'])) {
+                check_ajax_referer('sm_add_member', 'nonce');
+            } else {
+                check_ajax_referer('sm_add_member', 'sm_nonce');
+            }
             $mid = intval($_POST['member_id']);
         self::validate_member_access($mid);
 
