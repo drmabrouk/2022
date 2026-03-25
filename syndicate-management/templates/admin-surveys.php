@@ -193,9 +193,8 @@
                 </div>
             </div>
         </div>
-</div>
+    </div>
 
-<!-- NEW/EDIT SURVEY MODAL -->
 <div id="new-survey-modal" class="sm-modal-overlay">
     <div class="sm-modal-content" style="max-width: 750px;">
         <div class="sm-modal-header">
@@ -376,6 +375,8 @@
         </div>
     </div>
 </div>
+
+</div> <!-- End .sm-surveys-container -->
 
 <script>
 function smOpenNewSurveyModal() {
