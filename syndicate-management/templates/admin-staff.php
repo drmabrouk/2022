@@ -91,9 +91,9 @@
                 <select name="role_filter" class="sm-select">
                     <option value="">كافة الأدوار</option>
                     <?php
-                    global $wp_roles;
-                    foreach($wp_roles->roles as $rk => $rd): ?>
-                        <option value="<?php echo esc_attr($rk); ?>" <?php selected($_GET['role_filter'] ?? '', $rk); ?>><?php echo esc_html(translate_user_role($rd['name'])); ?></option>
+                    $roles_obj = wp_roles();
+                    foreach($roles_obj->roles as $rk => $rd): ?>
+                        <option value="<?php echo esc_attr($rk); ?>" <?php selected($_GET['role_filter'] ?? '', $rk); ?>><?php echo esc_html(function_exists('translate_user_role') ? translate_user_role($rd['name']) : $rd['name']); ?></option>
                     <?php endforeach; ?>
                 </select>
             </div>
@@ -238,8 +238,10 @@
                                         <div class="sm-form-group">
                                             <label class="sm-label">الدور الوظيفي / الصلاحيات:</label>
                                             <select name="role" class="sm-select" onchange="smToggleRankField(this, 'rank-group-<?php echo $u->ID; ?>')">
-                                                <?php foreach($wp_roles->roles as $rk => $rd): ?>
-                                                    <option value="<?php echo esc_attr($rk); ?>" <?php selected($role_slug, $rk); ?>><?php echo esc_html(translate_user_role($rd['name'])); ?></option>
+                                                <?php
+                                                $roles_obj = wp_roles();
+                                                foreach($roles_obj->roles as $rk => $rd): ?>
+                                                    <option value="<?php echo esc_attr($rk); ?>" <?php selected($role_slug, $rk); ?>><?php echo esc_html(function_exists('translate_user_role') ? translate_user_role($rd['name']) : $rd['name']); ?></option>
                                                 <?php endforeach; ?>
                                             </select>
                                         </div>
@@ -398,8 +400,10 @@
                     <div class="sm-form-group">
                         <label class="sm-label">الدور الوظيفي:</label>
                         <select name="role" class="sm-select">
-                            <?php foreach($wp_roles->roles as $rk => $rd): ?>
-                                <option value="<?php echo esc_attr($rk); ?>" <?php selected($rk, 'sm_syndicate_member'); ?>><?php echo esc_html(translate_user_role($rd['name'])); ?></option>
+                            <?php
+                            $roles_obj = wp_roles();
+                            foreach($roles_obj->roles as $rk => $rd): ?>
+                                <option value="<?php echo esc_attr($rk); ?>" <?php selected($rk, 'sm_syndicate_member'); ?>><?php echo esc_html(function_exists('translate_user_role') ? translate_user_role($rd['name']) : $rd['name']); ?></option>
                             <?php endforeach; ?>
                         </select>
                     </div>
