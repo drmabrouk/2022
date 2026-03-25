@@ -809,27 +809,27 @@
             ];
         } else if (module === 'services') {
             fields = [
-                { id: 'name', label: 'اسم الخدمة' },
-                { id: 'category', label: 'التصنيف' },
-                { id: 'fees', label: 'الرسوم' },
-                { id: 'status', label: 'الحالة' },
-                { id: 'requests_count', label: 'عدد الطلبات' }
+                { id: 'name', label: 'اسم الخدمة الرقمية' },
+                { id: 'category', label: 'تصنيف الخدمة' },
+                { id: 'fees', label: 'قيمة الرسوم المقررة' },
+                { id: 'status', label: 'الحالة التشغيلية' },
+                { id: 'requests_count', label: 'إجمالي طلبات الخدمة' }
             ];
         } else if (module === 'surveys') {
             fields = [
-                { id: 'title', label: 'اسم الاختبار' },
-                { id: 'test_type', label: 'النوع' },
-                { id: 'time_limit', label: 'المدة' },
-                { id: 'pass_score', label: 'درجة النجاح' },
-                { id: 'responses_count', label: 'المشاركات' }
+                { id: 'title', label: 'عنوان الاختبار المهني' },
+                { id: 'test_type', label: 'نوع الاختبار' },
+                { id: 'time_limit', label: 'المدة الزمنية (د)' },
+                { id: 'pass_score', label: 'درجة النجاح المطلوبة' },
+                { id: 'responses_count', label: 'عدد المشاركات المسجلة' }
             ];
         } else if (module === 'branches') {
             fields = [
-                { id: 'name', label: 'اسم الفرع' },
-                { id: 'manager', label: 'المدير' },
-                { id: 'phone', label: 'رقم التواصل' },
-                { id: 'members_count', label: 'الأعضاء' },
-                { id: 'revenue', label: 'الإيرادات' }
+                { id: 'name', label: 'اسم الفرع النقابي' },
+                { id: 'manager', label: 'اسم مدير الفرع' },
+                { id: 'phone', label: 'رقم تواصل الفرع' },
+                { id: 'members_count', label: 'إجمالي الأعضاء المقيدين' },
+                { id: 'revenue', label: 'إجمالي إيرادات الفرع' }
             ];
         }
 

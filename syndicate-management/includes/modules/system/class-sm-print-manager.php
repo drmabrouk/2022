@@ -153,6 +153,80 @@ class SM_Print_Manager {
                         }
                     }
                     break;
+
+                case 'services':
+                    $title = 'قائمة الخدمات الرقمية';
+                    $results = SM_DB::get_services(['is_deleted' => 0]);
+                    if (!empty($results)) {
+                        foreach ($results as $row) {
+                            $item = [];
+                            foreach ($fields as $f) {
+                                switch ($f) {
+                                    case 'name': $item['الخدمة'] = $row->name; break;
+                                    case 'category': $item['التصنيف'] = $row->category; break;
+                                    case 'fees': $item['الرسوم'] = number_format($row->fees, 2); break;
+                                    case 'status': $item['الحالة'] = ($row->status === 'active' ? 'نشطة' : 'معطلة'); break;
+                                    case 'requests_count':
+                                        $reqs = SM_DB::get_service_requests(['service_id' => $row->id]);
+                                        $item['الطلبات'] = count($reqs);
+                                        break;
+                                }
+                            }
+                            $data[] = $item;
+                        }
+                    }
+                    break;
+
+                case 'surveys':
+                    $title = 'سجل الاختبارات المهنية';
+                    $results = SM_DB::get_surveys_admin();
+                    if (!empty($results)) {
+                        foreach ($results as $row) {
+                            $item = [];
+                            foreach ($fields as $f) {
+                                switch ($f) {
+                                    case 'title': $item['الاختبار'] = $row->title; break;
+                                    case 'test_type':
+                                        $types = ['practice' => 'مزاولة', 'promotion' => 'ترقية', 'training' => 'دورة'];
+                                        $item['النوع'] = $types[$row->test_type] ?? $row->test_type;
+                                        break;
+                                    case 'time_limit': $item['المدة'] = $row->time_limit . ' د'; break;
+                                    case 'pass_score': $item['النجاح'] = $row->pass_score . '%'; break;
+                                    case 'responses_count':
+                                        $resps = SM_DB::get_survey_responses($row->id);
+                                        $item['المشاركات'] = count($resps);
+                                        break;
+                                }
+                            }
+                            $data[] = $item;
+                        }
+                    }
+                    break;
+
+                case 'branches':
+                    $title = 'كشف فروع ولجان النقابة';
+                    $results = SM_DB::get_branches_data();
+                    if (!empty($results)) {
+                        foreach ($results as $row) {
+                            $item = [];
+                            foreach ($fields as $f) {
+                                switch ($f) {
+                                    case 'name': $item['الفرع'] = $row->name; break;
+                                    case 'manager': $item['المدير'] = $row->manager ?: '---'; break;
+                                    case 'phone': $item['الهاتف'] = $row->phone ?: '---'; break;
+                                    case 'members_count':
+                                        $item['الأعضاء'] = SM_DB::count_members(['governorate' => $row->slug]);
+                                        break;
+                                    case 'revenue':
+                                        $rev_stats = SM_DB_Finance::get_statistics(['governorate' => $row->slug]);
+                                        $item['الإيرادات'] = number_format($rev_stats['total_revenue'] ?? 0, 2);
+                                        break;
+                                }
+                            }
+                            $data[] = $item;
+                        }
+                    }
+                    break;
             }
 
             if (empty($data)) {

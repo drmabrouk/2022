@@ -100,8 +100,8 @@ class SM_DB {
         return SM_DB_Members::get_membership_request_by_national_id($nid);
     }
 
-    public static function get_membership_requests($status = null) {
-        return SM_DB_Members::get_membership_requests($status);
+    public static function get_membership_requests($args = []) {
+        return SM_DB_Members::get_membership_requests($args);
     }
 
     public static function count_members($args = []) {

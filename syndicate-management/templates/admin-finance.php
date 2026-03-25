@@ -64,15 +64,15 @@ foreach ($members as $m) {
     </div>
 
     <!-- Search & Filter -->
-    <div style="background: #f8fafc; padding: 30px; border-radius: 12px; border: 1px solid #e2e8f0; margin-bottom: 20px;">
-        <form method="get" style="display: grid; grid-template-columns: 2fr 1fr auto; gap: 15px; align-items: flex-end;">
+    <div style="background: #f8fafc; padding: 25px; border-radius: 15px; border: 1px solid #e2e8f0; margin-bottom: 20px; box-shadow: 0 2px 4px rgba(0,0,0,0.02);">
+        <form method="get" style="display: grid; grid-template-columns: 1.5fr 1fr 1fr auto; gap: 12px; align-items: flex-end;">
             <input type="hidden" name="sm_tab" value="finance">
             <div class="sm-form-group" style="margin:0;">
-                <label class="sm-label">البحث عن عضو (الاسم أو الرقم القومي):</label>
-                <input type="text" name="member_search" class="sm-input" value="<?php echo esc_attr($search); ?>" placeholder="أدخل بيانات العضو لتدقيق حسابه المالي...">
+                <label class="sm-label" style="font-size:12px; font-weight:700; color:#64748b;">البحث عن عضو (الاسم/الرقم القومي):</label>
+                <input type="text" name="member_search" class="sm-input" value="<?php echo esc_attr($search); ?>" placeholder="أدخل بيانات العضو...">
             </div>
             <div class="sm-form-group" style="margin:0;">
-                <label class="sm-label">تصفية حسب الفرع:</label>
+                <label class="sm-label" style="font-size:12px; font-weight:700; color:#64748b;">تصفية حسب الفرع:</label>
                 <select name="gov_filter" class="sm-select">
                     <option value="">كل الفروع</option>
                     <?php
@@ -81,10 +81,18 @@ foreach ($members as $m) {
                     ?>
                 </select>
             </div>
-            <div style="display: flex; gap: 10px;">
-                <button type="submit" class="sm-btn" style="width: auto; height: 42px; padding: 0 25px;">بحث وتدقيق</button>
-                <?php if ($search || !empty($_GET['gov_filter'])): ?>
-                    <a href="<?php echo remove_query_arg(['member_search', 'gov_filter']); ?>" class="sm-btn sm-btn-outline" style="width: auto; height: 42px; text-decoration:none; display:flex; align-items:center; padding: 0 20px;">إلغاء البحث</a>
+            <div class="sm-form-group" style="margin:0;">
+                <label class="sm-label" style="font-size:12px; font-weight:700; color:#64748b;">الحالة المالية:</label>
+                <select name="status_filter" class="sm-select">
+                    <option value="">كافة السجلات</option>
+                    <option value="debt" <?php selected($_GET['status_filter'] ?? '', 'debt'); ?>>مدين فقط</option>
+                    <option value="cleared" <?php selected($_GET['status_filter'] ?? '', 'cleared'); ?>>خالص فقط</option>
+                </select>
+            </div>
+            <div style="display: flex; gap: 8px;">
+                <button type="submit" class="sm-btn" style="width: auto; height: 42px; padding: 0 20px; font-weight:800;">تطبيق البحث</button>
+                <?php if ($search || !empty($_GET['gov_filter']) || !empty($_GET['status_filter'])): ?>
+                    <a href="<?php echo remove_query_arg(['member_search', 'gov_filter', 'status_filter']); ?>" class="sm-btn sm-btn-outline" style="width: auto; height: 42px; text-decoration:none; display:flex; align-items:center; padding: 0 15px; font-size:11px;">تصفير</a>
                 <?php endif; ?>
             </div>
         </form>
