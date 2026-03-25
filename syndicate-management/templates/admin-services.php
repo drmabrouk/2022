@@ -19,7 +19,10 @@ $all_requests = $is_official ? SM_DB::get_service_requests() : [];
     <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
         <h2 style="margin:0; font-weight: 800; color: var(--sm-dark-color);">الخدمات الرقمية</h2>
         <?php if ($is_official): ?>
-            <button onclick="smOpenAddServiceModal()" class="sm-btn" style="width:auto;">+ إضافة خدمة جديدة</button>
+            <div style="display: flex; gap: 10px;">
+                <button onclick="smOpenPrintCustomizer('services')" class="sm-btn" style="background: #4a5568; width: auto;"><span class="dashicons dashicons-printer"></span> طباعة مخصصة</button>
+                <button onclick="smOpenAddServiceModal()" class="sm-btn" style="width:auto;">+ إضافة خدمة جديدة</button>
+            </div>
         <?php endif; ?>
     </div>
 

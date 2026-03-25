@@ -807,6 +807,30 @@
                 { id: 'expiry_date', label: 'تاريخ الانتهاء' },
                 { id: 'governorate', label: 'الفرع' }
             ];
+        } else if (module === 'services') {
+            fields = [
+                { id: 'name', label: 'اسم الخدمة' },
+                { id: 'category', label: 'التصنيف' },
+                { id: 'fees', label: 'الرسوم' },
+                { id: 'status', label: 'الحالة' },
+                { id: 'requests_count', label: 'عدد الطلبات' }
+            ];
+        } else if (module === 'surveys') {
+            fields = [
+                { id: 'title', label: 'اسم الاختبار' },
+                { id: 'test_type', label: 'النوع' },
+                { id: 'time_limit', label: 'المدة' },
+                { id: 'pass_score', label: 'درجة النجاح' },
+                { id: 'responses_count', label: 'المشاركات' }
+            ];
+        } else if (module === 'branches') {
+            fields = [
+                { id: 'name', label: 'اسم الفرع' },
+                { id: 'manager', label: 'المدير' },
+                { id: 'phone', label: 'رقم التواصل' },
+                { id: 'members_count', label: 'الأعضاء' },
+                { id: 'revenue', label: 'الإيرادات' }
+            ];
         }
 
         fieldsContainer.innerHTML = fields.map(f => `

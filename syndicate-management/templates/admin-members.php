@@ -7,6 +7,21 @@ if ($import_results) {
 }
 ?>
 <div class="sm-content-wrapper" dir="rtl">
+    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 25px; flex-wrap: wrap; gap: 20px;">
+        <div>
+            <h2 style="margin:0; font-weight: 800; color: var(--sm-dark-color);">إدارة الأعضاء وطلبات القيد</h2>
+            <p style="margin:5px 0 0 0; color:#64748b; font-size:13px;">إدارة بيانات الأعضاء المسجلين، طباعة البطاقات، وعمليات الاستيراد الجماعي.</p>
+        </div>
+        <?php if ($can_manage_members): ?>
+        <div style="display: flex; gap: 10px; align-items: center;">
+            <button onclick="document.getElementById('add-single-member-modal').style.display='flex'" class="sm-btn" style="width: 160px; height: 42px; padding: 0; display: flex; align-items: center; justify-content: center; font-weight: 700;">+ إضافة عضو جديد</button>
+            <button onclick="document.getElementById('csv-import-form').style.display='block'" class="sm-btn sm-btn-secondary" style="width: 160px; height: 42px; padding: 0; display: flex; align-items: center; justify-content: center; font-weight: 700;">استيراد أعضاء (Excel)</button>
+            <button onclick="smOpenPrintCustomizer('members')" class="sm-btn" style="background: #4a5568; width: 160px; height: 42px; padding: 0; display: flex; align-items: center; justify-content: center; font-weight: 700;"><span class="dashicons dashicons-printer" style="font-size: 16px; margin-left: 8px;"></span> طباعة مخصصة</button>
+            <a href="<?php echo admin_url('admin-ajax.php?action=sm_print&print_type=id_card'); ?>" target="_blank" class="sm-btn sm-btn-accent" style="background: #27ae60; text-decoration:none; width: 160px; height: 42px; padding: 0; display: inline-flex; align-items: center; justify-content: center; font-weight: 700;">طباعة كافة البطاقات</a>
+        </div>
+        <?php endif; ?>
+    </div>
+
     <?php if ($import_results): ?>
         <div style="background: #fff; border-radius: 12px; border: 1px solid var(--sm-border-color); margin-bottom: 8px; overflow: hidden; box-shadow: var(--sm-shadow);">
             <div style="background: var(--sm-bg-light); padding: 20px 15px; border-bottom: 1px solid var(--sm-border-color); display: flex; justify-content: space-between; align-items: center;">
@@ -85,13 +100,6 @@ if ($import_results) {
     </div>
 
     <?php if ($can_manage_members): ?>
-    <div style="display: flex; gap: 10px; margin-bottom: 8px; flex-wrap: wrap; align-items: center;">
-        <button onclick="document.getElementById('add-single-member-modal').style.display='flex'" class="sm-btn">+ إضافة عضو جديد</button>
-        <button onclick="document.getElementById('csv-import-form').style.display='block'" class="sm-btn sm-btn-secondary">استيراد أعضاء (Excel)</button>
-        <button onclick="smOpenPrintCustomizer('members')" class="sm-btn" style="background: #4a5568;"><span class="dashicons dashicons-printer" style="font-size: 16px; margin-top: 4px;"></span> طباعة مخصصة</button>
-        <a href="<?php echo admin_url('admin-ajax.php?action=sm_print&print_type=id_card'); ?>" target="_blank" class="sm-btn sm-btn-accent" style="background: #27ae60; text-decoration:none;">طباعة كافة البطاقات</a>
-    </div>
-
     <!-- CSV Import Form -->
     <div id="csv-import-form" style="display:none; background: #f8fafc; padding: 15px; border: 2px dashed #cbd5e0; border-radius: 12px; margin-bottom: 8px;">
         <h3 style="margin-top:0; color:var(--sm-secondary-color);">استيراد الأعضاء من ملف CSV / Excel</h3>
