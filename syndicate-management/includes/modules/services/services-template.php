@@ -1,26 +1,22 @@
 <?php if (!defined('ABSPATH')) exit; ?>
 <div class="sm-public-page" dir="rtl">
-    <div class="sm-tracking-search-box" style="background: linear-gradient(135deg, #fff 0%, #f9fafb 100%); border: 1px solid #e2e8f0; border-radius: 30px; padding: 40px; margin-bottom: 50px; color: var(--sm-dark-color); box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.05);">
-        <div style="text-align: center; margin-bottom: 30px;">
-            <div style="display: inline-flex; align-items: center; justify-content: center; width: 50px; height: 50px; background: rgba(246, 48, 73, 0.1); border-radius: 15px; margin-bottom: 15px;"><span class="dashicons dashicons-search" style="font-size: 24px; width: 24px; height: 24px; color: var(--sm-primary-color);"></span></div>
-            <h2 style="margin: 0; font-weight: 900; font-size: 2em; color: var(--sm-dark-color);">متابعة حالة الطلبات</h2>
-            <p style="margin: 10px 0 0 0; color: #64748b; font-size: 15px; font-weight: 500;">استعلم عن حالة طلبك الرقمي لحظياً باستخدام كود التتبع الموحد</p>
-        </div>
-        <div style="display: flex; gap: 15px; max-width: 650px; margin: 0 auto; background: #fff; padding: 10px; border-radius: 20px; border: 1px solid #e2e8f0; box-shadow: 0 10px 15px -3px rgba(0,0,0,0.02);">
-            <?php wp_nonce_field('sm_contact_action', 'nonce_tracking'); ?>
-            <div style="flex: 1; position: relative; display: flex; align-items: center;"><span class="dashicons dashicons-text-page" style="position: absolute; right: 15px; color: #94a3b8;"></span><input type="text" id="sm_service_tracking_input" placeholder="أدخل كود الطلب" style="width: 100%; padding: 15px 40px 15px 20px; border-radius: 15px; border: 1px solid transparent; background: #f8fafc; color: var(--sm-dark-color); font-family: 'Rubik', sans-serif; font-size: 15px; outline: none; transition: 0.3s; font-weight: 500;"></div>
-            <button onclick="smTrackServiceRequest()" style="background: var(--sm-primary-color); color: #fff; border: none; padding: 0 35px; border-radius: 15px; font-weight: 800; font-size: 15px; cursor: pointer; transition: 0.3s; font-family: 'Rubik', sans-serif; box-shadow: 0 4px 12px rgba(246, 48, 73, 0.3);">بحث وتتبع</button>
-        </div>
-        <div id="sm-tracking-results-area" style="margin-top: 30px; display: none; background: #fff; border-radius: 20px; padding: 30px; border: 1px solid #e2e8f0; animation: smFadeIn 0.4s ease; box-shadow: 0 10px 15px -3px rgba(0,0,0,0.05);"></div>
-        <?php if ($is_logged_in && $current_member): ?>
-            <?php $my_requests = SM_DB_Services::get_service_requests(['member_id' => $current_member->id]); if ($my_requests): $my_requests = array_slice($my_requests, 0, 5); ?>
-            <div style="margin-top: 35px; border-top: 1px solid #e2e8f0; padding-top: 25px;"><h4 style="margin: 0 0 15px 0; font-weight: 800; color: var(--sm-dark-color); display: flex; align-items: center; gap: 10px;"><span class="dashicons dashicons-clock" style="color:var(--sm-primary-color);"></span> طلباتك الأخيرة</h4><div style="display: grid; gap: 10px;"><?php foreach ($my_requests as $mr): $track_code = date('Ymd', strtotime($mr->created_at)) . $mr->id; $labels = ['pending' => 'قيد الانتظار', 'approved' => 'مكتمل', 'rejected' => 'مرفوض']; ?><div style="background: #fff; padding: 12px 15px; border-radius: 12px; border: 1px solid #f1f5f9; display: flex; justify-content: space-between; align-items: center; transition: 0.2s; cursor: pointer;" onclick="document.getElementById('sm_service_tracking_input').value='<?php echo $track_code; ?>'; smTrackServiceRequest();"><div><div style="font-weight: 700; color: var(--sm-dark-color); font-size: 14px;"><?php echo esc_html($mr->service_name); ?></div><div style="font-size: 10px; color: #94a3b8; margin-top: 2px;">كود التتبع: #<?php echo $track_code; ?></div></div><div style="display: flex; align-items: center; gap: 10px;"><span style="font-size: 11px; font-weight: 700; padding: 3px 10px; border-radius: 8px; background: #f8fafc; border: 1px solid #e2e8f0;"><?php echo $labels[$mr->status] ?? $mr->status; ?></span><span class="dashicons dashicons-arrow-left-alt2" style="font-size: 14px; color: var(--sm-primary-color);"></span></div></div><?php endforeach; ?></div></div>
-            <?php endif; ?>
-        <?php endif; ?>
-    </div>
-
     <div class="sm-services-layout" style="display: flex; gap: 30px; margin-top: 30px; align-items: flex-start;">
-        <div class="sm-services-sidebar" style="width: 280px; flex-shrink: 0; background: #fff; border: 1px solid var(--sm-border-color); border-radius: 20px; padding: 25px; position: sticky; top: 20px; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.02);"><h4 style="margin: 0 0 20px 0; font-weight: 800; color: var(--sm-dark-color); display: flex; align-items: center; gap: 10px; font-size: 1em;"><span style="display:flex; align-items:center; justify-content:center; width:28px; height:28px; background:var(--sm-primary-color); color:#fff; border-radius:8px;"><span class="dashicons dashicons-filter" style="font-size: 16px; width: 16px; height: 16px;"></span></span> فلترة الخدمات</h4><div style="margin-bottom: 20px;"><label class="sm-label" style="font-size: 12px; margin-bottom: 5px; display: block; color: #64748b;">البحث بالاسم:</label><div style="position: relative;"><input type="text" id="sm_service_search_filter" placeholder="ابحث..." style="width: 100%; padding: 10px 12px; border-radius: 10px; border: 1px solid #e2e8f0; font-family: 'Rubik', sans-serif; outline: none;" oninput="smApplyServiceFilters()"><span class="dashicons dashicons-search" style="position: absolute; left: 8px; top: 8px; color: #94a3b8; font-size: 16px;"></span></div></div><div style="margin-bottom: 20px;"><label class="sm-label" style="font-size: 12px; margin-bottom: 5px; display: block; color: #64748b;">تصنيف الخدمة:</label><select id="sm_service_cat_filter" class="sm-select" onchange="smApplyServiceFilters()" style="width: 100%; border-radius: 10px; font-size: 13px;"><?php foreach ($categories as $cat): ?><option value="<?php echo esc_attr($cat); ?>"><?php echo esc_html($cat); ?></option><?php endforeach; ?></select></div></div>
+        <div class="sm-services-sidebar" style="width: 280px; flex-shrink: 0; background: #fff; border: 1px solid var(--sm-border-color); border-radius: 20px; padding: 25px; position: sticky; top: 20px; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.02);">
+            <h4 style="margin: 0 0 20px 0; font-weight: 800; color: var(--sm-dark-color); display: flex; align-items: center; gap: 10px; font-size: 1em;">
+                <span style="display:flex; align-items:center; justify-content:center; width:28px; height:28px; background:var(--sm-primary-color); color:#fff; border-radius:8px;">
+                    <span class="dashicons dashicons-filter" style="font-size: 16px; width: 16px; height: 16px;"></span>
+                </span> فلترة الخدمات
+            </h4>
+            <div style="margin-bottom: 20px;">
+                <label class="sm-label" style="font-size: 12px; margin-bottom: 5px; display: block; color: #64748b;">تصنيف الخدمة:</label>
+                <select id="sm_service_cat_filter" class="sm-select" onchange="smApplyServiceFilters()" style="width: 100%; border-radius: 10px; font-size: 13px;">
+                    <?php foreach ($categories as $cat): ?>
+                        <option value="<?php echo esc_attr($cat); ?>"><?php echo esc_html($cat); ?></option>
+                    <?php endforeach; ?>
+                </select>
+            </div>
+        </div>
+
         <div class="sm-services-grid-wrapper" style="flex: 1;">
             <div id="sm-services-grid" style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 20px;">
                 <?php if (empty($services)): ?>
@@ -70,61 +66,6 @@ window.smLoadMoreServices = function() {
     }
 };
 
-window.smTrackServiceRequest = function() {
-    const code = document.getElementById('sm_service_tracking_input').value.trim();
-    const area = document.getElementById('sm-tracking-results-area');
-    if(!code) {
-        smShowNotification('يرجى إدخال كود التتبع', true);
-        return;
-    }
-
-    const fd = new FormData();
-    fd.append('action', 'sm_track_service_request');
-    fd.append('tracking_code', code);
-    fd.append('_wpnonce', document.getElementById('nonce_tracking').value);
-
-    area.style.display = 'block';
-    area.innerHTML = '<div style="text-align:center; padding:20px; color:#64748b;">جاري البحث عن الطلب...</div>';
-
-    const action = 'sm_track_service_request';
-    fetch(ajaxurl + '?action=' + action, {method:'POST', body:fd}).then(r=>r.json()).then(res=>{
-        if(res.success) {
-            const r = res.data;
-            area.innerHTML = `
-                <div style="display:grid; grid-template-columns: 1fr 1fr; gap:20px;">
-                    <div style="background:#f8fafc; padding:20px; border-radius:15px; border:1px solid #edf2f7;">
-                        <h4 style="margin:0 0 15px 0; color:var(--sm-primary-color); font-size:14px; border-bottom:1px solid #e2e8f0; pb:10px;">بيانات مقدم الطلب</h4>
-                        <div style="display:grid; gap:10px; font-size:13px;">
-                            <div><strong>الاسم:</strong> ${r.member}</div>
-                            <div><strong>البريد:</strong> ${r.email}</div>
-                            <div><strong>الهاتف:</strong> ${r.phone}</div>
-                            <div><strong>الفرع:</strong> ${r.branch || '---'}</div>
-                        </div>
-                    </div>
-                    <div style="background:#f8fafc; padding:20px; border-radius:15px; border:1px solid #edf2f7;">
-                        <h4 style="margin:0 0 15px 0; color:var(--sm-primary-color); font-size:14px; border-bottom:1px solid #e2e8f0; pb:10px;">تفاصيل وحالة الطلب</h4>
-                        <div style="display:grid; gap:10px; font-size:13px;">
-                            <div><strong>رقم التتبع:</strong> ${code}</div>
-                            <div><strong>نوع الخدمة:</strong> ${r.service}</div>
-                            <div><strong>تاريخ الطلب:</strong> ${r.date}</div>
-                            <div style="margin-top:5px;">
-                                <strong>الحالة:</strong>
-                                <span style="background:var(--sm-primary-color); color:#fff; padding:3px 12px; border-radius:10px; font-weight:800; font-size:11px;">${r.status}</span>
-                            </div>
-                        </div>
-                    </div>
-                    ${r.notes ? `
-                    <div style="grid-column: span 2; background:#fffaf0; border:1px solid #feebc8; padding:15px; border-radius:12px; font-size:12px; color:#9c4221;">
-                        <strong>ملاحظات الإدارة:</strong> ${r.notes}
-                    </div>` : ''}
-                </div>
-            `;
-        } else {
-            area.innerHTML = `<div style="text-align:center; color:#e53e3e; font-weight:700; padding:10px;">${res.data}</div>`;
-        }
-    });
-};
-
 window.smOpenProgressiveForm = function(btn, s) {
     const container = document.getElementById('sm-service-dropdown-container');
     const body = document.getElementById('sm-dropdown-body');
@@ -132,7 +73,6 @@ window.smOpenProgressiveForm = function(btn, s) {
 
     let reqFields = []; try { reqFields = JSON.parse(s.required_fields); } catch(e){}
 
-    // Fetch branch info for payment if member is logged in
     const branchInfo = <?php echo $current_member ? wp_json_encode(SM_DB::get_branches_data()) : '[]'; ?>;
     const myBranch = branchInfo.find(b => b.slug === '<?php echo $current_member ? $current_member->governorate : ""; ?>') || branchInfo[0] || {};
 
@@ -251,8 +191,8 @@ window.smOpenProgressiveForm = function(btn, s) {
         fd.append('transaction_code', transCode);
         if(transFile) fd.append('payment_receipt', transFile);
 
-        const btn = document.querySelector('#service-step-3 .sm-btn:last-child');
-        btn.disabled = true; btn.innerText = 'جاري التقديم...';
+        const btn = document.querySelector('#service-step-5 .sm-btn:last-child');
+        if (btn) { btn.disabled = true; btn.innerText = 'جاري التقديم...'; }
 
         const action = 'sm_submit_service_request';
         fetch(ajaxurl + '?action=' + action, {method:'POST', body:fd}).then(r=>r.json()).then(res=>{
@@ -260,7 +200,7 @@ window.smOpenProgressiveForm = function(btn, s) {
                 body.innerHTML = `<div style="text-align:center; padding:20px;"><div style="font-size:60px; margin-bottom:20px;">✅</div><h3 style="font-weight:900; font-size:1.8em;">تم تقديم طلبك بنجاح!</h3><p style="color:#64748b; margin-bottom:20px;">كود تتبع الطلب الخاص بك:</p><div style="background:#f8fafc; border:2px dashed var(--sm-primary-color); padding:15px; font-size:24px; font-weight:900; color:var(--sm-primary-color); border-radius:15px; margin-bottom:30px;">${res.data}</div><button onclick="location.reload()" class="sm-btn" style="width:100%;">إغلاق</button></div>`;
             } else {
                 smHandleAjaxError(res.data, 'فشل تقديم الطلب');
-                btn.disabled = false; btn.innerText = 'تأكيد وإرسال الطلب';
+                if (btn) { btn.disabled = false; btn.innerText = 'تأكيد وإرسال الطلب'; }
             }
         });
     };
@@ -269,11 +209,11 @@ window.smOpenProgressiveForm = function(btn, s) {
 };
 
 function smApplyServiceFilters() {
-    const q = document.getElementById('sm_service_search_filter').value.toLowerCase(); const cat = document.getElementById('sm_service_cat_filter').value;
+    const cat = document.getElementById('sm_service_cat_filter').value;
     const cards = document.querySelectorAll('.sm-service-card-modern');
     let visibleCount = 0;
     cards.forEach(card => {
-        const matches = card.dataset.name.toLowerCase().includes(q) && (cat === 'الكل' || card.dataset.category === cat);
+        const matches = (cat === 'الكل' || card.dataset.category === cat);
         if (matches) {
             visibleCount++;
             card.style.display = visibleCount <= 6 ? 'flex' : 'none';
@@ -281,6 +221,7 @@ function smApplyServiceFilters() {
             card.style.display = 'none';
         }
     });
-    document.getElementById('sm_load_more_services').style.display = visibleCount > 6 ? 'inline-block' : 'none';
+    const loadMoreBtn = document.getElementById('sm_load_more_services');
+    if (loadMoreBtn) loadMoreBtn.style.display = visibleCount > 6 ? 'inline-block' : 'none';
 }
 </script>
