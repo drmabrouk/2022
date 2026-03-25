@@ -94,6 +94,10 @@ class SM_License_Manager {
                 wp_send_json_error(['message' => 'يرجى إدخال قيمة للبحث']);
             }
 
+            $user = wp_get_current_user();
+            $is_admin = current_user_can('sm_full_access') || current_user_can('manage_options');
+            $my_gov = get_user_meta($user->ID, 'sm_governorate', true);
+
             $blocks = [];
             $grades = SM_Settings::get_professional_grades();
             $specs = SM_Settings::get_specializations();
@@ -109,6 +113,10 @@ class SM_License_Manager {
             if ($type === 'national_id') {
                 $member = SM_DB::get_member_by_national_id($val);
                 if ($member) {
+                    // Security Check
+                    if (!$is_admin && $my_gov && $member->governorate !== $my_gov) {
+                        wp_send_json_error(['message' => 'عذراً، لا تملك صلاحية الوصول لبيانات هذا العضو في فرع آخر.']);
+                    }
                     $blocks[] = [ 'type' => 'profile', 'owner' => self::format_owner_data($member, $grades, $specs) ];
                     if ($member->membership_number) $blocks[] = [ 'type' => 'membership', 'membership' => [ 'number' => $member->membership_number, 'status' => $member->membership_status ?: 'Active', 'expiry' => $member->membership_expiration_date ?: '---' ] ];
                     if ($member->license_number) $blocks[] = [ 'type' => 'practice', 'practice' => [ 'number' => $member->license_number, 'issue_date' => $member->license_issue_date ?: '---', 'expiry' => $member->license_expiration_date ?: '---' ] ];
@@ -123,6 +131,9 @@ class SM_License_Manager {
             if ($type === 'membership' || ($type === 'numeric_short' && empty($blocks))) {
                 $member = SM_DB::get_member_by_membership_number($val);
                 if ($member) {
+                    if (!$is_admin && $my_gov && $member->governorate !== $my_gov) {
+                        wp_send_json_error(['message' => 'عذراً، السجل مطلوب من فرع خارج صلاحياتك.']);
+                    }
                     wp_send_json_success([[ 'type' => 'membership', 'membership' => [ 'number' => $member->membership_number, 'status' => $member->membership_status ?: 'Active', 'expiry' => $member->membership_expiration_date ?: '---' ] ]]);
                 }
             }
@@ -130,6 +141,9 @@ class SM_License_Manager {
             if ($type === 'practice' || ($type === 'numeric_short' && empty($blocks))) {
                 $member = SM_DB::get_member_by_license_number($val);
                 if ($member) {
+                    if (!$is_admin && $my_gov && $member->governorate !== $my_gov) {
+                        wp_send_json_error(['message' => 'عذراً، السجل مطلوب من فرع خارج صلاحياتك.']);
+                    }
                     wp_send_json_success([[ 'type' => 'practice', 'practice' => [ 'number' => $member->license_number, 'issue_date' => $member->license_issue_date ?: '---', 'expiry' => $member->license_expiration_date ?: '---' ] ]]);
                 }
             }
@@ -137,6 +151,9 @@ class SM_License_Manager {
             if ($type === 'facility' || ($type === 'numeric_short' && empty($blocks))) {
                 $member = SM_DB::get_member_by_facility_number($val);
                 if ($member) {
+                    if (!$is_admin && $my_gov && $member->governorate !== $my_gov) {
+                        wp_send_json_error(['message' => 'عذراً، السجل مطلوب من فرع خارج صلاحياتك.']);
+                    }
                     wp_send_json_success([[ 'type' => 'facility', 'facility' => [ 'name' => $member->facility_name, 'number' => $member->facility_number, 'category' => $member->facility_category, 'address' => $member->facility_address ?: '---', 'expiry' => $member->facility_license_expiration_date ?: '---' ] ]]);
                 }
             }
@@ -144,6 +161,9 @@ class SM_License_Manager {
             if ($type === 'tracking') {
                 $track = self::find_tracking_by_code($val);
                 if ($track) {
+                    if (!$is_admin && $my_gov && $track['branch_slug'] !== $my_gov) {
+                        wp_send_json_error(['message' => 'طلب التتبع يخص فرعاً آخر.']);
+                    }
                     wp_send_json_success([[ 'type' => 'tracking', 'tracking' => $track ]]);
                 }
             }
@@ -179,8 +199,17 @@ class SM_License_Manager {
 
     private static function find_tracking_by_national_id($nid) {
         $found = [];
+        $user = wp_get_current_user();
+        $is_admin = current_user_can('sm_full_access') || current_user_can('manage_options');
+        $my_gov = get_user_meta($user->ID, 'sm_governorate', true);
+
         $req = SM_DB::get_membership_request_by_national_id($nid);
-        if ($req) $found[] = self::map_membership_request($req);
+        if ($req) {
+            if ($is_admin || !$my_gov || $req->governorate === $my_gov) {
+                $found[] = self::map_membership_request($req);
+            }
+        }
+
         $member = SM_DB::get_member_by_national_id($nid);
         if ($member) {
             $s_reqs = SM_DB_Services::get_service_requests(['member_id' => $member->id]);
@@ -222,7 +251,8 @@ class SM_License_Manager {
             'notes' => $req->notes ?? ($req->rejection_reason ?? ''),
             'date' => date('Y-m-d', strtotime($req->created_at)),
             'member' => $req->name ?? '---',
-            'branch' => SM_Settings::get_branch_name($req->governorate ?? '')
+            'branch' => SM_Settings::get_branch_name($req->governorate ?? ''),
+            'branch_slug' => $req->governorate ?? ''
         ];
     }
 
@@ -240,7 +270,8 @@ class SM_License_Manager {
             'notes' => $req->admin_notes ?? '',
             'date' => date('Y-m-d', strtotime($req->created_at)),
             'member' => $req->member_name ?: ($req->name ?? '---'),
-            'branch' => SM_Settings::get_branch_name($req->governorate ?? '')
+            'branch' => SM_Settings::get_branch_name($req->governorate ?? ''),
+            'branch_slug' => $req->governorate ?? ''
         ];
     }
 
