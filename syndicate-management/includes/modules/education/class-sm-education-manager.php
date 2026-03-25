@@ -97,6 +97,81 @@ class SM_Education_Manager {
         }
     }
 
+    public static function ajax_start_test_session() {
+        try {
+            if (!is_user_logged_in()) wp_send_json_error(['message' => 'Unauthorized']);
+            check_ajax_referer('sm_test_nonce', 'nonce');
+
+            $aid = intval($_POST['assignment_id']);
+            global $wpdb;
+            $assign = $wpdb->get_row($wpdb->prepare("SELECT * FROM {$wpdb->prefix}sm_test_assignments WHERE id = %d AND user_id = %d", $aid, get_current_user_id()));
+            if (!$assign) wp_send_json_error(['message' => 'Invalid assignment']);
+
+            $wpdb->update("{$wpdb->prefix}sm_test_assignments", [
+                'started_at' => current_time('mysql'),
+                'last_heartbeat' => current_time('mysql'),
+                'status' => 'active'
+            ], ['id' => $aid]);
+
+            self::log_test_action($aid, 'start', 'بدء الاختبار المهني');
+            wp_send_json_success();
+        } catch (Throwable $e) { wp_send_json_error(['message' => $e->getMessage()]); }
+    }
+
+    public static function ajax_log_test_action() {
+        try {
+            if (!is_user_logged_in()) wp_send_json_error(['message' => 'Unauthorized']);
+            check_ajax_referer('sm_test_nonce', 'nonce');
+            $aid = intval($_POST['assignment_id']);
+            $type = sanitize_text_field($_POST['type']);
+            $details = sanitize_textarea_field($_POST['details']);
+            self::log_test_action($aid, $type, $details);
+            wp_send_json_success();
+        } catch (Throwable $e) { wp_send_json_error(['message' => $e->getMessage()]); }
+    }
+
+    private static function log_test_action($aid, $type, $details) {
+        global $wpdb;
+        $wpdb->insert("{$wpdb->prefix}sm_test_logs", [
+            'assignment_id' => $aid,
+            'user_id' => get_current_user_id(),
+            'action_type' => $type,
+            'details' => $details,
+            'created_at' => current_time('mysql')
+        ]);
+    }
+
+    public static function ajax_sync_test_progress() {
+        try {
+            if (!is_user_logged_in()) wp_send_json_error(['message' => 'Unauthorized']);
+            check_ajax_referer('sm_test_nonce', 'nonce');
+
+            $aid = intval($_POST['assignment_id']);
+            $data = $_POST['progress']; // JSON string
+            global $wpdb;
+
+            $wpdb->update("{$wpdb->prefix}sm_test_assignments", [
+                'session_data' => $data,
+                'last_heartbeat' => current_time('mysql')
+            ], ['id' => $aid, 'user_id' => get_current_user_id()]);
+
+            // Check if terminated by admin
+            $status = $wpdb->get_var($wpdb->prepare("SELECT status FROM {$wpdb->prefix}sm_test_assignments WHERE id = %d", $aid));
+            wp_send_json_success(['status' => $status]);
+        } catch (Throwable $e) { wp_send_json_error(['message' => $e->getMessage()]); }
+    }
+
+    public static function ajax_terminate_test_admin() {
+        try {
+            self::check_capability('sm_manage_system');
+            check_ajax_referer('sm_admin_action', 'nonce');
+            $aid = intval($_POST['assignment_id']);
+            global $wpdb;
+            $wpdb->update("{$wpdb->prefix}sm_test_assignments", ['status' => 'terminated'], ['id' => $aid]);
+            wp_send_json_success();
+        } catch (Throwable $e) { wp_send_json_error(['message' => $e->getMessage()]); }
+    }
+
     public static function ajax_submit_survey_response() {
         try {
             if (!is_user_logged_in()) {
@@ -105,6 +180,7 @@ class SM_Education_Manager {
             check_ajax_referer('sm_survey_action', 'nonce');
 
         $sid = intval($_POST['survey_id']);
+        $aid = intval($_POST['assignment_id'] ?? 0);
         $user_id = get_current_user_id();
         $responses = json_decode(stripslashes($_POST['responses'] ?? '[]'), true);
         $questions = SM_DB::get_test_questions($sid);
@@ -114,10 +190,12 @@ class SM_Education_Manager {
             wp_send_json_error(['message' => 'Test not found']);
         }
 
-        // Security: Check attempt limits
-        $attempts_made = SM_DB::get_user_attempts_count($sid, $user_id);
-        if ($attempts_made >= $survey->max_attempts) {
-            wp_send_json_error(['message' => 'لقد استنفدت كافة المحاولات المتاحة لهذا الاختبار.']);
+        // Security: Check attempt limits (skip if it's an auto-submit from active session)
+        if (!$aid) {
+            $attempts_made = SM_DB::get_user_attempts_count($sid, $user_id);
+            if ($attempts_made >= $survey->max_attempts) {
+                wp_send_json_error(['message' => 'لقد استنفدت كافة المحاولات المتاحة لهذا الاختبار.']);
+            }
         }
 
         $score = 0;
@@ -143,6 +221,12 @@ class SM_Education_Manager {
             'score' => $percent,
             'status' => $passed ? 'passed' : 'failed'
         ]);
+
+        if ($aid) {
+            global $wpdb;
+            $wpdb->update("{$wpdb->prefix}sm_test_assignments", ['status' => 'completed'], ['id' => $aid]);
+            self::log_test_action($aid, 'submit', 'تم تسليم الاختبار بنجاح');
+        }
 
         // Notify member of result
         $user = wp_get_current_user();

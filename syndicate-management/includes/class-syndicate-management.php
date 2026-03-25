@@ -128,6 +128,10 @@ class Syndicate_Management {
             'sm_add_test_question' => ['SM_Education_Manager', 'ajax_add_test_question'],
             'sm_delete_test_question' => ['SM_Education_Manager', 'ajax_delete_test_question'],
             'sm_assign_test' => ['SM_Education_Manager', 'ajax_assign_test'],
+            'sm_start_test_session' => ['SM_Education_Manager', 'ajax_start_test_session'],
+            'sm_log_test_action' => ['SM_Education_Manager', 'ajax_log_test_action'],
+            'sm_sync_test_progress' => ['SM_Education_Manager', 'ajax_sync_test_progress'],
+            'sm_terminate_test_admin' => ['SM_Education_Manager', 'ajax_terminate_test_admin'],
             'sm_submit_survey_response' => ['SM_Education_Manager', 'ajax_submit_survey_response'],
             'sm_cancel_survey' => ['SM_Education_Manager', 'ajax_cancel_survey'],
             'sm_get_survey_results' => ['SM_Education_Manager', 'ajax_get_survey_results'],
@@ -175,7 +179,8 @@ class Syndicate_Management {
             'sm_activate_account_step1', 'sm_activate_account_final',
             'sm_submit_membership_request',
             'sm_submit_membership_request_stage3', 'sm_get_test_questions',
-            'sm_track_membership_request'
+            'sm_track_membership_request',
+            'sm_start_test_session', 'sm_log_test_action', 'sm_sync_test_progress'
         ];
 
         foreach ($ajax_map as $action => $callback) {

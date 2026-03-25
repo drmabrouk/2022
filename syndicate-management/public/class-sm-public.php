@@ -100,6 +100,7 @@ class SM_Public {
         SM_Service_Manager::register_shortcodes();
 
         add_shortcode('sm_admin', array($this, 'shortcode_admin_dashboard'));
+        add_shortcode('test', array($this, 'shortcode_test_system'));
         add_shortcode('verify', array($this, 'shortcode_verify'));
         add_shortcode('sm_branches', array($this, 'shortcode_branches'));
         add_shortcode('contact', array($this, 'shortcode_contact'));
@@ -146,6 +147,13 @@ class SM_Public {
     public function shortcode_verify() {
         ob_start();
         include SM_PLUGIN_DIR . 'templates/public-verification.php';
+        return ob_get_clean();
+    }
+
+    public function shortcode_test_system() {
+        if (!is_user_logged_in()) return SM_Auth::shortcode_login();
+        ob_start();
+        include SM_PLUGIN_DIR . 'templates/public-test-system.php';
         return ob_get_clean();
     }
 
