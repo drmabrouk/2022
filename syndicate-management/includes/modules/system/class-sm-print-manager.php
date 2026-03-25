@@ -11,7 +11,11 @@ class SM_Print_Manager {
     public static function ajax_get_custom_print() {
         try {
             self::check_capability('sm_print_reports');
-            check_ajax_referer('sm_admin_action', 'nonce');
+            if (isset($_POST['nonce'])) {
+                check_ajax_referer('sm_admin_action', 'nonce');
+            } else {
+                check_ajax_referer('sm_admin_action', 'sm_admin_nonce');
+            }
 
             $module = sanitize_text_field($_POST['module'] ?? '');
             $fields = isset($_POST['fields']) ? array_map('sanitize_text_field', $_POST['fields']) : [];

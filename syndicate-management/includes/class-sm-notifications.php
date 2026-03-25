@@ -10,7 +10,7 @@ class SM_Notifications {
     }
 
     public static function ajax_get_template_ajax() {
-        if (!current_user_can('sm_manage_system')) {
+        if (!current_user_can('sm_manage_system') && !current_user_can('manage_options')) {
             wp_send_json_error('Unauthorized');
         }
         $type = sanitize_text_field($_REQUEST['type'] ?? ($_REQUEST['template_type'] ?? ''));

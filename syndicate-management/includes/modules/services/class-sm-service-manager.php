@@ -36,7 +36,11 @@ class SM_Service_Manager {
     public static function ajax_add_service() {
         try {
             self::check_capability('sm_manage_system');
-            check_ajax_referer('sm_admin_action', 'nonce');
+            if (isset($_POST['nonce'])) {
+                check_ajax_referer('sm_admin_action', 'nonce');
+            } else {
+                check_ajax_referer('sm_admin_action', 'sm_admin_nonce');
+            }
 
             if (empty($_POST['name'])) {
             wp_send_json_error(['message' => 'اسم الخدمة مطلوب']);
@@ -68,7 +72,11 @@ class SM_Service_Manager {
     public static function ajax_update_service() {
         try {
             self::check_capability('sm_manage_system');
-            check_ajax_referer('sm_admin_action', 'nonce');
+            if (isset($_POST['nonce'])) {
+                check_ajax_referer('sm_admin_action', 'nonce');
+            } else {
+                check_ajax_referer('sm_admin_action', 'sm_admin_nonce');
+            }
             if (SM_DB::update_service(intval($_POST['id']), $_POST)) {
                 wp_send_json_success();
             } else {
@@ -166,7 +174,11 @@ class SM_Service_Manager {
             if (!current_user_can('sm_manage_members')) {
                 wp_send_json_error(['message' => 'Unauthorized']);
             }
-            check_ajax_referer('sm_admin_action', 'nonce');
+            if (isset($_POST['nonce'])) {
+                check_ajax_referer('sm_admin_action', 'nonce');
+            } else {
+                check_ajax_referer('sm_admin_action', 'sm_admin_nonce');
+            }
 
         $id = intval($_POST['id']);
         $status = sanitize_text_field($_POST['status']);
@@ -210,7 +222,11 @@ class SM_Service_Manager {
 
     public static function ajax_track_service_request() {
         try {
-            check_ajax_referer('sm_contact_action');
+            if (isset($_REQUEST['nonce'])) {
+                check_ajax_referer('sm_contact_action', 'nonce');
+            } else {
+                check_ajax_referer('sm_contact_action', '_wpnonce');
+            }
         $code = trim(sanitize_text_field($_POST['tracking_code'] ?? ''));
         if (empty($code)) {
             wp_send_json_error(['message' => 'يرجى إدخال كود التتبع']);

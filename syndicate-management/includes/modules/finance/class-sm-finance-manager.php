@@ -21,7 +21,11 @@ class SM_Finance_Manager {
             if (!current_user_can('sm_manage_finance') && !current_user_can('manage_options')) {
                  wp_send_json_error(['message' => 'Unauthorized access.']);
             }
-            check_ajax_referer('sm_finance_action', 'nonce');
+            if (isset($_POST['nonce'])) {
+                check_ajax_referer('sm_finance_action', 'nonce');
+            } else {
+                check_ajax_referer('sm_finance_action', '_wpnonce');
+            }
             $mid = intval($_POST['member_id']);
             self::validate_member_access($mid);
             if (SM_Finance::record_payment($_POST)) {
@@ -44,7 +48,11 @@ class SM_Finance_Manager {
             if (!current_user_can('sm_full_access') && !current_user_can('manage_options')) {
                 wp_send_json_error(['message' => 'Unauthorized']);
             }
-            check_ajax_referer('sm_admin_action', 'nonce');
+            if (isset($_POST['nonce'])) {
+                check_ajax_referer('sm_admin_action', 'nonce');
+            } else {
+                check_ajax_referer('sm_admin_action', 'sm_admin_nonce');
+            }
             $id = intval($_POST['transaction_id']);
         $pmt = SM_DB::get_payment_by_id($id);
 

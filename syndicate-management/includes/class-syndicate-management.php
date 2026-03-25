@@ -61,9 +61,12 @@ class Syndicate_Management {
 
     private function register_ajax_hooks() {
         $ajax_map = [
+            // Core & Public
             'sm_ping' => [__CLASS__, 'ajax_ping'],
             'sm_get_user_role' => ['SM_Public', 'ajax_get_user_role'],
             'sm_refresh_dashboard' => ['SM_Public', 'ajax_refresh_dashboard'],
+
+            // Members Module
             'sm_get_member' => ['SM_Member_Manager', 'ajax_get_member'],
             'sm_search_members' => ['SM_Member_Manager', 'ajax_search_members'],
             'sm_add_member_ajax' => ['SM_Member_Manager', 'ajax_add_member'],
@@ -78,7 +81,7 @@ class Syndicate_Management {
             'sm_process_update_request_ajax' => ['SM_Member_Manager', 'ajax_process_update_request_ajax'],
             'sm_submit_professional_request' => ['SM_Member_Manager', 'ajax_submit_professional_request'],
             'sm_process_professional_request' => ['SM_Member_Manager', 'ajax_process_professional_request'],
-            'sm_track_membership_request' => ['SM_Member_Manager', 'ajax_track_membership_request'],
+            'sm_track_membership_request' => ['SM_Auth', 'ajax_track_membership_request'],
             'sm_submit_membership_request_stage3' => ['SM_Member_Manager', 'ajax_submit_membership_request_stage3'],
             'sm_upload_document' => ['SM_Member_Manager', 'ajax_upload_document'],
             'sm_get_documents' => ['SM_Member_Manager', 'ajax_get_documents'],
@@ -90,6 +93,8 @@ class Syndicate_Management {
             'sm_update_staff_ajax' => ['SM_Member_Manager', 'ajax_update_staff'],
             'sm_delete_staff_ajax' => ['SM_Member_Manager', 'ajax_delete_staff'],
             'sm_bulk_delete_users_ajax' => ['SM_Member_Manager', 'ajax_bulk_delete_users'],
+
+            // Services Module
             'sm_add_service' => ['SM_Service_Manager', 'ajax_add_service'],
             'sm_submit_service_request' => ['SM_Service_Manager', 'ajax_submit_service_request'],
             'sm_process_service_request' => ['SM_Service_Manager', 'ajax_process_service_request'],
@@ -99,17 +104,23 @@ class Syndicate_Management {
             'sm_delete_service' => ['SM_Service_Manager', 'ajax_delete_service'],
             'sm_restore_service' => ['SM_Service_Manager', 'ajax_restore_service'],
             'sm_print_service_request' => ['SM_Service_Manager', 'ajax_print_service_request'],
+
+            // Finance Module
             'sm_record_payment_ajax' => ['SM_Finance_Manager', 'ajax_record_payment'],
             'sm_delete_transaction_ajax' => ['SM_Finance_Manager', 'ajax_delete_transaction'],
             'sm_get_member_finance_html' => ['SM_Finance_Manager', 'ajax_get_member_finance_html'],
             'sm_export_finance_report' => ['SM_Finance_Manager', 'ajax_export_finance_report'],
             'sm_print_invoice' => ['SM_Finance_Manager', 'ajax_print_invoice'],
+
+            // Licenses Module
             'sm_update_license_ajax' => ['SM_License_Manager', 'ajax_update_license'],
             'sm_update_facility_ajax' => ['SM_License_Manager', 'ajax_update_facility'],
             'sm_verify_document' => ['SM_License_Manager', 'ajax_verify_document'],
             'sm_verify_suggest' => ['SM_License_Manager', 'ajax_verify_suggest'],
             'sm_print_license' => ['SM_License_Manager', 'ajax_print_license'],
             'sm_print_facility' => ['SM_License_Manager', 'ajax_print_facility'],
+
+            // Messaging Module
             'sm_send_message_ajax' => ['SM_Messaging_Manager', 'ajax_send_message'],
             'sm_get_conversation_ajax' => ['SM_Messaging_Manager', 'ajax_get_conversation'],
             'sm_submit_contact_form' => ['SM_Messaging_Manager', 'ajax_submit_contact_form'],
@@ -123,6 +134,8 @@ class Syndicate_Management {
             'sm_get_ticket_details' => ['SM_Messaging_Manager', 'ajax_get_ticket_details'],
             'sm_add_ticket_reply' => ['SM_Messaging_Manager', 'ajax_add_ticket_reply'],
             'sm_close_ticket' => ['SM_Messaging_Manager', 'ajax_close_ticket'],
+
+            // Education Module
             'sm_add_survey' => ['SM_Education_Manager', 'ajax_add_survey'],
             'sm_update_survey' => ['SM_Education_Manager', 'ajax_update_survey'],
             'sm_add_test_question' => ['SM_Education_Manager', 'ajax_add_test_question'],
@@ -133,6 +146,8 @@ class Syndicate_Management {
             'sm_get_survey_results' => ['SM_Education_Manager', 'ajax_get_survey_results'],
             'sm_export_survey_results' => ['SM_Education_Manager', 'ajax_export_survey_results'],
             'sm_get_test_questions' => ['SM_Education_Manager', 'ajax_get_test_questions'],
+
+            // System Module
             'sm_save_branch' => ['SM_System_Manager', 'ajax_save_branch'],
             'sm_delete_branch' => ['SM_System_Manager', 'ajax_delete_branch'],
             'sm_save_alert' => ['SM_System_Manager', 'ajax_save_alert'],
@@ -157,15 +172,20 @@ class Syndicate_Management {
             'sm_get_backup_history' => ['SM_System_Manager', 'ajax_get_backup_history'],
             'sm_update_backup_freq' => ['SM_System_Manager', 'ajax_update_backup_freq'],
             'sm_download_stored_backup' => ['SM_System_Manager', 'ajax_download_stored_backup'],
+            'sm_export_users_csv' => ['SM_Member_Manager', 'ajax_export_users_csv'],
             'sm_get_custom_print' => ['SM_Print_Manager', 'ajax_get_custom_print'],
+            'sm_run_health_check' => ['SM_Health_Check', 'ajax_run_health_check'],
+
+            // Auth Module
             'sm_update_profile_ajax' => ['SM_Auth', 'ajax_update_profile'],
             'sm_forgot_password_otp' => ['SM_Auth', 'ajax_forgot_password_otp'],
             'sm_reset_password_otp' => ['SM_Auth', 'ajax_reset_password_otp'],
             'sm_activate_account_step1' => ['SM_Auth', 'ajax_activate_account_step1'],
             'sm_activate_account_final' => ['SM_Auth', 'ajax_activate_account_final'],
             'sm_submit_membership_request' => ['SM_Auth', 'ajax_submit_membership_request'],
+
+            // Notifications
             'sm_get_template_ajax' => ['SM_Notifications', 'ajax_get_template_ajax'],
-            'sm_run_health_check' => ['SM_Health_Check', 'ajax_run_health_check'],
         ];
 
         $public_actions = [
