@@ -37,8 +37,7 @@
                         <p style="font-size: 13px; color: #64748b; line-height: 1.6; margin-bottom: 20px; flex: 1;"><?php echo esc_html($s->description); ?></p>
                         <div style="display: flex; justify-content: space-between; align-items: center; margin-top: auto; padding-top: 20px; border-top: 1px solid #f1f5f9;">
                             <div style="display: flex; flex-direction: column;"><span style="font-size: 10px; color: #94a3b8; font-weight: 600;">رسوم الخدمة</span><span style="font-weight: 900; color: var(--sm-primary-color); font-size: 1.1em;"><?php echo $s->fees > 0 ? number_format($s->fees, 2) . ' <small>ج.م</small>' : 'خدمة مجانية'; ?></span></div>
-                            <?php $btn_onclick = $is_logged_in ? "smOpenProgressiveForm(this, " . esc_attr(json_encode($s)) . ")" : "window.location.href='" . esc_url($login_url) . "'"; ?>
-                            <button onclick='<?php echo $btn_onclick; ?>' class="sm-btn-sleek sm-service-trigger" style="background: var(--sm-dark-color); color: #fff; padding: 8px 20px; border: none; border-radius: 12px; font-weight: 700; font-size: 13px; cursor: pointer; transition: 0.3s;">طلب خدمة</button>
+                            <button onclick='smHandleServiceClick(this, <?php echo esc_attr(json_encode($s)); ?>)' class="sm-btn-sleek sm-service-trigger" style="background: var(--sm-dark-color); color: #fff; padding: 8px 20px; border: none; border-radius: 12px; font-weight: 700; font-size: 13px; cursor: pointer; transition: 0.3s;">طلب خدمة</button>
                         </div>
                     </div>
                 <?php endforeach; endif; ?>
@@ -92,6 +91,11 @@
 </style>
 
 <script>
+function smNotify(msg, isError = false) {
+    if (typeof smShowNotification === 'function') smShowNotification(msg, isError);
+    else alert(msg);
+}
+
 window.smLoadMoreServices = function() {
     const hiddenCards = document.querySelectorAll('.sm-service-card-modern[style*="display: none"]');
     for (let i = 0; i < Math.min(hiddenCards.length, 6); i++) {
@@ -102,20 +106,31 @@ window.smLoadMoreServices = function() {
     }
 };
 
-window.smOpenProgressiveForm = function(btn, s) {
+window.smHandleServiceClick = function(btn, s) {
+    const isLoggedIn = <?php echo is_user_logged_in() ? 'true' : 'false'; ?>;
     const member = <?php echo $current_member ? wp_json_encode($current_member) : 'null'; ?>;
-    if (!member) {
-        location.href = '<?php echo home_url("/sm-login"); ?>';
+
+    if (!isLoggedIn) {
+        window.location.href = '<?php echo home_url("/sm-login"); ?>';
         return;
     }
 
+    if (!member) {
+        smNotify('عذراً، هذه الخدمة متاحة فقط للأعضاء المسجلين. يرجى التواصل مع الإدارة لتفعيل ملفك العضوي.', true);
+        return;
+    }
+
+    smOpenProgressiveForm(btn, s, member);
+};
+
+window.smOpenProgressiveForm = function(btn, s, member) {
     const container = document.getElementById('sm-service-dropdown-container');
     const body = document.getElementById('sm-dropdown-body');
     container.style.display = 'flex';
 
     let currentStep = 1;
     let currentFormData = {};
-    const branchInfo = <?php echo $current_member ? wp_json_encode(SM_DB::get_branches_data()) : '[]'; ?>;
+    const branchInfo = <?php echo wp_json_encode(SM_DB::get_branches_data()); ?>;
     const myBranch = branchInfo.find(b => b.slug === member.governorate) || branchInfo[0] || {};
     let reqFields = []; try { reqFields = JSON.parse(s.required_fields); } catch(e){}
 
@@ -274,7 +289,7 @@ window.smOpenProgressiveForm = function(btn, s) {
             const inputs = document.querySelectorAll('#service-req-fields input');
             for(let i of inputs) {
                 if(i.required && !i.value) {
-                    smShowNotification('يرجى ملء الحقول المطلوبة.', true);
+                    smNotify('يرجى ملء الحقول المطلوبة.', true);
                     return;
                 }
                 currentFormData[i.id.replace('f_','')] = i.value;
@@ -282,7 +297,7 @@ window.smOpenProgressiveForm = function(btn, s) {
         }
         if (step === 3 && currentStep === 2) {
             if (!document.getElementById('sm_terms_agree').checked) {
-                smShowNotification('يجب الموافقة على الشروط القانونية للمتابعة.', true);
+                smNotify('يجب الموافقة على الشروط القانونية للمتابعة.', true);
                 return;
             }
         }
@@ -290,11 +305,11 @@ window.smOpenProgressiveForm = function(btn, s) {
             const code = document.getElementById('sm_trans_code').value.trim();
             const file = document.getElementById('sm_trans_file').files[0];
             if (!code) {
-                smShowNotification('يرجى إدخال رقم مرجع التحويل البنكي.', true);
+                smNotify('يرجى إدخال رقم مرجع التحويل البنكي.', true);
                 return;
             }
             if (!file && !currentFormData.payment_receipt) {
-                smShowNotification('يرجى إرفاق صورة إيصال السداد.', true);
+                smNotify('يرجى إرفاق صورة إيصال السداد.', true);
                 return;
             }
             currentFormData.transaction_code = code;
@@ -343,7 +358,7 @@ window.smOpenProgressiveForm = function(btn, s) {
 
     window.smCopyRefCode = (code) => {
         navigator.clipboard.writeText(code).then(() => {
-            smShowNotification('تم نسخ كود التتبع بنجاح.');
+            smNotify('تم نسخ كود التتبع بنجاح.');
         });
     };
 
