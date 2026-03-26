@@ -1,12 +1,16 @@
 <?php if (!defined('ABSPATH')) exit; ?>
 <div class="sm-content-wrapper" dir="rtl">
-    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 30px;">
-        <h3 style="margin:0; border:none; padding:0;">إدارة مستخدمي النظام</h3>
+    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 25px; background: #fff; padding: 20px 25px; border-radius: 12px; border: 1px solid var(--sm-border-color);">
+        <div>
+            <h3 style="margin:0; border:none; padding:0; font-weight: 900; color: var(--sm-dark-color);">مركز التحكم بمستخدمي النظام</h3>
+            <p style="margin: 5px 0 0 0; font-size: 12px; color: #64748b;">إدارة شاملة لكافة حسابات المسؤولين، الموظفين، وأعضاء النقابة</p>
+        </div>
         <?php if (current_user_can('sm_manage_users') || current_user_can('manage_options')): ?>
             <div style="display:flex; gap:10px;">
-                <button onclick="executeBulkDeleteUsers()" class="sm-btn" style="width:auto; background:#e53e3e;">حذف المستخدمين المحددين</button>
-                <button onclick="document.getElementById('staff-csv-import-form').style.display='block'" class="sm-btn" style="width:auto; background:var(--sm-secondary-color);">استيراد جماعي (CSV)</button>
-                <button onclick="document.getElementById('add-staff-modal').style.display='flex'" class="sm-btn" style="width:auto;">+ إضافة مستخدم جديد</button>
+                <button onclick="smExportUsers()" class="sm-btn sm-btn-outline" style="width:auto;"><span class="dashicons dashicons-download" style="margin-top:4px;"></span> تصدير البيانات</button>
+                <button onclick="document.getElementById('staff-csv-import-form').style.display='block'" class="sm-btn" style="width:auto; background:var(--sm-secondary-color);"><span class="dashicons dashicons-upload" style="margin-top:4px;"></span> استيراد (CSV)</button>
+                <button onclick="document.getElementById('add-staff-modal').style.display='flex'" class="sm-btn" style="width:auto;"><span class="dashicons dashicons-plus-alt" style="margin-top:4px;"></span> إضافة مستخدم</button>
+                <button onclick="executeBulkDeleteUsers()" class="sm-btn" style="width:auto; background:#e53e3e; padding: 0 15px;"><span class="dashicons dashicons-trash" style="margin-top:4px;"></span> حذف محدد</button>
             </div>
         <?php endif; ?>
     </div>
@@ -60,6 +64,7 @@
     $is_sys_manager = in_array('sm_system_admin', (array)$current_user->roles);
     $is_syndicate_admin = in_array('sm_syndicate_admin', (array)$current_user->roles);
     $my_gov = get_user_meta($current_user->ID, 'sm_governorate', true);
+    $db_branches = SM_DB::get_branches_data();
     ?>
 
     <?php if ($is_sys_manager): ?>
@@ -71,31 +76,50 @@
     </div>
     <?php endif; ?>
 
-    <div style="background: white; padding: 30px; border: 1px solid var(--sm-border-color); border-radius: var(--sm-radius); margin-bottom: 20px; box-shadow: var(--sm-shadow);">
-        <form method="get" style="display: grid; grid-template-columns: 1fr 1fr auto; gap: 20px; align-items: end;">
+    <div style="background: white; padding: 25px; border: 1px solid var(--sm-border-color); border-radius: var(--sm-radius); margin-bottom: 25px; box-shadow: var(--sm-shadow);">
+        <form method="get" style="display: grid; grid-template-columns: 2fr 1fr 1fr 1fr auto; gap: 15px; align-items: end;">
             <input type="hidden" name="page" value="sm-dashboard">
             <input type="hidden" name="sm_tab" value="staff">
 
             <div class="sm-form-group" style="margin-bottom:0;">
-                <label class="sm-label">بحث عن مستخدم (اسم/بريد/كود):</label>
-                <input type="text" name="staff_search" class="sm-input" value="<?php echo esc_attr(isset($_GET['staff_search']) ? $_GET['staff_search'] : ''); ?>" placeholder="أدخل بيانات البحث...">
+                <label class="sm-label" style="font-size: 11px; font-weight: 800;">البحث المتقدم (اسم، بريد، كود، هوية):</label>
+                <input type="text" name="staff_search" class="sm-input" value="<?php echo esc_attr(isset($_GET['staff_search']) ? $_GET['staff_search'] : ''); ?>" placeholder="كلمات البحث...">
             </div>
 
-            <?php if ($is_sys_manager): ?>
             <div class="sm-form-group" style="margin-bottom:0;">
-                <label class="sm-label">تصفية حسب الدور:</label>
+                <label class="sm-label" style="font-size: 11px; font-weight: 800;">الدور الوظيفي:</label>
                 <select name="role_filter" class="sm-select">
-                    <option value="">كل الأدوار</option>
-                    <option value="sm_system_admin" <?php selected($_GET['role_filter'] ?? '', 'sm_system_admin'); ?>>مدير النظام</option>
-                    <option value="sm_syndicate_admin" <?php selected($_GET['role_filter'] ?? '', 'sm_syndicate_admin'); ?>>مسؤول نقابة</option>
-                    <option value="sm_syndicate_member" <?php selected($_GET['role_filter'] ?? '', 'sm_syndicate_member'); ?>>عضو نقابة</option>
+                    <option value="">كافة الأدوار</option>
+                    <?php
+                    $roles_obj = wp_roles();
+                    foreach($roles_obj->roles as $rk => $rd): ?>
+                        <option value="<?php echo esc_attr($rk); ?>" <?php selected($_GET['role_filter'] ?? '', $rk); ?>><?php echo esc_html(function_exists('translate_user_role') ? translate_user_role($rd['name']) : $rd['name']); ?></option>
+                    <?php endforeach; ?>
                 </select>
             </div>
-            <?php endif; ?>
 
-            <div style="display: flex; gap: 10px;">
-                <button type="submit" class="sm-btn">تطبيق البحث</button>
-                <a href="<?php echo add_query_arg(array('sm_tab'=>'staff'), remove_query_arg(array('staff_search', 'role_filter'))); ?>" class="sm-btn sm-btn-outline" style="text-decoration:none;">إعادة ضبط</a>
+            <div class="sm-form-group" style="margin-bottom:0;">
+                <label class="sm-label" style="font-size: 11px; font-weight: 800;">الفرع / اللجنة:</label>
+                <select name="gov_filter" class="sm-select">
+                    <option value="">كافة الفروع</option>
+                    <?php
+                        foreach($db_branches as $db) echo "<option value='".esc_attr($db->slug)."' ".selected($_GET['gov_filter'] ?? '', $db->slug, false).">".esc_html($db->name)."</option>";
+                    ?>
+                </select>
+            </div>
+
+            <div class="sm-form-group" style="margin-bottom:0;">
+                <label class="sm-label" style="font-size: 11px; font-weight: 800;">حالة الحساب:</label>
+                <select name="status_filter" class="sm-select">
+                    <option value="">الكل</option>
+                    <option value="active" <?php selected($_GET['status_filter'] ?? '', 'active'); ?>>نشط</option>
+                    <option value="restricted" <?php selected($_GET['status_filter'] ?? '', 'restricted'); ?>>مقيد / معطل</option>
+                </select>
+            </div>
+
+            <div style="display: flex; gap: 8px;">
+                <button type="submit" class="sm-btn" style="width: auto; padding: 0 20px;">فلترة</button>
+                <a href="<?php echo add_query_arg(array('sm_tab'=>'staff'), remove_query_arg(array('staff_search', 'role_filter', 'gov_filter', 'status_filter'))); ?>" class="sm-btn sm-btn-outline" style="text-decoration:none; width: auto; padding: 0 15px;">تصفير</a>
             </div>
         </form>
     </div>
@@ -128,11 +152,11 @@
 
                 $args = array(
                     'number' => $limit,
-                    'offset' => $offset
+                    'offset' => $offset,
+                    'role' => $_GET['role_filter'] ?? '',
+                    'governorate' => $_GET['gov_filter'] ?? '',
+                    'account_status' => $_GET['status_filter'] ?? ''
                 );
-                if (!empty($_GET['role_filter'])) {
-                    $args['role'] = sanitize_text_field($_GET['role_filter']);
-                }
 
                 if (!empty($_GET['staff_search'])) {
                     $args['search'] = '*' . esc_attr($_GET['staff_search']) . '*';
@@ -147,7 +171,7 @@
                         $role = (array)$u->roles;
                         $role_slug = reset($role);
                         if ($u->ID === get_current_user_id()) continue; // Skip current user
-                        $assigned = get_user_meta($u->ID, 'sm_assigned_specializations', true) ?: (get_user_meta($u->ID, 'sm_supervised_grades', true) ?: array());
+                        $member = SM_DB::get_member_by_wp_user_id($u->ID);
                         $user_data_attr = array(
                             "id" => $u->ID,
                             "name" => $u->display_name,
@@ -155,12 +179,27 @@
                             "login" => $u->user_login,
                             "role" => $role_slug,
                             "rank" => get_user_meta($u->ID, "sm_rank", true),
-                            "assigned" => $assigned,
                             "officer_id" => get_user_meta($u->ID, "sm_syndicateMemberIdAttr", true),
-                            "national_id" => get_user_meta($u->ID, "sm_national_id", true),
                             "phone" => get_user_meta($u->ID, "sm_phone", true),
                             "governorate" => get_user_meta($u->ID, "sm_governorate", true),
-                            "status" => get_user_meta($u->ID, "sm_account_status", true) ?: "active"
+                            "status" => get_user_meta($u->ID, "sm_account_status", true) ?: "active",
+                            // Full Member Fields
+                            "member_id" => $member ? $member->id : '',
+                            "national_id" => $member ? $member->national_id : get_user_meta($u->ID, "sm_national_id", true),
+                            "professional_grade" => $member ? $member->professional_grade : '',
+                            "specialization" => $member ? $member->specialization : '',
+                            "academic_degree" => $member ? $member->academic_degree : '',
+                            "university" => $member ? $member->university : '',
+                            "faculty" => $member ? $member->faculty : '',
+                            "department" => $member ? $member->department : '',
+                            "graduation_date" => $member ? $member->graduation_date : '',
+                            "residence_governorate" => $member ? $member->residence_governorate : '',
+                            "residence_city" => $member ? $member->residence_city : '',
+                            "residence_street" => $member ? $member->residence_street : '',
+                            "membership_number" => $member ? $member->membership_number : '',
+                            "membership_start_date" => $member ? $member->membership_start_date : '',
+                            "membership_expiration_date" => $member ? $member->membership_expiration_date : '',
+                            "notes" => $member ? $member->notes : ''
                         );
                     ?>
                         <tr class="user-row" data-user-id="<?php echo $u->ID; ?>">
@@ -182,71 +221,143 @@
                                 </div>
                             </td>
                         </tr>
-                        <tr id="edit-panel-<?php echo $u->ID; ?>" class="edit-panel-row" style="display:none; background: #f8fafc; border-right: 4px solid var(--sm-primary-color);">
-                            <td colspan="8" style="padding: 30px;">
+                        <tr id="edit-panel-<?php echo $u->ID; ?>" class="edit-panel-row" style="display:none; background: #fdfdfd; border-right: 5px solid var(--sm-primary-color);">
+                            <td colspan="8" style="padding: 35px;">
                                 <form onsubmit="saveInlineEdit(event, <?php echo $u->ID; ?>)" class="inline-edit-form">
                                     <?php wp_nonce_field('sm_syndicateMemberAction', 'sm_nonce'); ?>
                                     <input type="hidden" name="edit_officer_id" value="<?php echo $u->ID; ?>">
-                                    <div style="display:grid; grid-template-columns: repeat(3, 1fr); gap:15px;">
+                                    <input type="hidden" name="member_id" value="<?php echo esc_attr($user_data_attr['member_id']); ?>">
+
+                                    <!-- Core Account Information -->
+                                    <h4 style="margin: 0 0 20px 0; padding-bottom: 10px; border-bottom: 2px solid #f1f5f9; color: var(--sm-dark-color);"><span class="dashicons dashicons-admin-network" style="margin-top:4px;"></span> إدارة حساب المستخدم والصلاحيات</h4>
+                                    <div style="display:grid; grid-template-columns: repeat(4, 1fr); gap:15px; margin-bottom: 30px; background: #f8fafc; padding: 20px; border-radius: 12px; border: 1px solid #e2e8f0;">
                                         <div class="sm-form-group">
-                                            <label class="sm-label">الاسم الكامل:</label>
+                                            <label class="sm-label">الاسم المعروض (Display Name):</label>
                                             <input type="text" name="display_name" value="<?php echo esc_attr($u->display_name); ?>" class="sm-input" required>
                                         </div>
                                         <div class="sm-form-group">
-                                            <label class="sm-label">الرقم القومي / الكود:</label>
-                                            <input type="text" name="officer_id" value="<?php echo esc_attr($user_data_attr['officer_id']); ?>" class="sm-input" required>
-                                        </div>
-                                        <div class="sm-form-group">
-                                            <label class="sm-label">رقم الهاتف:</label>
-                                            <input type="text" name="phone" value="<?php echo esc_attr($user_data_attr['phone']); ?>" class="sm-input">
-                                        </div>
-                                        <div class="sm-form-group">
-                                            <label class="sm-label">البريد الإلكتروني:</label>
-                                            <input type="email" name="user_email" value="<?php echo esc_attr($u->user_email); ?>" class="sm-input" required>
-                                        </div>
-                                        <div class="sm-form-group">
-                                            <label class="sm-label">الدور:</label>
+                                            <label class="sm-label">الدور الوظيفي / الصلاحيات:</label>
                                             <select name="role" class="sm-select" onchange="smToggleRankField(this, 'rank-group-<?php echo $u->ID; ?>')">
-                                                <?php foreach($wp_roles->roles as $rk => $rd): ?>
-                                                    <option value="<?php echo esc_attr($rk); ?>" <?php selected($role_slug, $rk); ?>><?php echo esc_html(translate_user_role($rd['name'])); ?></option>
+                                                <?php
+                                                $roles_obj = wp_roles();
+                                                foreach($roles_obj->roles as $rk => $rd): ?>
+                                                    <option value="<?php echo esc_attr($rk); ?>" <?php selected($role_slug, $rk); ?>><?php echo esc_html(function_exists('translate_user_role') ? translate_user_role($rd['name']) : $rd['name']); ?></option>
                                                 <?php endforeach; ?>
                                             </select>
                                         </div>
-                                        <div class="sm-form-group" id="rank-group-<?php echo $u->ID; ?>" style="<?php echo ($role_slug === 'sm_syndicate_member' || $role_slug === 'sm_member') ? '' : 'display:none;'; ?>">
-                                            <label class="sm-label">الرتبة المهنية:</label>
-                                            <select name="rank" class="sm-select">
-                                                <option value="">-- اختر الرتبة --</option>
-                                                <?php foreach (SM_Settings::get_professional_grades() as $k => $v) echo "<option value='$k' ".selected($user_data_attr['rank'], $k, false).">$v</option>"; ?>
-                                            </select>
-                                        </div>
                                         <div class="sm-form-group">
-                                            <label class="sm-label">الفرع:</label>
+                                            <label class="sm-label">الفرع الإداري المباشر:</label>
                                             <select name="governorate" class="sm-select">
-                                                <option value="">-- اختر الفرع --</option>
+                                                <option value="">-- بلا فرع محدد --</option>
                                                 <?php
-                                                    if (!empty($db_branches)) {
-                                                        foreach($db_branches as $db) echo "<option value='".esc_attr($db->slug)."' ".selected($user_data_attr['governorate'], $db->slug, false).">".esc_html($db->name)."</option>";
-                                                    } else {
-                                                        foreach (SM_Settings::get_governorates() as $k => $v) echo "<option value='$k' ".selected($user_data_attr['governorate'], $k, false).">$v</option>";
-                                                    }
+                                                    foreach($db_branches as $db) echo "<option value='".esc_attr($db->slug)."' ".selected($user_data_attr['governorate'], $db->slug, false).">".esc_html($db->name)."</option>";
                                                 ?>
                                             </select>
                                         </div>
                                         <div class="sm-form-group">
-                                            <label class="sm-label">حالة الحساب:</label>
+                                            <label class="sm-label">حالة الحساب الإلكتروني:</label>
                                             <select name="account_status" class="sm-select">
-                                                <option value="active" <?php selected($user_data_attr['status'], 'active'); ?>>نشط</option>
-                                                <option value="restricted" <?php selected($user_data_attr['status'], 'restricted'); ?>>مقيد</option>
+                                                <option value="active" <?php selected($user_data_attr['status'], 'active'); ?>>✅ نشط / مفعل</option>
+                                                <option value="restricted" <?php selected($user_data_attr['status'], 'restricted'); ?>>🚫 مقيد / معطل</option>
                                             </select>
                                         </div>
                                         <div class="sm-form-group">
-                                            <label class="sm-label">تغيير كلمة المرور (اختياري):</label>
+                                            <label class="sm-label">تحديث كلمة المرور (اختياري):</label>
                                             <input type="password" name="user_pass" class="sm-input" placeholder="********">
                                         </div>
+                                        <div class="sm-form-group">
+                                            <label class="sm-label">البريد الإلكتروني للحساب:</label>
+                                            <input type="email" name="user_email" value="<?php echo esc_attr($u->user_email); ?>" class="sm-input" required>
+                                        </div>
                                     </div>
+
+                                    <!-- Member Integrated Profile -->
+                                    <h4 style="margin: 0 0 20px 0; padding-bottom: 10px; border-bottom: 2px solid #f1f5f9; color: var(--sm-dark-color);"><span class="dashicons dashicons-id-alt" style="margin-top:4px;"></span> البيانات المهنية والأكاديمية المرتبطة</h4>
+                                    <div style="display:grid; grid-template-columns: repeat(4, 1fr); gap:15px; margin-bottom: 30px;">
+                                        <div class="sm-form-group">
+                                            <label class="sm-label">الاسم الرباعي (بالهوية):</label>
+                                            <input type="text" name="name" value="<?php echo esc_attr($user_data_attr['name']); ?>" class="sm-input">
+                                        </div>
+                                        <div class="sm-form-group">
+                                            <label class="sm-label">الرقم القومي (14 رقم):</label>
+                                            <input type="text" name="national_id" value="<?php echo esc_attr($user_data_attr['national_id']); ?>" class="sm-input" maxlength="14">
+                                        </div>
+                                        <div class="sm-form-group">
+                                            <label class="sm-label">كود الضابط / التعريفي:</label>
+                                            <input type="text" name="officer_id" value="<?php echo esc_attr($user_data_attr['officer_id']); ?>" class="sm-input">
+                                        </div>
+                                        <div class="sm-form-group">
+                                            <label class="sm-label">رقم القيد / العضوية:</label>
+                                            <input type="text" name="membership_number" value="<?php echo esc_attr($user_data_attr['membership_number']); ?>" class="sm-input">
+                                        </div>
+                                        <div class="sm-form-group">
+                                            <label class="sm-label">الدرجة الوظيفية:</label>
+                                            <select name="professional_grade" class="sm-select">
+                                                <option value="">-- اختر الدرجة --</option>
+                                                <?php foreach (SM_Settings::get_professional_grades() as $k => $v) echo "<option value='$k' ".selected($user_data_attr['professional_grade'], $k, false).">$v</option>"; ?>
+                                            </select>
+                                        </div>
+                                        <div class="sm-form-group">
+                                            <label class="sm-label">التخصص الدقيق:</label>
+                                            <select name="specialization" class="sm-select">
+                                                <option value="">-- اختر التخصص --</option>
+                                                <?php foreach (SM_Settings::get_specializations() as $k => $v) echo "<option value='$k' ".selected($user_data_attr['specialization'], $k, false).">$v</option>"; ?>
+                                            </select>
+                                        </div>
+                                        <div class="sm-form-group">
+                                            <label class="sm-label">الجامعة:</label>
+                                            <select name="university" class="sm-select">
+                                                <option value="">-- اختر الجامعة --</option>
+                                                <?php foreach (SM_Settings::get_universities() as $k => $v) echo "<option value='$k' ".selected($user_data_attr['university'], $k, false).">$v</option>"; ?>
+                                            </select>
+                                        </div>
+                                        <div class="sm-form-group">
+                                            <label class="sm-label">الكلية:</label>
+                                            <select name="faculty" class="sm-select">
+                                                <option value="">-- اختر الكلية --</option>
+                                                <?php foreach (SM_Settings::get_faculties() as $k => $v) echo "<option value='$k' ".selected($user_data_attr['faculty'], $k, false).">$v</option>"; ?>
+                                            </select>
+                                        </div>
+                                        <div class="sm-form-group">
+                                            <label class="sm-label">رقم الهاتف الجوال:</label>
+                                            <input type="text" name="phone" value="<?php echo esc_attr($user_data_attr['phone']); ?>" class="sm-input">
+                                        </div>
+                                    </div>
+
+                                    <h4 style="margin: 0 0 20px 0; padding-bottom: 10px; border-bottom: 2px solid #f1f5f9; color: var(--sm-dark-color);"><span class="dashicons dashicons-location" style="margin-top:4px;"></span> بيانات السكن وتواريخ العضوية</h4>
+                                    <div style="display:grid; grid-template-columns: repeat(4, 1fr); gap:15px; margin-bottom: 20px;">
+                                        <div class="sm-form-group">
+                                            <label class="sm-label">محافظة السكن:</label>
+                                            <select name="residence_governorate" class="sm-select">
+                                                <option value="">-- اختر المحافظة --</option>
+                                                <?php foreach (SM_Settings::get_governorates() as $k => $v) echo "<option value='$k' ".selected($user_data_attr['residence_governorate'], $k, false).">$v</option>"; ?>
+                                            </select>
+                                        </div>
+                                        <div class="sm-form-group">
+                                            <label class="sm-label">المدينة / المركز:</label>
+                                            <input type="text" name="residence_city" value="<?php echo esc_attr($user_data_attr['residence_city']); ?>" class="sm-input">
+                                        </div>
+                                        <div class="sm-form-group" style="grid-column: span 2;">
+                                            <label class="sm-label">العنوان بالتفصيل:</label>
+                                            <input type="text" name="residence_street" value="<?php echo esc_attr($user_data_attr['residence_street']); ?>" class="sm-input">
+                                        </div>
+                                        <div class="sm-form-group">
+                                            <label class="sm-label">تاريخ بدء القيد:</label>
+                                            <input type="date" name="membership_start_date" value="<?php echo esc_attr($user_data_attr['membership_start_date']); ?>" class="sm-input">
+                                        </div>
+                                        <div class="sm-form-group">
+                                            <label class="sm-label">تاريخ انتهاء العضوية:</label>
+                                            <input type="date" name="membership_expiration_date" value="<?php echo esc_attr($user_data_attr['membership_expiration_date']); ?>" class="sm-input">
+                                        </div>
+                                        <div class="sm-form-group" style="grid-column: span 2;">
+                                            <label class="sm-label">ملاحظات إدارية:</label>
+                                            <textarea name="notes" class="sm-textarea" rows="1"><?php echo esc_textarea($user_data_attr['notes']); ?></textarea>
+                                        </div>
+                                    </div>
+
                                     <div style="margin-top: 30px; display: flex; gap: 10px; justify-content: flex-end;">
-                                        <button type="submit" class="sm-btn" style="width: auto; padding: 0 30px;">حفظ التعديلات</button>
-                                        <button type="button" onclick="document.getElementById('edit-panel-<?php echo $u->ID; ?>').style.display='none'" class="sm-btn sm-btn-outline" style="width: auto; padding: 0 30px;">إلغاء</button>
+                                        <button type="submit" class="sm-btn" style="width: 200px; height: 45px; font-weight: 800;">تحديث البيانات بالكامل</button>
+                                        <button type="button" onclick="document.getElementById('edit-panel-<?php echo $u->ID; ?>').style.display='none'" class="sm-btn sm-btn-outline" style="width: auto; padding: 0 30px;">إلغاء التعديل</button>
                                     </div>
                                 </form>
                             </td>
@@ -273,85 +384,80 @@
 
 
     <div id="add-staff-modal" class="sm-modal-overlay">
-        <div class="sm-modal-content">
+        <div class="sm-modal-content" style="max-width: 900px;">
             <div class="sm-modal-header">
-                <h3>إضافة حساب مستخدم جديد</h3>
+                <h3>إضافة حساب مستخدم ونظامي جديد</h3>
                 <button class="sm-modal-close" onclick="document.getElementById('add-staff-modal').style.display='none'">&times;</button>
             </div>
-            <form id="add-staff-form">
+            <form id="add-staff-form" style="padding: 25px;">
                 <?php wp_nonce_field('sm_syndicateMemberAction', 'sm_nonce'); ?>
-                <div style="display:grid; grid-template-columns: 1fr 1fr; gap:20px;">
+
+                <h4 style="margin: 0 0 15px 0; color: var(--sm-primary-color); border-bottom: 1px solid #eee; padding-bottom: 8px;">بيانات الحساب الأساسية</h4>
+                <div style="display:grid; grid-template-columns: 1fr 1fr 1fr; gap:15px; margin-bottom: 25px;">
+                    <div class="sm-form-group"><label class="sm-label">اسم الدخول (Username):</label><input type="text" name="user_login" class="sm-input" required></div>
+                    <div class="sm-form-group"><label class="sm-label">البريد الإلكتروني:</label><input type="email" name="user_email" class="sm-input" required></div>
+                    <div class="sm-form-group"><label class="sm-label">كلمة المرور (اختياري):</label><input type="password" name="user_pass" class="sm-input" placeholder="توليد تلقائي"></div>
                     <div class="sm-form-group">
-                        <label class="sm-label">الاسم الكامل:</label>
-                        <input type="text" name="display_name" class="sm-input" required>
-                    </div>
-                    <div class="sm-form-group">
-                        <label class="sm-label">الرقم القومي / كود المستخدم:</label>
-                        <input type="text" name="officer_id" class="sm-input" required>
-                    </div>
-                    <div class="sm-form-group">
-                        <label class="sm-label">اختيار الدور:</label>
-                        <select name="role" id="add_off_role" class="sm-select" onchange="smToggleRankField(this, 'add_off_rank_group')">
+                        <label class="sm-label">الدور الوظيفي:</label>
+                        <select name="role" class="sm-select">
                             <?php
-                            global $wp_roles;
-                            foreach($wp_roles->roles as $role_key => $role_data): ?>
-                                <option value="<?php echo esc_attr($role_key); ?>" <?php selected($role_key, 'sm_syndicate_member'); ?>><?php echo esc_html(translate_user_role($role_data['name'])); ?></option>
+                            $roles_obj = wp_roles();
+                            foreach($roles_obj->roles as $rk => $rd): ?>
+                                <option value="<?php echo esc_attr($rk); ?>" <?php selected($rk, 'sm_syndicate_member'); ?>><?php echo esc_html(function_exists('translate_user_role') ? translate_user_role($rd['name']) : $rd['name']); ?></option>
                             <?php endforeach; ?>
                         </select>
                     </div>
-                    <div class="sm-form-group" id="add_off_rank_group">
-                        <label class="sm-label">الرتبة / الدرجة المهنية:</label>
-                        <select name="rank" class="sm-select">
-                            <option value="">-- اختر الرتبة --</option>
+                    <div class="sm-form-group">
+                        <label class="sm-label">الفرع الملحق به:</label>
+                        <select name="governorate" class="sm-select">
+                            <option value="">-- اختر الفرع --</option>
+                            <?php foreach($db_branches as $db) echo "<option value='".esc_attr($db->slug)."'>".esc_html($db->name)."</option>"; ?>
+                        </select>
+                    </div>
+                    <div class="sm-form-group"><label class="sm-label">رقم التواصل:</label><input type="text" name="phone" class="sm-input"></div>
+                </div>
+
+                <h4 style="margin: 0 0 15px 0; color: var(--sm-primary-color); border-bottom: 1px solid #eee; padding-bottom: 8px;">بيانات العضوية (للمزامنة)</h4>
+                <div style="display:grid; grid-template-columns: 1fr 1fr 1fr; gap:15px;">
+                    <div class="sm-form-group"><label class="sm-label">الاسم الكامل (رباعي):</label><input type="text" name="name" class="sm-input" required></div>
+                    <div class="sm-form-group"><label class="sm-label">الرقم القومي (14 رقم):</label><input type="text" name="national_id" class="sm-input" maxlength="14" required></div>
+                    <div class="sm-form-group"><label class="sm-label">كود الضابط / التعريفي:</label><input type="text" name="officer_id" class="sm-input"></div>
+                    <div class="sm-form-group">
+                        <label class="sm-label">الدرجة الوظيفية:</label>
+                        <select name="professional_grade" class="sm-select">
+                            <option value="">-- اختر الدرجة --</option>
                             <?php foreach (SM_Settings::get_professional_grades() as $k => $v) echo "<option value='$k'>$v</option>"; ?>
                         </select>
                     </div>
                     <div class="sm-form-group">
-                        <label class="sm-label">الفرع:</label>
-                        <select name="governorate" class="sm-select" <?php if (!$is_sys_manager && $is_syndicate_admin) echo 'disabled'; ?>>
-                            <option value="">-- اختر الفرع --</option>
-                            <?php
-                                $db_branches = SM_DB::get_branches_data();
-                                if (!empty($db_branches)) {
-                                    foreach($db_branches as $db) {
-                                        $sel = (!$is_sys_manager && $is_syndicate_admin && $db->slug === $my_gov) ? 'selected' : '';
-                                        echo "<option value='".esc_attr($db->slug)."' $sel>".esc_html($db->name)."</option>";
-                                    }
-                                } else {
-                                    foreach (SM_Settings::get_governorates() as $k => $v) {
-                                        $sel = (!$is_sys_manager && $is_syndicate_admin && $k === $my_gov) ? 'selected' : '';
-                                        echo "<option value='$k' $sel>$v</option>";
-                                    }
-                                }
-                            ?>
+                        <label class="sm-label">التخصص:</label>
+                        <select name="specialization" class="sm-select">
+                            <option value="">-- اختر التخصص --</option>
+                            <?php foreach (SM_Settings::get_specializations() as $k => $v) echo "<option value='$k'>$v</option>"; ?>
                         </select>
-                        <?php if (!$is_sys_manager && $is_syndicate_admin): ?>
-                            <input type="hidden" name="governorate" value="<?php echo esc_attr($my_gov); ?>">
-                        <?php endif; ?>
                     </div>
-                    <div class="sm-form-group">
-                        <label class="sm-label">رقم الهاتف:</label>
-                        <input type="text" name="phone" class="sm-input">
-                    </div>
-                    <div class="sm-form-group">
-                        <label class="sm-label">اسم المستخدم (Login):</label>
-                        <input type="text" name="user_login" class="sm-input" required>
-                    </div>
-                    <div class="sm-form-group">
-                        <label class="sm-label">البريد الإلكتروني:</label>
-                        <input type="email" name="user_email" class="sm-input" required>
-                    </div>
-                    <div class="sm-form-group" style="grid-column: span 2;">
-                        <label class="sm-label">كلمة المرور (اترك فارغاً للتوليد التلقائي 10 أرقام):</label>
-                        <input type="password" name="user_pass" class="sm-input" placeholder="********">
-                    </div>
+                    <div class="sm-form-group"><label class="sm-label">رقم القيد:</label><input type="text" name="membership_number" class="sm-input"></div>
                 </div>
-                <button type="submit" class="sm-btn" style="margin-top: 20px;">إنشاء الحساب الآن</button>
+
+                <div style="margin-top: 25px; text-align: left; border-top: 1px solid #eee; padding-top: 20px;">
+                    <button type="submit" class="sm-btn" style="width: 250px; height: 45px; font-weight: 800;">إضافة المستخدم وتفعيل الملف</button>
+                </div>
             </form>
         </div>
     </div>
 
     <script>
+    window.smExportUsers = function() {
+        const role = document.querySelector('select[name="role_filter"]').value;
+        const gov = document.querySelector('select[name="gov_filter"]').value;
+        const status = document.querySelector('select[name="status_filter"]').value;
+        let url = ajaxurl + '?action=sm_export_users_csv';
+        if (role) url += '&role_filter=' + role;
+        if (gov) url += '&gov_filter=' + gov;
+        if (status) url += '&status_filter=' + status;
+        window.location.href = url;
+    };
+
     window.smToggleRankField = function(roleSelect, groupId) {
         const group = document.getElementById(groupId);
         if (!group) return;

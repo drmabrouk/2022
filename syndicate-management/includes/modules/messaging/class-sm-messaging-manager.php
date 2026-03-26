@@ -21,7 +21,11 @@ class SM_Messaging_Manager {
             if (!is_user_logged_in()) {
                 wp_send_json_error(['message' => 'Unauthorized']);
             }
-            check_ajax_referer('sm_message_action', 'nonce');
+            if (isset($_POST['nonce'])) {
+                check_ajax_referer('sm_message_action', 'nonce');
+            } else {
+                check_ajax_referer('sm_message_action', '_wpnonce');
+            }
 
         $sid = get_current_user_id();
         $mid = intval($_POST['member_id'] ?? 0);
@@ -68,7 +72,11 @@ class SM_Messaging_Manager {
             if (!is_user_logged_in()) {
                 wp_send_json_error(['message' => 'Unauthorized']);
             }
-            check_ajax_referer('sm_message_action', 'nonce');
+            if (isset($_POST['nonce'])) {
+                check_ajax_referer('sm_message_action', 'nonce');
+            } else {
+                check_ajax_referer('sm_message_action', '_wpnonce');
+            }
 
         $mid = intval($_POST['member_id'] ?? 0);
         if (!$mid) {
@@ -121,7 +129,11 @@ class SM_Messaging_Manager {
             if (!is_user_logged_in()) {
                 wp_send_json_error(['message' => 'Unauthorized']);
             }
-            check_ajax_referer('sm_message_action', 'nonce');
+            if (isset($_POST['nonce'])) {
+                check_ajax_referer('sm_message_action', 'nonce');
+            } else {
+                check_ajax_referer('sm_message_action', '_wpnonce');
+            }
         $user = wp_get_current_user();
         $gov = get_user_meta($user->ID, 'sm_governorate', true);
         $has_full = current_user_can('sm_full_access') || current_user_can('manage_options');
@@ -160,7 +172,11 @@ class SM_Messaging_Manager {
         if (!is_user_logged_in()) {
             wp_send_json_error(['message' => 'Unauthorized']);
         }
-        check_ajax_referer('sm_message_action', 'nonce');
+        if (isset($_POST['nonce'])) {
+            check_ajax_referer('sm_message_action', 'nonce');
+        } else {
+            check_ajax_referer('sm_message_action', '_wpnonce');
+        }
         SM_DB::mark_messages_read(get_current_user_id(), intval($_POST['other_user_id']));
         wp_send_json_success();
     }
@@ -169,7 +185,11 @@ class SM_Messaging_Manager {
         if (!is_user_logged_in()) {
             wp_send_json_error(['message' => 'Unauthorized']);
         }
-        check_ajax_referer('sm_ticket_action', 'nonce');
+        if (isset($_REQUEST['nonce'])) {
+            check_ajax_referer('sm_ticket_action', 'nonce');
+        } else {
+            check_ajax_referer('sm_ticket_action', '_wpnonce');
+        }
         wp_send_json_success(SM_DB::get_tickets($_GET));
     }
 
@@ -178,7 +198,11 @@ class SM_Messaging_Manager {
             if (!is_user_logged_in()) {
                 wp_send_json_error(['message' => 'Unauthorized']);
             }
-            check_ajax_referer('sm_ticket_action', 'nonce');
+            if (isset($_POST['nonce'])) {
+                check_ajax_referer('sm_ticket_action', 'nonce');
+            } else {
+                check_ajax_referer('sm_ticket_action', '_wpnonce');
+            }
         $user = wp_get_current_user();
         $member = SM_DB_Members::get_member_by_username($user->user_login);
         if (!$member) {
@@ -229,7 +253,11 @@ class SM_Messaging_Manager {
         if (!is_user_logged_in()) {
             wp_send_json_error(['message' => 'Unauthorized']);
         }
-        check_ajax_referer('sm_ticket_action', 'nonce');
+        if (isset($_REQUEST['nonce'])) {
+            check_ajax_referer('sm_ticket_action', 'nonce');
+        } else {
+            check_ajax_referer('sm_ticket_action', '_wpnonce');
+        }
         $id = intval($_GET['id']);
         $ticket = SM_DB::get_ticket($id);
         if (!$ticket) {
@@ -257,7 +285,11 @@ class SM_Messaging_Manager {
             if (!is_user_logged_in()) {
                 wp_send_json_error(['message' => 'Unauthorized']);
             }
-            check_ajax_referer('sm_ticket_action', 'nonce');
+            if (isset($_POST['nonce'])) {
+                check_ajax_referer('sm_ticket_action', 'nonce');
+            } else {
+                check_ajax_referer('sm_ticket_action', '_wpnonce');
+            }
         $tid = intval($_POST['ticket_id']);
         $ticket = SM_DB::get_ticket($tid);
         if (!$ticket) wp_send_json_error(['message' => 'Ticket not found']);
@@ -311,7 +343,11 @@ class SM_Messaging_Manager {
         if (!is_user_logged_in()) {
             wp_send_json_error(['message' => 'Unauthorized']);
         }
-        check_ajax_referer('sm_ticket_action', 'nonce');
+        if (isset($_POST['nonce'])) {
+            check_ajax_referer('sm_ticket_action', 'nonce');
+        } else {
+            check_ajax_referer('sm_ticket_action', '_wpnonce');
+        }
         if (SM_DB::update_ticket_status(intval($_POST['id']), 'closed')) {
             wp_send_json_success();
         } else {
@@ -327,7 +363,11 @@ class SM_Messaging_Manager {
     public static function ajax_send_direct_message() {
         try {
             self::check_capability('sm_manage_system');
-            check_ajax_referer('sm_message_action', 'nonce');
+            if (isset($_POST['nonce'])) {
+                check_ajax_referer('sm_message_action', 'nonce');
+            } else {
+                check_ajax_referer('sm_message_action', '_wpnonce');
+            }
 
         $member_ids = isset($_POST['member_ids']) ? array_map('intval', $_POST['member_ids']) : [];
         if (empty($member_ids) && !empty($_POST['member_id'])) {

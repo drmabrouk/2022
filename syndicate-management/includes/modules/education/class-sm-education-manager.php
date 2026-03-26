@@ -15,7 +15,11 @@ class SM_Education_Manager {
             if (!current_user_can('manage_options') && !current_user_can('sm_manage_system')) {
                 wp_send_json_error(['message' => 'Unauthorized']);
             }
-            check_ajax_referer('sm_admin_action', 'nonce');
+            if (isset($_POST['nonce'])) {
+                check_ajax_referer('sm_admin_action', 'nonce');
+            } else {
+                check_ajax_referer('sm_admin_action', 'sm_admin_nonce');
+            }
 
             $id = SM_DB::add_survey($_POST);
             if ($id) {
@@ -31,7 +35,11 @@ class SM_Education_Manager {
     public static function ajax_update_survey() {
         try {
             self::check_capability('sm_manage_system');
-            check_ajax_referer('sm_admin_action', 'nonce');
+            if (isset($_POST['nonce'])) {
+                check_ajax_referer('sm_admin_action', 'nonce');
+            } else {
+                check_ajax_referer('sm_admin_action', 'sm_admin_nonce');
+            }
 
             $id = intval($_POST['id']);
             if (SM_DB::update_survey_data($id, $_POST)) {
@@ -47,7 +55,11 @@ class SM_Education_Manager {
     public static function ajax_add_test_question() {
         try {
             self::check_capability('sm_manage_system');
-            check_ajax_referer('sm_admin_action', 'nonce');
+            if (isset($_POST['nonce'])) {
+                check_ajax_referer('sm_admin_action', 'nonce');
+            } else {
+                check_ajax_referer('sm_admin_action', 'sm_admin_nonce');
+            }
 
             $id = SM_DB::add_test_question($_POST);
             if ($id) {
@@ -63,7 +75,11 @@ class SM_Education_Manager {
     public static function ajax_delete_test_question() {
         try {
             self::check_capability('sm_manage_system');
-            check_ajax_referer('sm_admin_action', 'nonce');
+            if (isset($_POST['nonce'])) {
+                check_ajax_referer('sm_admin_action', 'nonce');
+            } else {
+                check_ajax_referer('sm_admin_action', 'sm_admin_nonce');
+            }
 
             $id = intval($_POST['id']);
             if (SM_DB::delete_test_question($id)) {
@@ -79,7 +95,11 @@ class SM_Education_Manager {
     public static function ajax_assign_test() {
         try {
             self::check_capability('sm_manage_system');
-            check_ajax_referer('sm_admin_action', 'nonce');
+            if (isset($_POST['nonce'])) {
+                check_ajax_referer('sm_admin_action', 'nonce');
+            } else {
+                check_ajax_referer('sm_admin_action', 'sm_admin_nonce');
+            }
 
             $sid = intval($_POST['survey_id']);
             $uids = array_map('intval', (array)$_POST['user_ids']);
@@ -177,7 +197,11 @@ class SM_Education_Manager {
             if (!is_user_logged_in()) {
                 wp_send_json_error(['message' => 'Unauthorized']);
             }
-            check_ajax_referer('sm_survey_action', 'nonce');
+            if (isset($_POST['nonce'])) {
+                check_ajax_referer('sm_survey_action', 'nonce');
+            } else {
+                check_ajax_referer('sm_survey_action', '_wpnonce');
+            }
 
         $sid = intval($_POST['survey_id']);
         $aid = intval($_POST['assignment_id'] ?? 0);
@@ -253,7 +277,11 @@ class SM_Education_Manager {
     public static function ajax_cancel_survey() {
         try {
             self::check_capability('manage_options');
-            check_ajax_referer('sm_admin_action', 'nonce');
+            if (isset($_POST['nonce'])) {
+                check_ajax_referer('sm_admin_action', 'nonce');
+            } else {
+                check_ajax_referer('sm_admin_action', 'sm_admin_nonce');
+            }
             if (SM_DB::update_survey_data(intval($_POST['id']), ['status' => 'cancelled'])) {
                 wp_send_json_success();
             } else {
