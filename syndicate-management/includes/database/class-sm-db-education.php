@@ -148,15 +148,15 @@ class SM_DB_Education {
         $is_sys_admin = in_array('sm_system_admin', (array)$user->roles) || current_user_can('manage_options');
         $my_gov = get_user_meta($user->ID, 'sm_governorate', true);
 
-        $where = $wpdb->prepare("survey_id = %d", $survey_id);
+        $where = $wpdb->prepare("r.survey_id = %d", $survey_id);
         if (!$is_sys_admin && $my_gov) {
             $where .= $wpdb->prepare(" AND (
-                EXISTS (SELECT 1 FROM {$wpdb->prefix}usermeta um WHERE um.user_id = user_id AND um.meta_key = 'sm_governorate' AND um.meta_value = %s)
-                OR EXISTS (SELECT 1 FROM {$wpdb->prefix}sm_members m WHERE m.wp_user_id = user_id AND m.governorate = %s)
+                EXISTS (SELECT 1 FROM {$wpdb->prefix}usermeta um WHERE um.user_id = r.user_id AND um.meta_key = 'sm_governorate' AND um.meta_value = %s)
+                OR EXISTS (SELECT 1 FROM {$wpdb->prefix}sm_members m WHERE m.wp_user_id = r.user_id AND m.governorate = %s)
             )", $my_gov, $my_gov);
         }
 
-        return $wpdb->get_results("SELECT * FROM {$wpdb->prefix}sm_survey_responses WHERE $where");
+        return $wpdb->get_results("SELECT r.* FROM {$wpdb->prefix}sm_survey_responses r WHERE $where");
     }
 
     public static function assign_test($test_id, $user_id) {
@@ -214,7 +214,7 @@ class SM_DB_Education {
 
         $query = "SELECT * FROM {$wpdb->prefix}sm_surveys WHERE $where ORDER BY created_at DESC";
         if (!empty($params)) {
-            return $wpdb->get_results($wpdb->prepare($query, $params));
+            return $wpdb->get_results($wpdb->prepare($query, ...$params));
         }
         return $wpdb->get_results($query);
     }

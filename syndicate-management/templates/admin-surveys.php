@@ -14,47 +14,49 @@
     </div>
 
     <?php
+    global $wpdb;
     $user = wp_get_current_user();
     $roles = (array)$user->roles;
     $is_sys_admin = in_array('sm_system_admin', $roles) || current_user_can('manage_options');
     $is_syndicate_admin = in_array('sm_syndicate_admin', $roles);
     $my_gov = get_user_meta($user->ID, 'sm_governorate', true);
     $test_type_map = ['practice' => 'مزاولة مهنة', 'promotion' => 'ترقية درجة', 'training' => 'دورة تدريبية'];
+    $db_branches = SM_DB::get_branches_data();
+    if (!is_array($db_branches)) $db_branches = [];
     ?>
 
     <!-- TAB: Tests List -->
     <div id="tests-list" class="sm-internal-tab">
         <!-- Advanced Filter & Search Engine -->
-        <div style="background: #f8fafc; padding: 30px; border-radius: 15px; margin-bottom: 30px; border: 1px solid #e2e8f0; display: grid; grid-template-columns: 2fr 1fr 1fr 1fr; gap: 15px; align-items: flex-end;">
-        <div>
+        <div style="background: #f8fafc; padding: 25px; border-radius: 15px; margin-bottom: 30px; border: 1px solid #e2e8f0; display: flex; flex-wrap: wrap; gap: 15px; align-items: flex-end;">
+        <div style="flex: 2; min-width: 250px;">
             <label class="sm-label" style="font-size: 12px; margin-bottom: 8px; display: block; color: #64748b;">ابحث باسم الاختبار:</label>
             <div style="position: relative;">
                 <input type="text" id="test_search_input" class="sm-input" placeholder="اكتب اسم الاختبار للبحث..." oninput="smApplyTestFilters()">
                 <span class="dashicons dashicons-search" style="position: absolute; left: 10px; top: 12px; color: #94a3b8;"></span>
             </div>
         </div>
-        <div>
+        <div style="flex: 1; min-width: 150px;">
             <label class="sm-label" style="font-size: 12px; margin-bottom: 8px; display: block; color: #64748b;">تصفية بالنوع:</label>
             <select id="test_type_filter" class="sm-select" onchange="smApplyTestFilters()">
                 <option value="all">كل الأنواع</option>
                 <?php foreach($test_type_map as $k => $v) echo "<option value='$k'>$v</option>"; ?>
             </select>
         </div>
-        <div>
+        <div style="flex: 1; min-width: 150px;">
             <label class="sm-label" style="font-size: 12px; margin-bottom: 8px; display: block; color: #64748b;">تصفية بالفرع:</label>
             <select id="test_branch_filter" class="sm-select" onchange="smApplyTestFilters()">
                 <option value="all">كل الفروع</option>
                 <option value="all_branches">عام (لكل الفروع)</option>
                 <?php
-                $db_branches = SM_DB::get_branches_data();
                 foreach($db_branches as $b) echo "<option value='".esc_attr($b->slug)."'>".esc_html($b->name)."</option>";
                 ?>
             </select>
         </div>
-        <button class="sm-btn sm-btn-outline" onclick="smResetTestFilters()" style="height: 45px;">إعادة تعيين</button>
+        <button class="sm-btn sm-btn-outline" onclick="smResetTestFilters()" style="height: 45px; width: auto; padding: 0 20px;">إعادة تعيين</button>
     </div>
 
-        <div class="sm-table-container" style="border-radius: 15px; overflow: hidden; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.05); border: 1px solid #e2e8f0;">
+        <div class="sm-table-container" style="border-radius: 15px; overflow-x: auto; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.05); border: 1px solid #e2e8f0;">
             <table class="sm-table" id="tests-admin-table">
                 <thead>
                     <tr style="background: #f1f5f9;">
@@ -70,11 +72,14 @@
                 <tbody>
                     <?php
                     $surveys = SM_DB::get_surveys_admin();
+                    if (!is_array($surveys)) $surveys = [];
 
                     $specs_labels = SM_Settings::get_specializations();
                     foreach ($surveys as $s):
-                        $responses_count = count(SM_DB::get_survey_responses($s->id));
-                        $questions_count = count(SM_DB::get_test_questions($s->id));
+                        $responses = SM_DB::get_survey_responses($s->id);
+                        $responses_count = is_array($responses) ? count($responses) : 0;
+                        $questions = SM_DB::get_test_questions($s->id);
+                        $questions_count = is_array($questions) ? count($questions) : 0;
                         $branch_label = ($s->branch === 'all') ? 'كل الفروع' : (SM_Settings::get_branch_name($s->branch) ?: $s->branch);
                     ?>
                     <tr class="sm-test-row"
@@ -126,8 +131,8 @@
 
     <!-- TAB: Live Monitoring -->
     <div id="active-sessions" class="sm-internal-tab" style="display:none;">
-        <div style="display:grid; grid-template-columns: 1fr 350px; gap:25px;">
-            <div class="sm-table-container">
+        <div style="display:flex; flex-wrap:wrap; gap:25px;">
+            <div class="sm-table-container" style="flex: 1; min-width: 500px; overflow-x: auto;">
                 <h4 style="margin-bottom:15px; font-weight:800; color:var(--sm-dark-color);">الجلسات النشطة حالياً</h4>
                 <table class="sm-table">
                     <thead>
@@ -150,7 +155,7 @@
                             WHERE a.status = 'active'
                             ORDER BY a.last_heartbeat DESC
                         ");
-                        if(empty($active_sessions)): ?>
+                        if(empty($active_sessions) || !is_array($active_sessions)): ?>
                             <tr><td colspan="6" style="text-align:center; padding:30px; color:#94a3b8;">لا توجد جلسات نشطة حالياً.</td></tr>
                         <?php else: foreach($active_sessions as $as):
                             $diff = time() - strtotime($as->last_heartbeat);
@@ -169,7 +174,7 @@
                 </table>
             </div>
 
-            <div style="background:#f8fafc; border:1px solid #e2e8f0; border-radius:15px; padding:25px;">
+            <div style="background:#f8fafc; border:1px solid #e2e8f0; border-radius:15px; padding:20px; width: 350px; flex-shrink: 0; max-width: 100%;">
                 <h4 style="margin:0 0 20px 0; font-weight:800; color:var(--sm-dark-color);">سجل التنبيهات الأمنية (Live)</h4>
                 <div id="live-security-logs" style="max-height:500px; overflow-y:auto; display:grid; gap:10px;">
                     <?php
@@ -179,6 +184,7 @@
                         JOIN {$wpdb->prefix}sm_members m ON l.user_id = m.wp_user_id
                         ORDER BY l.created_at DESC LIMIT 20
                     ");
+                    if (!is_array($logs)) $logs = [];
                     foreach($logs as $log):
                         $color = ($log->action_type === 'start' || $log->action_type === 'submit') ? '#38a169' : '#e53e3e';
                     ?>
@@ -276,9 +282,9 @@
             <button class="sm-modal-close" onclick="this.closest('.sm-modal-overlay').style.display='none'">&times;</button>
         </div>
         <div class="sm-modal-body" style="padding: 0;">
-            <div style="display: grid; grid-template-columns: 350px 1fr; height: 650px;">
+            <div style="display: flex; flex-wrap: wrap; min-height: 400px; max-height: 80vh;">
                 <!-- Add Question Form -->
-                <div style="background: #f8fafc; border-left: 1px solid #e2e8f0; padding: 30px; overflow-y: auto;">
+                <div style="background: #f8fafc; border-left: 1px solid #e2e8f0; padding: 25px; overflow-y: auto; width: 350px; flex-shrink: 0; max-width: 100%;">
                     <h4 style="margin-top:0;">إضافة سؤال جديد</h4>
                     <form id="add-question-form">
                         <input type="hidden" id="q_test_id">
@@ -328,7 +334,7 @@
                     </form>
                 </div>
                 <!-- Questions List -->
-                <div style="padding: 30px; overflow-y: auto;">
+                <div style="padding: 25px; overflow-y: auto; flex: 1; min-width: 300px;">
                     <div id="bank-questions-list">
                         <!-- Questions load here via JS -->
                     </div>
