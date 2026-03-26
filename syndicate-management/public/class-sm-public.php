@@ -72,6 +72,7 @@ class SM_Public {
         wp_enqueue_media();
         wp_enqueue_script('jquery');
         wp_add_inline_script('jquery', 'var ajaxurl = "' . admin_url('admin-ajax.php') . '";', 'before');
+        wp_enqueue_script('sm-ui-engine', SM_PLUGIN_URL . 'assets/js/sm-ui-engine.js', array('jquery'), $this->version, true);
         wp_enqueue_style('dashicons');
         wp_enqueue_style('google-font-rubik', 'https://fonts.googleapis.com/css2?family=Rubik:wght@300;400;500;700;800;900&display=swap', array(), null);
         wp_enqueue_script('chart-js', 'https://cdn.jsdelivr.net/npm/chart.js', array(), '4.4.1', true);

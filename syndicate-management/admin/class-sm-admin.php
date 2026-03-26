@@ -107,6 +107,7 @@ class SM_Admin {
     public function enqueue_styles() {
         wp_enqueue_style('google-font-rubik', 'https://fonts.googleapis.com/css2?family=Rubik:wght@300;400;500;700;800;900&display=swap', array(), null);
         wp_add_inline_script('jquery', 'var ajaxurl = "' . admin_url('admin-ajax.php') . '";', 'before');
+        wp_enqueue_script('sm-ui-engine', SM_PLUGIN_URL . 'assets/js/sm-ui-engine.js', array('jquery'), $this->version, true);
         wp_enqueue_style($this->plugin_name, SM_PLUGIN_URL . 'assets/css/sm-admin.css', array(), $this->version, 'all');
 
         $app = SM_Settings::get_appearance();

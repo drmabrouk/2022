@@ -6,18 +6,13 @@ if (!defined('ABSPATH')) {
 class SM_Member_Manager {
     public static function ajax_get_member() {
         try {
-            if (!current_user_can('sm_manage_members') && !current_user_can('manage_options')) {
-                wp_send_json_error(['message' => 'Unauthorized access.']);
-            }
-            if (isset($_POST['nonce'])) {
-                check_ajax_referer('sm_admin_action', 'nonce');
-            } else {
-                check_ajax_referer('sm_admin_action', 'sm_admin_nonce');
-            }
+            SM_Access::check_any_capability(['sm_manage_members', 'manage_options']);
+            SM_Access::verify_nonce('sm_admin_action', isset($_POST['nonce']) ? 'nonce' : 'sm_admin_nonce');
+
             $nid = sanitize_text_field($_POST['national_id'] ?? '');
-        $member = SM_DB::get_member_by_national_id($nid);
+            $member = SM_DB::get_member_by_national_id($nid);
             if ($member) {
-                self::validate_member_access($member->id);
+                SM_Access::validate_member_access($member->id);
                 wp_send_json_success($member);
             } else {
                 wp_send_json_error(['message' => 'Member not found']);
@@ -29,15 +24,13 @@ class SM_Member_Manager {
 
     public static function ajax_search_members() {
         try {
-            if (!current_user_can('sm_manage_members') && !current_user_can('sm_manage_system') && !current_user_can('manage_options')) {
-                wp_send_json_error(['message' => 'Unauthorized']);
-            }
+            SM_Access::check_any_capability(['sm_manage_members', 'sm_manage_system', 'manage_options']);
+
             $query = sanitize_text_field($_REQUEST['member_search'] ?? ($_REQUEST['query'] ?? ''));
-        if (empty($query)) wp_send_json_success([]);
+            if (empty($query)) wp_send_json_success([]);
 
-        $members = SM_DB::get_members(['search' => $query, 'limit' => 15]);
+            $members = SM_DB::get_members(['search' => $query, 'limit' => 15]);
 
-            // Enhance with labels for UI
             foreach ($members as &$m) {
                 $m->branch_label = SM_Settings::get_branch_name($m->governorate);
             }
@@ -50,14 +43,9 @@ class SM_Member_Manager {
 
     public static function ajax_add_member() {
         try {
-            if (!current_user_can('sm_manage_members') && !current_user_can('manage_options')) {
-                 wp_send_json_error(['message' => 'Unauthorized access: You lack the "sm_manage_members" capability.']);
-            }
-            if (isset($_POST['sm_nonce'])) {
-                check_ajax_referer('sm_add_member', 'sm_nonce');
-            } else {
-                check_ajax_referer('sm_add_member', 'nonce');
-            }
+            SM_Access::check_any_capability(['sm_manage_members', 'manage_options']);
+            SM_Access::verify_nonce('sm_add_member', isset($_POST['sm_nonce']) ? 'sm_nonce' : 'nonce');
+
             if (!function_exists('wp_insert_user')) {
                 require_once(ABSPATH . 'wp-admin/includes/user.php');
             }
@@ -78,19 +66,15 @@ class SM_Member_Manager {
 
     public static function ajax_update_member() {
         try {
-            if (!current_user_can('sm_manage_members') && !current_user_can('manage_options')) {
-                 wp_send_json_error(['message' => 'Unauthorized access.']);
-            }
-            if (isset($_POST['sm_nonce'])) {
-                check_ajax_referer('sm_add_member', 'sm_nonce');
-            } else {
-                check_ajax_referer('sm_add_member', 'nonce');
-            }
+            SM_Access::check_any_capability(['sm_manage_members', 'manage_options']);
+            SM_Access::verify_nonce('sm_add_member', isset($_POST['sm_nonce']) ? 'sm_nonce' : 'nonce');
+
             if (!function_exists('wp_update_user')) {
                 require_once(ABSPATH . 'wp-admin/includes/user.php');
             }
             $id = intval($_POST['member_id']);
-            self::validate_member_access($id);
+            SM_Access::validate_member_access($id);
+
             $old = SM_DB::get_member_by_id($id);
             SM_DB::update_member($id, $_POST);
 
@@ -105,9 +89,9 @@ class SM_Member_Manager {
         }
     }
 
-    public static function ajax_import_staffs_csv() {
-        self::check_capability('sm_manage_users');
-        check_ajax_referer('sm_admin_action', 'sm_admin_nonce');
+    public static function handle_staff_import() {
+        SM_Access::check_any_capability(['sm_manage_users', 'manage_options']);
+        SM_Access::verify_nonce('sm_admin_action', 'sm_admin_nonce');
 
         if (empty($_FILES['csv_file']['tmp_name'])) {
             wp_send_json_error(['message' => 'لم يتم رفع أي ملف.']);
@@ -124,7 +108,7 @@ class SM_Member_Manager {
         }
 
         $success = 0;
-        $header = fgetcsv($handle); // Skip header
+        $header = fgetcsv($handle);
 
         while (($row = fgetcsv($handle)) !== false) {
             if (empty($row[0]) || empty($row[1])) continue;
@@ -134,7 +118,7 @@ class SM_Member_Manager {
                 'user_email' => sanitize_email($row[1]),
                 'display_name' => sanitize_text_field($row[2]),
                 'user_pass' => $row[6] ?? null,
-                'role' => 'sm_syndicate_member' // Default
+                'role' => 'sm_syndicate_member'
             ];
 
             if (username_exists($user_data['user_login']) || email_exists($user_data['user_email'])) {
@@ -150,7 +134,6 @@ class SM_Member_Manager {
                 update_user_meta($uid, 'sm_phone', $phone);
                 update_user_meta($uid, 'sm_account_status', 'active');
 
-                // If the user being imported is also a member (indicated by National ID in row[3])
                 if (preg_match('/^[0-9]{14}$/', $officer_id)) {
                     $member_data = array(
                         'national_id' => $officer_id,
@@ -171,9 +154,9 @@ class SM_Member_Manager {
         exit;
     }
 
-    public static function ajax_import_members_csv() {
-        self::check_capability('sm_manage_members');
-        check_ajax_referer('sm_admin_action', 'sm_admin_nonce');
+    public static function handle_member_import() {
+        SM_Access::check_any_capability(['sm_manage_members', 'manage_options']);
+        SM_Access::verify_nonce('sm_admin_action', 'sm_admin_nonce');
 
         if (empty($_FILES['member_csv_file']['tmp_name'])) {
             wp_send_json_error(['message' => 'لم يتم رفع أي ملف.']);
@@ -189,7 +172,7 @@ class SM_Member_Manager {
         }
 
         $results = ['total' => 0, 'success' => 0, 'error' => 0, 'warning' => 0];
-        $header = fgetcsv($handle); // Skip header
+        $header = fgetcsv($handle);
 
         while (($row = fgetcsv($handle)) !== false) {
             if (empty($row[0]) || empty($row[1])) {
@@ -224,14 +207,12 @@ class SM_Member_Manager {
 
     public static function ajax_delete_member() {
         try {
-            self::check_capability('sm_manage_members');
-            if (isset($_POST['nonce'])) {
-                check_ajax_referer('sm_delete_member', 'nonce');
-            } else {
-                check_ajax_referer('sm_delete_member', 'sm_delete_nonce');
-            }
+            SM_Access::check_any_capability(['sm_manage_members', 'manage_options']);
+            SM_Access::verify_nonce('sm_delete_member', isset($_POST['nonce']) ? 'nonce' : 'sm_delete_nonce');
+
             $id = intval($_POST['member_id']);
-            self::validate_member_access($id);
+            SM_Access::validate_member_access($id);
+
             $old = SM_DB::get_member_by_id($id);
             SM_DB::delete_member($id);
 
@@ -247,44 +228,39 @@ class SM_Member_Manager {
 
     public static function ajax_update_member_account() {
         try {
-            if (!current_user_can('sm_manage_members') && !current_user_can('manage_options')) {
-                 wp_send_json_error(['message' => 'Unauthorized access.']);
-            }
-            if (isset($_POST['nonce'])) {
-                check_ajax_referer('sm_admin_action', 'nonce');
-            } else {
-                check_ajax_referer('sm_admin_action', 'sm_admin_nonce');
-            }
+            SM_Access::check_any_capability(['sm_manage_members', 'manage_options']);
+            SM_Access::verify_nonce('sm_admin_action', isset($_POST['nonce']) ? 'nonce' : 'sm_admin_nonce');
+
             if (!function_exists('wp_update_user')) {
                 require_once(ABSPATH . 'wp-admin/includes/user.php');
             }
-        if (!function_exists('media_handle_upload')) {
-            require_once(ABSPATH . 'wp-admin/includes/file.php');
-            require_once(ABSPATH . 'wp-admin/includes/image.php');
-            require_once(ABSPATH . 'wp-admin/includes/media.php');
-        }
-        $mid = intval($_POST['member_id']);
-        $uid = intval($_POST['wp_user_id']);
-        $email = sanitize_email($_POST['email']);
-        $pass = $_POST['password'] ?? '';
-        $role = $_POST['role'] ?? '';
+            if (!function_exists('media_handle_upload')) {
+                require_once(ABSPATH . 'wp-admin/includes/file.php');
+                require_once(ABSPATH . 'wp-admin/includes/image.php');
+                require_once(ABSPATH . 'wp-admin/includes/media.php');
+            }
+            $mid = intval($_POST['member_id']);
+            $uid = intval($_POST['wp_user_id']);
+            $email = sanitize_email($_POST['email']);
+            $pass = $_POST['password'] ?? '';
+            $role = $_POST['role'] ?? '';
 
-        self::validate_member_access($mid);
+            SM_Access::validate_member_access($mid);
 
-        $data = array('ID' => $uid, 'user_email' => $email);
-        if (!empty($pass)) { $data['user_pass'] = $pass; }
+            $data = array('ID' => $uid, 'user_email' => $email);
+            if (!empty($pass)) { $data['user_pass'] = $pass; }
 
-        $res = wp_update_user($data);
-        if (is_wp_error($res)) {
-            wp_send_json_error(['message' => $res->get_error_message()]);
-        }
+            $res = wp_update_user($data);
+            if (is_wp_error($res)) {
+                wp_send_json_error(['message' => $res->get_error_message()]);
+            }
 
-        if (!empty($role) && (current_user_can('sm_full_access') || current_user_can('manage_options'))) {
-            $u = new WP_User($uid);
-            $u->set_role($role);
-        }
+            if (!empty($role) && (current_user_can('sm_full_access') || current_user_can('manage_options'))) {
+                $u = new WP_User($uid);
+                $u->set_role($role);
+            }
 
-        SM_DB::update_member($mid, ['email' => $email]);
+            SM_DB::update_member($mid, ['email' => $email]);
 
             SM_Logger::log('تحديث حساب عضو', "تم تحديث بيانات الحساب للعضو ID: $mid");
             wp_send_json_success(['message' => 'Account updated']);
@@ -293,58 +269,25 @@ class SM_Member_Manager {
         }
     }
 
-    private static function check_capability($cap) {
-        if (!current_user_can($cap) && !current_user_can('manage_options')) {
-            wp_send_json_error(['message' => 'Unauthorized']);
-        }
-    }
-
-    private static function validate_member_access($mid) {
-        if (!self::can_access_member($mid)) {
-            wp_send_json_error(['message' => 'Access denied']);
-        }
-    }
-
-    public static function can_access_member($member_id) {
-        if (current_user_can('sm_full_access') || current_user_can('manage_options')) {
-            return true;
-        }
-        $member = SM_DB::get_member_by_id($member_id);
-        if (!$member) {
-            return false;
-        }
-        $user = wp_get_current_user();
-        $roles = (array)$user->roles;
-        if ((in_array('sm_syndicate_member', $roles) || in_array('sm_member', $roles)) && $member->wp_user_id == $user->ID) {
-            return true;
-        }
-        $my_gov = get_user_meta($user->ID, 'sm_governorate', true);
-        if (in_array('sm_syndicate_admin', (array)$user->roles) || in_array('sm_syndicate_member', (array)$user->roles)) {
-            if ($my_gov && $member->governorate !== $my_gov) {
-                return false;
-            }
-            return true;
-        }
-        return false;
-    }
-
     public static function ajax_update_member_photo() {
         try {
             if (!is_user_logged_in()) {
                 wp_send_json_error(['message' => 'Unauthorized']);
             }
-            check_ajax_referer('sm_photo_action', 'sm_photo_nonce');
-        $mid = intval($_POST['member_id']);
-        self::validate_member_access($mid);
-        if (!function_exists('media_handle_upload')) {
-            require_once(ABSPATH . 'wp-admin/includes/file.php');
-            require_once(ABSPATH . 'wp-admin/includes/image.php');
-            require_once(ABSPATH . 'wp-admin/includes/media.php');
-        }
-        $att_id = media_handle_upload('member_photo', 0);
-        if (is_wp_error($att_id)) {
-            wp_send_json_error(['message' => $att_id->get_error_message()]);
-        }
+            SM_Access::verify_nonce('sm_photo_action', 'sm_photo_nonce');
+
+            $mid = intval($_POST['member_id']);
+            SM_Access::validate_member_access($mid);
+
+            if (!function_exists('media_handle_upload')) {
+                require_once(ABSPATH . 'wp-admin/includes/file.php');
+                require_once(ABSPATH . 'wp-admin/includes/image.php');
+                require_once(ABSPATH . 'wp-admin/includes/media.php');
+            }
+            $att_id = media_handle_upload('member_photo', 0);
+            if (is_wp_error($att_id)) {
+                wp_send_json_error(['message' => $att_id->get_error_message()]);
+            }
             $url = wp_get_attachment_url($att_id);
             SM_DB::update_member_photo($mid, $url);
             wp_send_json_success(array('photo_url' => $url));
@@ -355,22 +298,17 @@ class SM_Member_Manager {
 
     public static function ajax_add_staff() {
         try {
-            if (!current_user_can('sm_manage_users') && !current_user_can('manage_options')) {
-                 wp_send_json_error(['message' => 'Unauthorized access.']);
-            }
+            SM_Access::check_any_capability(['sm_manage_users', 'manage_options']);
             if (!function_exists('wp_insert_user')) {
                 require_once(ABSPATH . 'wp-admin/includes/user.php');
             }
-            if (!wp_verify_nonce($_POST['sm_nonce'], 'sm_syndicateMemberAction')) {
-                wp_send_json_error(['message' => 'Security check failed']);
-            }
+            SM_Access::verify_nonce('sm_syndicateMemberAction', 'sm_nonce');
 
             $user_login = sanitize_user($_POST['user_login']);
             $email = sanitize_email($_POST['user_email']);
             $display_name = sanitize_text_field($_POST['display_name']);
             $role = sanitize_text_field($_POST['role']);
 
-            // Security: Prevent unauthorized role assignment
             if ($role === 'administrator' && !current_user_can('manage_options')) {
                 wp_send_json_error(['message' => 'Insufficient permissions to assign Administrator role']);
             }
@@ -392,7 +330,6 @@ class SM_Member_Manager {
                 wp_send_json_error(['message' => $uid->get_error_message()]);
             }
 
-            // Sync Member Profile if data provided
             $nid = sanitize_text_field($_POST['national_id'] ?? '');
             if ($nid) {
                 $existing_member = SM_DB::get_member_by_national_id($nid);
@@ -427,26 +364,20 @@ class SM_Member_Manager {
 
     public static function ajax_update_staff() {
         try {
-            if (!current_user_can('sm_manage_users') && !current_user_can('manage_options')) {
-                 wp_send_json_error(['message' => 'Unauthorized access.']);
-            }
+            SM_Access::check_any_capability(['sm_manage_users', 'manage_options']);
             if (!function_exists('wp_update_user')) {
                 require_once(ABSPATH . 'wp-admin/includes/user.php');
             }
-            if (!wp_verify_nonce($_POST['sm_nonce'], 'sm_syndicateMemberAction')) {
-                wp_send_json_error(['message' => 'Security check failed']);
-            }
+            SM_Access::verify_nonce('sm_syndicateMemberAction', 'sm_nonce');
 
             $uid = intval($_POST['edit_officer_id']);
             $mid = intval($_POST['member_id'] ?? 0);
             $role = sanitize_text_field($_POST['role']);
 
-            // Security: Prevent unauthorized role assignment
             if ($role === 'administrator' && !current_user_can('manage_options')) {
                 wp_send_json_error(['message' => 'Insufficient permissions to assign Administrator role']);
             }
 
-            // 1. Update WordPress User Core
             $user_data = [
                 'ID' => $uid,
                 'display_name' => sanitize_text_field($_POST['display_name']),
@@ -464,7 +395,6 @@ class SM_Member_Manager {
             $u = new WP_User($uid);
             $u->set_role($role);
 
-            // 2. Update User Meta (Unified Account/Member Meta)
             update_user_meta($uid, 'sm_syndicateMemberIdAttr', sanitize_text_field($_POST['officer_id']));
             update_user_meta($uid, 'sm_phone', sanitize_text_field($_POST['phone']));
             update_user_meta($uid, 'sm_governorate', sanitize_text_field($_POST['governorate']));
@@ -474,11 +404,9 @@ class SM_Member_Manager {
                 update_user_meta($uid, 'sm_rank', sanitize_text_field($_POST['rank']));
             }
 
-            // 3. Bi-directional Synchronization with sm_members
             if ($mid) {
                 SM_DB::update_member($mid, $_POST);
             } else {
-                // Check if member exists by national ID or username to link
                 $nid = sanitize_text_field($_POST['national_id'] ?? '');
                 if ($nid) {
                     $existing_member = SM_DB::get_member_by_national_id($nid);
@@ -497,13 +425,12 @@ class SM_Member_Manager {
 
     public static function ajax_delete_staff() {
         try {
-            self::check_capability('sm_manage_users');
+            SM_Access::check_capability('sm_manage_users');
             if (!function_exists('wp_delete_user')) {
                 require_once(ABSPATH . 'wp-admin/includes/user.php');
             }
-            if (!wp_verify_nonce($_POST['nonce'], 'sm_syndicateMemberAction')) {
-                wp_send_json_error(['message' => 'Security check failed']);
-            }
+            SM_Access::verify_nonce('sm_syndicateMemberAction');
+
             $uid = intval($_POST['user_id']);
             if ($uid === get_current_user_id()) {
                 wp_send_json_error(['message' => 'Cannot delete yourself']);
@@ -517,9 +444,7 @@ class SM_Member_Manager {
 
     public static function ajax_export_users_csv() {
         try {
-            if (!current_user_can('sm_manage_users') && !current_user_can('manage_options')) {
-                wp_die('Unauthorized');
-            }
+            SM_Access::check_any_capability(['sm_manage_users', 'manage_options']);
 
             $args = array(
                 'number' => -1,
@@ -540,7 +465,6 @@ class SM_Member_Manager {
             header('Content-Disposition: attachment; filename=system_users_' . date('Y-m-d') . '.csv');
             $output = fopen('php://output', 'w');
 
-            // UTF-8 BOM for Excel
             fprintf($output, chr(0xEF).chr(0xBB).chr(0xBF));
 
             fputcsv($output, array('اسم المستخدم', 'البريد الإلكتروني', 'الاسم الكامل', 'الرقم القومي', 'الدور', 'الفرع', 'رقم الهاتف', 'الحالة'));
@@ -568,13 +492,12 @@ class SM_Member_Manager {
 
     public static function ajax_bulk_delete_users() {
         try {
-            self::check_capability('sm_manage_users');
+            SM_Access::check_capability('sm_manage_users');
             if (!function_exists('wp_delete_user')) {
                 require_once(ABSPATH . 'wp-admin/includes/user.php');
             }
-            if (!wp_verify_nonce($_POST['nonce'], 'sm_syndicateMemberAction')) {
-                wp_send_json_error(['message' => 'Security check failed']);
-            }
+            SM_Access::verify_nonce('sm_syndicateMemberAction');
+
             $ids = explode(',', $_POST['user_ids']);
             foreach ($ids as $id) {
                 $id = intval($id);
@@ -594,9 +517,11 @@ class SM_Member_Manager {
             if (!is_user_logged_in()) {
                 wp_send_json_error(['message' => 'يجب تسجيل الدخول']);
             }
-            check_ajax_referer('sm_update_request', 'nonce');
-        $mid = intval($_POST['member_id']);
-        self::validate_member_access($mid);
+            SM_Access::verify_nonce('sm_update_request');
+
+            $mid = intval($_POST['member_id']);
+            SM_Access::validate_member_access($mid);
+
             if (SM_DB::add_update_request($mid, $_POST)) {
                 wp_send_json_success(['message' => 'Request submitted']);
             } else {
@@ -609,10 +534,9 @@ class SM_Member_Manager {
 
     public static function ajax_process_update_request_ajax() {
         try {
-            if (!current_user_can('sm_manage_members') && !current_user_can('manage_options')) {
-                 wp_send_json_error(['message' => 'Unauthorized access.']);
-            }
-            check_ajax_referer('sm_update_request', 'nonce');
+            SM_Access::check_any_capability(['sm_manage_members', 'manage_options']);
+            SM_Access::verify_nonce('sm_update_request');
+
             if (SM_DB::process_update_request(intval($_POST['request_id']), sanitize_text_field($_POST['status']))) {
                 wp_send_json_success(['message' => 'Request processed']);
             } else {
@@ -625,11 +549,8 @@ class SM_Member_Manager {
 
     public static function ajax_submit_membership_request_stage3() {
         try {
-            if (isset($_POST['nonce'])) {
-                check_ajax_referer('sm_registration_nonce', 'nonce');
-            } else {
-                check_ajax_referer('sm_registration_nonce', '_wpnonce');
-            }
+            SM_Access::verify_nonce('sm_registration_nonce');
+
             $nid = sanitize_text_field($_POST['national_id']);
             if (!empty($_FILES)) {
                 if (!function_exists('wp_handle_upload')) {
@@ -662,88 +583,87 @@ class SM_Member_Manager {
 
     public static function ajax_process_membership_request() {
         try {
-            if (!current_user_can('sm_manage_members') && !current_user_can('manage_options')) {
-                 wp_send_json_error(['message' => 'Unauthorized access.']);
-            }
-            check_ajax_referer('sm_admin_action', 'nonce');
+            SM_Access::check_any_capability(['sm_manage_members', 'manage_options']);
+            SM_Access::verify_nonce('sm_admin_action');
+
             if (!function_exists('wp_insert_user')) {
                 require_once(ABSPATH . 'wp-admin/includes/user.php');
             }
 
             $rid = intval($_POST['request_id']);
-        $status = sanitize_text_field($_POST['status']);
-        $reason = sanitize_text_field($_POST['reason'] ?? '');
+            $status = sanitize_text_field($_POST['status']);
+            $reason = sanitize_text_field($_POST['reason'] ?? '');
 
-        $req = SM_DB::get_membership_request($rid);
-        if (!$req) {
-            wp_send_json_error(['message' => 'Request not found']);
-        }
-
-        if ($status === 'approved') {
-            $data = (array)$req;
-            $data['membership_start_date'] = current_time('Y-m-d');
-            $data['membership_expiration_date'] = date('Y-12-31');
-            $data['membership_status'] = 'Active – New Member';
-
-            $exclude = [
-                'id', 'status', 'processed_by', 'created_at', 'current_stage',
-                'payment_method', 'payment_reference', 'payment_screenshot_url',
-                'doc_qualification_url', 'doc_id_url', 'doc_military_url',
-                'doc_criminal_url', 'doc_photo_url', 'rejection_reason', 'notes'
-            ];
-            foreach ($exclude as $key) {
-                unset($data[$key]);
+            $req = SM_DB::get_membership_request($rid);
+            if (!$req) {
+                wp_send_json_error(['message' => 'Request not found']);
             }
 
-            $mid = SM_DB::add_member($data);
-            if (is_wp_error($mid)) {
-                wp_send_json_error(['message' => $mid->get_error_message()]);
-            }
+            if ($status === 'approved') {
+                $data = (array)$req;
+                $data['membership_start_date'] = current_time('Y-m-d');
+                $data['membership_expiration_date'] = date('Y-12-31');
+                $data['membership_status'] = 'Active – New Member';
 
-            if ($req->doc_photo_url) {
-                SM_DB::update_member_photo($mid, $req->doc_photo_url);
-            }
-
-            $docs = [
-                'doc_qualification_url' => 'شهادة المؤهل الدراسي',
-                'doc_id_url' => 'بطاقة الرقم القومي',
-                'doc_military_url' => 'شهادة الخدمة العسكرية',
-                'doc_criminal_url' => 'صحيفة الحالة الجنائية',
-                'payment_screenshot_url' => 'إيصال سداد رسوم العضوية'
-            ];
-            foreach ($docs as $f => $t) {
-                if ($req->$f) {
-                    SM_DB::add_document([
-                        'member_id' => $mid,
-                        'category' => 'other',
-                        'title' => $t,
-                        'file_url' => $req->$f,
-                        'file_type' => 'application/pdf'
-                    ]);
+                $exclude = [
+                    'id', 'status', 'processed_by', 'created_at', 'current_stage',
+                    'payment_method', 'payment_reference', 'payment_screenshot_url',
+                    'doc_qualification_url', 'doc_id_url', 'doc_military_url',
+                    'doc_criminal_url', 'doc_photo_url', 'rejection_reason', 'notes'
+                ];
+                foreach ($exclude as $key) {
+                    unset($data[$key]);
                 }
+
+                $mid = SM_DB::add_member($data);
+                if (is_wp_error($mid)) {
+                    wp_send_json_error(['message' => $mid->get_error_message()]);
+                }
+
+                if ($req->doc_photo_url) {
+                    SM_DB::update_member_photo($mid, $req->doc_photo_url);
+                }
+
+                $docs = [
+                    'doc_qualification_url' => 'شهادة المؤهل الدراسي',
+                    'doc_id_url' => 'بطاقة الرقم القومي',
+                    'doc_military_url' => 'شهادة الخدمة العسكرية',
+                    'doc_criminal_url' => 'صحيفة الحالة الجنائية',
+                    'payment_screenshot_url' => 'إيصال سداد رسوم العضوية'
+                ];
+                foreach ($docs as $f => $t) {
+                    if ($req->$f) {
+                        SM_DB::add_document([
+                            'member_id' => $mid,
+                            'category' => 'other',
+                            'title' => $t,
+                            'file_url' => $req->$f,
+                            'file_type' => 'application/pdf'
+                        ]);
+                    }
+                }
+
+                $fin_settings = SM_Settings::get_finance_settings();
+                SM_Finance::record_payment([
+                    'member_id' => $mid,
+                    'amount' => (float)($fin_settings['membership_new'] ?? 480),
+                    'payment_type' => 'membership',
+                    'payment_date' => current_time('mysql'),
+                    'target_year' => (int)date('Y'),
+                    'details_ar' => 'رسوم اشتراك عضوية جديدة - طلب رقم ' . $rid,
+                    'notes' => 'طريقة الدفع: ' . ($req->payment_method ?: 'manual')
+                ]);
             }
 
-            $fin_settings = SM_Settings::get_finance_settings();
-            SM_Finance::record_payment([
-                'member_id' => $mid,
-                'amount' => (float)($fin_settings['membership_new'] ?? 480),
-                'payment_type' => 'membership',
-                'payment_date' => current_time('mysql'),
-                'target_year' => (int)date('Y'),
-                'details_ar' => 'رسوم اشتراك عضوية جديدة - طلب رقم ' . $rid,
-                'notes' => 'طريقة الدفع: ' . ($req->payment_method ?: 'manual')
-            ]);
-        }
+            $upd = [
+                'status' => $status,
+                'processed_by' => get_current_user_id()
+            ];
+            if ($reason) {
+                $upd['notes'] = $reason;
+            }
 
-        $upd = [
-            'status' => $status,
-            'processed_by' => get_current_user_id()
-        ];
-        if ($reason) {
-            $upd['notes'] = $reason;
-        }
-
-        SM_DB::update_membership_request($rid, $upd);
+            SM_DB::update_membership_request($rid, $upd);
 
             SM_Logger::log('معالجة طلب عضوية', "تم {$status} طلب العضوية للرقم القومي: {$req->national_id}");
             wp_send_json_success(['message' => "Request $status"]);
@@ -757,28 +677,30 @@ class SM_Member_Manager {
             if (!is_user_logged_in()) {
                 wp_send_json_error(['message' => 'Unauthorized']);
             }
-            check_ajax_referer('sm_document_action', 'nonce');
-        $mid = intval($_POST['member_id']);
-        self::validate_member_access($mid);
-        if (empty($_FILES['document_file']['name'])) {
-            wp_send_json_error(['message' => 'No file']);
-        }
-        if (!function_exists('media_handle_upload')) {
-            require_once(ABSPATH . 'wp-admin/includes/file.php');
-            require_once(ABSPATH . 'wp-admin/includes/image.php');
-            require_once(ABSPATH . 'wp-admin/includes/media.php');
-        }
-        $aid = media_handle_upload('document_file', 0);
-        if (is_wp_error($aid)) {
-            wp_send_json_error(['message' => $aid->get_error_message()]);
-        }
-        $did = SM_DB::add_document([
-            'member_id' => $mid,
-            'category' => sanitize_text_field($_POST['category']),
-            'title' => sanitize_text_field($_POST['title']),
-            'file_url' => wp_get_attachment_url($aid),
-            'file_type' => get_post_mime_type($aid)
-        ]);
+            SM_Access::verify_nonce('sm_document_action');
+
+            $mid = intval($_POST['member_id']);
+            SM_Access::validate_member_access($mid);
+
+            if (empty($_FILES['document_file']['name'])) {
+                wp_send_json_error(['message' => 'No file']);
+            }
+            if (!function_exists('media_handle_upload')) {
+                require_once(ABSPATH . 'wp-admin/includes/file.php');
+                require_once(ABSPATH . 'wp-admin/includes/image.php');
+                require_once(ABSPATH . 'wp-admin/includes/media.php');
+            }
+            $aid = media_handle_upload('document_file', 0);
+            if (is_wp_error($aid)) {
+                wp_send_json_error(['message' => $aid->get_error_message()]);
+            }
+            $did = SM_DB::add_document([
+                'member_id' => $mid,
+                'category' => sanitize_text_field($_POST['category']),
+                'title' => sanitize_text_field($_POST['title']),
+                'file_url' => wp_get_attachment_url($aid),
+                'file_type' => get_post_mime_type($aid)
+            ]);
             if ($did) {
                 wp_send_json_success(['doc_id' => $did]);
             } else {
@@ -795,7 +717,7 @@ class SM_Member_Manager {
                 wp_send_json_error(['message' => 'Unauthorized']);
             }
             $mid = intval($_GET['member_id']);
-            self::validate_member_access($mid);
+            SM_Access::validate_member_access($mid);
             wp_send_json_success(SM_DB::get_member_documents($mid, $_GET));
         } catch (Throwable $e) {
             wp_send_json_error(['message' => $e->getMessage()]);
@@ -807,9 +729,11 @@ class SM_Member_Manager {
             if (!is_user_logged_in()) {
                 wp_send_json_error(['message' => 'Unauthorized']);
             }
-            check_ajax_referer('sm_document_action', 'nonce');
-        $mid = SM_DB::get_document_member_id(intval($_POST['doc_id']));
-        self::validate_member_access($mid);
+            SM_Access::verify_nonce('sm_document_action');
+
+            $mid = SM_DB::get_document_member_id(intval($_POST['doc_id']));
+            SM_Access::validate_member_access($mid);
+
             if (SM_DB::delete_document(intval($_POST['doc_id']))) {
                 wp_send_json_success();
             } else {
@@ -826,7 +750,7 @@ class SM_Member_Manager {
                 wp_send_json_error(['message' => 'Unauthorized']);
             }
             $mid = SM_DB::get_document_member_id(intval($_GET['doc_id']));
-            self::validate_member_access($mid);
+            SM_Access::validate_member_access($mid);
             wp_send_json_success(SM_DB::get_document_logs(intval($_GET['doc_id'])));
         } catch (Throwable $e) {
             wp_send_json_error(['message' => $e->getMessage()]);
@@ -839,7 +763,7 @@ class SM_Member_Manager {
                 wp_send_json_error(['message' => 'Unauthorized']);
             }
             $mid = SM_DB::get_document_member_id(intval($_POST['doc_id']));
-        self::validate_member_access($mid);
+            SM_Access::validate_member_access($mid);
             SM_DB::log_document_action(intval($_POST['doc_id']), 'view');
             wp_send_json_success(['message' => 'Log updated']);
         } catch (Throwable $e) {
@@ -848,14 +772,14 @@ class SM_Member_Manager {
     }
 
     public static function handle_print() {
-        if (!current_user_can('sm_print_reports')) {
-            wp_die('Unauthorized');
-        }
+        SM_Access::check_capability('sm_print_reports');
+
         $type = sanitize_text_field($_GET['type'] ?? ($_GET['print_type'] ?? ''));
         $mid = intval($_GET['member_id'] ?? 0);
-        if ($mid && !self::can_access_member($mid)) {
-            wp_die('Access denied');
+        if ($mid) {
+            SM_Access::validate_member_access($mid);
         }
+
         switch($type) {
             case 'id_card':
                 include SM_PLUGIN_DIR . 'templates/print-id-cards.php';
@@ -877,9 +801,11 @@ class SM_Member_Manager {
             if (!is_user_logged_in()) {
                 wp_send_json_error(['message' => 'Unauthorized']);
             }
-            check_ajax_referer('sm_professional_action', 'nonce');
-        $mid = intval($_POST['member_id']);
-        self::validate_member_access($mid);
+            SM_Access::verify_nonce('sm_professional_action');
+
+            $mid = intval($_POST['member_id']);
+            SM_Access::validate_member_access($mid);
+
             if (SM_DB::add_professional_request($mid, sanitize_text_field($_POST['request_type']))) {
                 wp_send_json_success(['message' => 'Request submitted']);
             } else {
@@ -892,10 +818,9 @@ class SM_Member_Manager {
 
     public static function ajax_process_professional_request() {
         try {
-            if (!current_user_can('sm_manage_members') && !current_user_can('manage_options')) {
-                 wp_send_json_error(['message' => 'Unauthorized access.']);
-            }
-            check_ajax_referer('sm_admin_action', 'nonce');
+            SM_Access::check_any_capability(['sm_manage_members', 'manage_options']);
+            SM_Access::verify_nonce('sm_admin_action');
+
             if (SM_DB::process_professional_request(intval($_POST['request_id']), sanitize_text_field($_POST['status']), sanitize_textarea_field($_POST['notes'] ?? ''))) {
                 wp_send_json_success(['message' => 'Request processed']);
             } else {
@@ -908,12 +833,8 @@ class SM_Member_Manager {
 
     public static function ajax_track_membership_request() {
         try {
-            // This is primarily called from public context
-            if (isset($_POST['nonce'])) {
-                check_ajax_referer('sm_registration_nonce', 'nonce');
-            } else {
-                check_ajax_referer('sm_registration_nonce', '_wpnonce');
-            }
+            SM_Access::verify_nonce('sm_registration_nonce');
+
             $req = SM_DB::get_membership_request_by_national_id(sanitize_text_field($_POST['national_id']));
             if (!$req) {
                 wp_send_json_error(['message' => 'لم يتم العثور على الطلب']);
