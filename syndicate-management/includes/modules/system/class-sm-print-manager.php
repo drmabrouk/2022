@@ -2,20 +2,11 @@
 if (!defined('ABSPATH')) exit;
 
 class SM_Print_Manager {
-    private static function check_capability($cap) {
-        if (!current_user_can($cap)) {
-            wp_send_json_error(['message' => 'Unauthorized access.']);
-        }
-    }
 
     public static function ajax_get_custom_print() {
         try {
-            self::check_capability('sm_print_reports');
-            if (isset($_POST['nonce'])) {
-                check_ajax_referer('sm_admin_action', 'nonce');
-            } else {
-                check_ajax_referer('sm_admin_action', 'sm_admin_nonce');
-            }
+            SM_Access::check_capability('sm_print_reports');
+            SM_Access::verify_nonce('sm_admin_action', isset($_POST['nonce']) ? 'nonce' : 'sm_admin_nonce');
 
             $module = sanitize_text_field($_POST['module'] ?? '');
             $fields = isset($_POST['fields']) ? array_map('sanitize_text_field', $_POST['fields']) : [];
@@ -230,7 +221,6 @@ class SM_Print_Manager {
             }
 
             if (empty($data)) {
-                // Return success but with info that data is empty to prevent JS crash
                 wp_send_json_success(['html' => '<div dir="rtl" style="padding:50px; text-align:center; font-family:sans-serif;"><h3>لا توجد بيانات متاحة للطباعة</h3><p>يرجى التأكد من وجود سجلات في الجدول تطابق معايير البحث المحددة.</p></div>']);
                 return;
             }

@@ -110,10 +110,8 @@ class SM_Health_Check {
     }
 
     public static function ajax_run_health_check() {
-        if (!current_user_can('manage_options') && !current_user_can('sm_full_access')) {
-            wp_send_json_error('Unauthorized');
-        }
-        check_ajax_referer('sm_admin_action', 'nonce');
+        SM_Access::check_any_capability(['manage_options', 'sm_full_access']);
+        SM_Access::verify_nonce('sm_admin_action');
         wp_send_json_success(self::run_all_checks());
     }
 }

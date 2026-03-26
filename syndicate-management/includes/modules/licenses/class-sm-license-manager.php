@@ -4,48 +4,32 @@ if (!defined('ABSPATH')) {
 }
 
 class SM_License_Manager {
-    private static function check_capability($cap) {
-        if (!current_user_can($cap)) {
-            wp_send_json_error(['message' => 'Unauthorized access.']);
-        }
-    }
-
-    private static function validate_member_access($member_id) {
-        if (!SM_Member_Manager::can_access_member($member_id)) {
-            wp_send_json_error(['message' => 'Access denied to this member data.']);
-        }
-    }
 
     public static function ajax_update_license() {
         try {
-            if (!current_user_can('sm_manage_licenses') && !current_user_can('manage_options')) {
-                 wp_send_json_error(['message' => 'Unauthorized access.']);
-            }
-            if (isset($_POST['nonce'])) {
-                check_ajax_referer('sm_add_member', 'nonce');
-            } else {
-                check_ajax_referer('sm_add_member', 'sm_nonce');
-            }
+            SM_Access::check_any_capability(['sm_manage_licenses', 'manage_options']);
+            SM_Access::verify_nonce('sm_add_member');
+
             $mid = intval($_POST['member_id']);
-        self::validate_member_access($mid);
+            SM_Access::validate_member_access($mid);
 
-        $res = SM_DB::update_member($mid, [
-            'license_number' => sanitize_text_field($_POST['license_number']),
-            'license_issue_date' => sanitize_text_field($_POST['license_issue_date']),
-            'license_expiration_date' => sanitize_text_field($_POST['license_expiration_date'])
-        ]);
+            $res = SM_DB::update_member($mid, [
+                'license_number' => sanitize_text_field($_POST['license_number']),
+                'license_issue_date' => sanitize_text_field($_POST['license_issue_date']),
+                'license_expiration_date' => sanitize_text_field($_POST['license_expiration_date'])
+            ]);
 
-        if ($res === false) {
-            wp_send_json_error(['message' => 'فشل في تحديث بيانات الترخيص في قاعدة البيانات.']);
-        }
+            if ($res === false) {
+                wp_send_json_error(['message' => 'فشل في تحديث بيانات الترخيص في قاعدة البيانات.']);
+            }
 
-        SM_DB::add_document([
-            'member_id' => $mid,
-            'category' => 'licenses',
-            'title' => "تصريح مزاولة مهنة رقم " . $_POST['license_number'],
-            'file_url' => admin_url('admin-ajax.php?action=sm_print_license&member_id=' . $mid),
-            'file_type' => 'application/pdf'
-        ]);
+            SM_DB::add_document([
+                'member_id' => $mid,
+                'category' => 'licenses',
+                'title' => "تصريح مزاولة مهنة رقم " . $_POST['license_number'],
+                'file_url' => admin_url('admin-ajax.php?action=sm_print_license&member_id=' . $mid),
+                'file_type' => 'application/pdf'
+            ]);
             SM_Logger::log('تحديث ترخيص مزاولة', "العضو ID: $mid");
             wp_send_json_success();
         } catch (Throwable $e) {
@@ -55,37 +39,32 @@ class SM_License_Manager {
 
     public static function ajax_update_facility() {
         try {
-            if (!current_user_can('sm_manage_licenses') && !current_user_can('manage_options')) {
-                 wp_send_json_error(['message' => 'Unauthorized access.']);
-            }
-            if (isset($_POST['nonce'])) {
-                check_ajax_referer('sm_add_member', 'nonce');
-            } else {
-                check_ajax_referer('sm_add_member', 'sm_nonce');
-            }
+            SM_Access::check_any_capability(['sm_manage_licenses', 'manage_options']);
+            SM_Access::verify_nonce('sm_add_member');
+
             $mid = intval($_POST['member_id']);
-        self::validate_member_access($mid);
+            SM_Access::validate_member_access($mid);
 
-        $res = SM_DB::update_member($mid, [
-            'facility_name' => sanitize_text_field($_POST['facility_name']),
-            'facility_number' => sanitize_text_field($_POST['facility_number']),
-            'facility_category' => sanitize_text_field($_POST['facility_category']),
-            'facility_license_issue_date' => sanitize_text_field($_POST['facility_license_issue_date']),
-            'facility_license_expiration_date' => sanitize_text_field($_POST['facility_license_expiration_date']),
-            'facility_address' => sanitize_textarea_field($_POST['facility_address'])
-        ]);
+            $res = SM_DB::update_member($mid, [
+                'facility_name' => sanitize_text_field($_POST['facility_name']),
+                'facility_number' => sanitize_text_field($_POST['facility_number']),
+                'facility_category' => sanitize_text_field($_POST['facility_category']),
+                'facility_license_issue_date' => sanitize_text_field($_POST['facility_license_issue_date']),
+                'facility_license_expiration_date' => sanitize_text_field($_POST['facility_license_expiration_date']),
+                'facility_address' => sanitize_textarea_field($_POST['facility_address'])
+            ]);
 
-        if ($res === false) {
-            wp_send_json_error(['message' => 'فشل في تحديث بيانات المنشأة في قاعدة البيانات.']);
-        }
+            if ($res === false) {
+                wp_send_json_error(['message' => 'فشل في تحديث بيانات المنشأة في قاعدة البيانات.']);
+            }
 
-        SM_DB::add_document([
-            'member_id' => $mid,
-            'category' => 'licenses',
-            'title' => "ترخيص منشأة: " . $_POST['facility_name'],
-            'file_url' => admin_url('admin-ajax.php?action=sm_print_facility&member_id=' . $mid),
-            'file_type' => 'application/pdf'
-        ]);
+            SM_DB::add_document([
+                'member_id' => $mid,
+                'category' => 'licenses',
+                'title' => "ترخيص منشأة: " . $_POST['facility_name'],
+                'file_url' => admin_url('admin-ajax.php?action=sm_print_facility&member_id=' . $mid),
+                'file_type' => 'application/pdf'
+            ]);
             SM_Logger::log('تحديث منشأة', "العضو ID: $mid");
             wp_send_json_success();
         } catch (Throwable $e) {
@@ -284,17 +263,17 @@ class SM_License_Manager {
     }
 
     public static function ajax_print_license() {
-        if (!current_user_can('sm_print_reports')) { wp_die('Unauthorized'); }
+        SM_Access::check_capability('sm_print_reports');
         $mid = intval($_GET['member_id'] ?? 0);
-        if (!$mid || !SM_Member_Manager::can_access_member($mid)) { wp_die('Access denied'); }
+        SM_Access::validate_member_access($mid);
         include SM_PLUGIN_DIR . 'templates/print-practice-license.php';
         exit;
     }
 
     public static function ajax_print_facility() {
-        if (!current_user_can('sm_print_reports')) { wp_die('Unauthorized'); }
+        SM_Access::check_capability('sm_print_reports');
         $mid = intval($_GET['member_id'] ?? 0);
-        if (!$mid || !SM_Member_Manager::can_access_member($mid)) { wp_die('Access denied'); }
+        SM_Access::validate_member_access($mid);
         include SM_PLUGIN_DIR . 'templates/print-facility-license.php';
         exit;
     }

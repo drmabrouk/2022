@@ -17,6 +17,7 @@ class Syndicate_Management {
     private function load_dependencies() {
         // Core Framework
         require_once SM_PLUGIN_DIR . 'includes/core/class-sm-loader.php';
+        require_once SM_PLUGIN_DIR . 'includes/core/class-sm-access.php';
         require_once SM_PLUGIN_DIR . 'includes/core/class-sm-settings.php';
         require_once SM_PLUGIN_DIR . 'includes/core/class-sm-logger.php';
         require_once SM_PLUGIN_DIR . 'includes/core/class-sm-health-check.php';
@@ -29,11 +30,11 @@ class Syndicate_Management {
         require_once SM_PLUGIN_DIR . 'includes/database/class-sm-db-communications.php';
         require_once SM_PLUGIN_DIR . 'includes/database/class-sm-db-education.php';
         require_once SM_PLUGIN_DIR . 'includes/database/class-sm-db-system.php';
-        require_once SM_PLUGIN_DIR . 'includes/class-sm-db.php'; // Legacy Wrapper
+        require_once SM_PLUGIN_DIR . 'includes/database/class-sm-db.php'; // Legacy Wrapper
 
         // Utilities & Shared logic
-        require_once SM_PLUGIN_DIR . 'includes/class-sm-finance.php';
-        require_once SM_PLUGIN_DIR . 'includes/class-sm-notifications.php';
+        require_once SM_PLUGIN_DIR . 'includes/modules/finance/class-sm-finance.php';
+        require_once SM_PLUGIN_DIR . 'includes/modules/system/class-sm-notifications.php';
 
         // Functional Modules
         require_once SM_PLUGIN_DIR . 'includes/modules/auth/class-sm-auth.php';
@@ -72,8 +73,8 @@ class Syndicate_Management {
             'sm_add_member_ajax' => ['SM_Member_Manager', 'ajax_add_member'],
             'sm_update_member_ajax' => ['SM_Member_Manager', 'ajax_update_member'],
             'sm_delete_member_ajax' => ['SM_Member_Manager', 'ajax_delete_member'],
-            'sm_import_members_csv' => ['SM_Member_Manager', 'ajax_import_members_csv'],
-            'sm_import_staffs_csv' => ['SM_Member_Manager', 'ajax_import_staffs_csv'],
+            'sm_import_members_csv' => ['SM_Member_Manager', 'handle_member_import'],
+            'sm_import_staffs_csv' => ['SM_Member_Manager', 'handle_staff_import'],
             'sm_update_member_account_ajax' => ['SM_Member_Manager', 'ajax_update_member_account'],
             'sm_process_membership_request' => ['SM_Member_Manager', 'ajax_process_membership_request'],
             'sm_update_member_photo' => ['SM_Member_Manager', 'ajax_update_member_photo'],
@@ -271,10 +272,10 @@ class Syndicate_Management {
 
     public function handle_form_imports() {
         if (isset($_POST['sm_import_members_csv'])) {
-            SM_Member_Manager::ajax_import_members_csv();
+            SM_Member_Manager::handle_member_import();
         }
         if (isset($_POST['sm_import_staffs_csv'])) {
-            SM_Member_Manager::ajax_import_staffs_csv();
+            SM_Member_Manager::handle_staff_import();
         }
     }
 

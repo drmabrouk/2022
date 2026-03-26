@@ -4,61 +4,46 @@ if (!defined('ABSPATH')) {
 }
 
 class SM_Messaging_Manager {
-    private static function check_capability($cap) {
-        if (!current_user_can($cap)) {
-            wp_send_json_error(['message' => 'Unauthorized access.']);
-        }
-    }
-
-    private static function validate_member_access($member_id) {
-        if (!SM_Member_Manager::can_access_member($member_id)) {
-            wp_send_json_error(['message' => 'Access denied to this member data.']);
-        }
-    }
 
     public static function ajax_send_message() {
         try {
             if (!is_user_logged_in()) {
                 wp_send_json_error(['message' => 'Unauthorized']);
             }
-            if (isset($_POST['nonce'])) {
-                check_ajax_referer('sm_message_action', 'nonce');
-            } else {
-                check_ajax_referer('sm_message_action', '_wpnonce');
+            SM_Access::verify_nonce('sm_message_action');
+
+            $sid = get_current_user_id();
+            $mid = intval($_POST['member_id'] ?? 0);
+
+            if (!$mid) {
+                $member_wp = SM_DB_Members::get_member_by_username(wp_get_current_user()->user_login);
+                if ($member_wp) {
+                    $mid = $member_wp->id;
+                }
             }
 
-        $sid = get_current_user_id();
-        $mid = intval($_POST['member_id'] ?? 0);
+            SM_Access::validate_member_access($mid);
 
-        if (!$mid) {
-            $member_wp = SM_DB_Members::get_member_by_username(wp_get_current_user()->user_login);
-            if ($member_wp) {
-                $mid = $member_wp->id;
+            $member = SM_DB::get_member_by_id($mid);
+            if (!$member) {
+                wp_send_json_error(['message' => 'Invalid member context']);
             }
-        }
 
-        self::validate_member_access($mid);
+            $msg = sanitize_textarea_field($_POST['message'] ?? '');
+            $rid = intval($_POST['receiver_id'] ?? 0);
 
-        $member = SM_DB::get_member_by_id($mid);
-        if (!$member) {
-            wp_send_json_error(['message' => 'Invalid member context']);
-        }
-
-        $msg = sanitize_textarea_field($_POST['message'] ?? '');
-        $rid = intval($_POST['receiver_id'] ?? 0);
-
-        $url = null;
-        if (!empty($_FILES['message_file']['name'])) {
-            if (!function_exists('media_handle_upload')) {
-                require_once(ABSPATH . 'wp-admin/includes/file.php');
-                require_once(ABSPATH . 'wp-admin/includes/image.php');
-                require_once(ABSPATH . 'wp-admin/includes/media.php');
+            $url = null;
+            if (!empty($_FILES['message_file']['name'])) {
+                if (!function_exists('media_handle_upload')) {
+                    require_once(ABSPATH . 'wp-admin/includes/file.php');
+                    require_once(ABSPATH . 'wp-admin/includes/image.php');
+                    require_once(ABSPATH . 'wp-admin/includes/media.php');
+                }
+                $att_id = media_handle_upload('message_file', 0);
+                if (!is_wp_error($att_id)) {
+                    $url = wp_get_attachment_url($att_id);
+                }
             }
-            $att_id = media_handle_upload('message_file', 0);
-            if (!is_wp_error($att_id)) {
-                $url = wp_get_attachment_url($att_id);
-            }
-        }
 
             SM_DB::send_message($sid, $rid, $msg, $mid, $url, $member->governorate);
             wp_send_json_success();
@@ -72,22 +57,17 @@ class SM_Messaging_Manager {
             if (!is_user_logged_in()) {
                 wp_send_json_error(['message' => 'Unauthorized']);
             }
-            if (isset($_POST['nonce'])) {
-                check_ajax_referer('sm_message_action', 'nonce');
-            } else {
-                check_ajax_referer('sm_message_action', '_wpnonce');
+            SM_Access::verify_nonce('sm_message_action');
+
+            $mid = intval($_POST['member_id'] ?? 0);
+            if (!$mid) {
+                $member_wp = SM_DB_Members::get_member_by_username(wp_get_current_user()->user_login);
+                if ($member_wp) {
+                    $mid = $member_wp->id;
+                }
             }
 
-        $mid = intval($_POST['member_id'] ?? 0);
-        if (!$mid) {
-            $member_wp = SM_DB_Members::get_member_by_username(wp_get_current_user()->user_login);
-            if ($member_wp) {
-                $mid = $member_wp->id;
-            }
-        }
-
-        self::validate_member_access($mid);
-
+            SM_Access::validate_member_access($mid);
             wp_send_json_success(SM_DB::get_ticket_messages($mid));
         } catch (Throwable $e) {
             wp_send_json_error(['message' => 'Critical Error: ' . $e->getMessage()]);
@@ -95,7 +75,7 @@ class SM_Messaging_Manager {
     }
 
     public static function ajax_submit_contact_form() {
-        check_ajax_referer('sm_contact_action', 'nonce');
+        SM_Access::verify_nonce('sm_contact_action');
 
         $name = sanitize_text_field($_POST['name']);
         $email = sanitize_email($_POST['email']);
@@ -129,32 +109,29 @@ class SM_Messaging_Manager {
             if (!is_user_logged_in()) {
                 wp_send_json_error(['message' => 'Unauthorized']);
             }
-            if (isset($_POST['nonce'])) {
-                check_ajax_referer('sm_message_action', 'nonce');
-            } else {
-                check_ajax_referer('sm_message_action', '_wpnonce');
-            }
-        $user = wp_get_current_user();
-        $gov = get_user_meta($user->ID, 'sm_governorate', true);
-        $has_full = current_user_can('sm_full_access') || current_user_can('manage_options');
+            SM_Access::verify_nonce('sm_message_action');
 
-        if (!$gov && !$has_full) {
-            wp_send_json_error(['message' => 'No governorate assigned']);
-        }
+            $user = wp_get_current_user();
+            $gov = get_user_meta($user->ID, 'sm_governorate', true);
+            $has_full = current_user_can('sm_full_access') || current_user_can('manage_options');
 
-        if (in_array('sm_syndicate_member', (array)$user->roles)) {
-            $offs = SM_DB::get_governorate_officials($gov);
-            $data = [];
-            foreach($offs as $o) {
-                $data[] = [
-                    'official' => [
-                        'ID' => $o->ID,
-                        'display_name' => $o->display_name,
-                        'avatar' => get_avatar_url($o->ID)
-                    ]
-                ];
+            if (!$gov && !$has_full) {
+                wp_send_json_error(['message' => 'No governorate assigned']);
             }
-            wp_send_json_success(['type' => 'member_view', 'officials' => $data]);
+
+            if (in_array('sm_syndicate_member', (array)$user->roles)) {
+                $offs = SM_DB::get_governorate_officials($gov);
+                $data = [];
+                foreach($offs as $o) {
+                    $data[] = [
+                        'official' => [
+                            'ID' => $o->ID,
+                            'display_name' => $o->display_name,
+                            'avatar' => get_avatar_url($o->ID)
+                        ]
+                    ];
+                }
+                wp_send_json_success(['type' => 'member_view', 'officials' => $data]);
             } else {
                 $t_gov = $has_full ? null : $gov;
                 $convs = SM_DB::get_governorate_conversations($t_gov);
@@ -172,11 +149,7 @@ class SM_Messaging_Manager {
         if (!is_user_logged_in()) {
             wp_send_json_error(['message' => 'Unauthorized']);
         }
-        if (isset($_POST['nonce'])) {
-            check_ajax_referer('sm_message_action', 'nonce');
-        } else {
-            check_ajax_referer('sm_message_action', '_wpnonce');
-        }
+        SM_Access::verify_nonce('sm_message_action');
         SM_DB::mark_messages_read(get_current_user_id(), intval($_POST['other_user_id']));
         wp_send_json_success();
     }
@@ -185,11 +158,7 @@ class SM_Messaging_Manager {
         if (!is_user_logged_in()) {
             wp_send_json_error(['message' => 'Unauthorized']);
         }
-        if (isset($_REQUEST['nonce'])) {
-            check_ajax_referer('sm_ticket_action', 'nonce');
-        } else {
-            check_ajax_referer('sm_ticket_action', '_wpnonce');
-        }
+        SM_Access::verify_nonce('sm_ticket_action');
         wp_send_json_success(SM_DB::get_tickets($_GET));
     }
 
@@ -198,43 +167,39 @@ class SM_Messaging_Manager {
             if (!is_user_logged_in()) {
                 wp_send_json_error(['message' => 'Unauthorized']);
             }
-            if (isset($_POST['nonce'])) {
-                check_ajax_referer('sm_ticket_action', 'nonce');
-            } else {
-                check_ajax_referer('sm_ticket_action', '_wpnonce');
+            SM_Access::verify_nonce('sm_ticket_action');
+
+            $user = wp_get_current_user();
+            $member = SM_DB_Members::get_member_by_username($user->user_login);
+            if (!$member) {
+                wp_send_json_error(['message' => 'Member profile not found']);
             }
-        $user = wp_get_current_user();
-        $member = SM_DB_Members::get_member_by_username($user->user_login);
-        if (!$member) {
-            wp_send_json_error(['message' => 'Member profile not found']);
-        }
-        $url = null;
-        $attachment_path = null;
-        if (!empty($_FILES['attachment']['name'])) {
-            if (!function_exists('media_handle_upload')) {
-                require_once(ABSPATH . 'wp-admin/includes/file.php');
-                require_once(ABSPATH . 'wp-admin/includes/image.php');
-                require_once(ABSPATH . 'wp-admin/includes/media.php');
+            $url = null;
+            $attachment_path = null;
+            if (!empty($_FILES['attachment']['name'])) {
+                if (!function_exists('media_handle_upload')) {
+                    require_once(ABSPATH . 'wp-admin/includes/file.php');
+                    require_once(ABSPATH . 'wp-admin/includes/image.php');
+                    require_once(ABSPATH . 'wp-admin/includes/media.php');
+                }
+                $att_id = media_handle_upload('attachment', 0);
+                if (!is_wp_error($att_id)) {
+                    $url = wp_get_attachment_url($att_id);
+                    $attachment_path = get_attached_file($att_id);
+                }
             }
-            $att_id = media_handle_upload('attachment', 0);
-            if (!is_wp_error($att_id)) {
-                $url = wp_get_attachment_url($att_id);
-                $attachment_path = get_attached_file($att_id);
-            }
-        }
-        $subject = sanitize_text_field($_POST['subject']);
-        $message = sanitize_textarea_field($_POST['message']);
-        $tid = SM_DB::create_ticket([
-            'member_id' => $member->id,
-            'subject' => $subject,
-            'category' => sanitize_text_field($_POST['category']),
-            'priority' => sanitize_text_field($_POST['priority'] ?? 'medium'),
-            'message' => $message,
-            'province' => $member->governorate,
-            'file_url' => $url
-        ]);
+            $subject = sanitize_text_field($_POST['subject']);
+            $message = sanitize_textarea_field($_POST['message']);
+            $tid = SM_DB::create_ticket([
+                'member_id' => $member->id,
+                'subject' => $subject,
+                'category' => sanitize_text_field($_POST['category']),
+                'priority' => sanitize_text_field($_POST['priority'] ?? 'medium'),
+                'message' => $message,
+                'province' => $member->governorate,
+                'file_url' => $url
+            ]);
             if ($tid) {
-                // Notification to official (Optional, but let's send confirmation to member)
                 if ($member->email) {
                     $email_subject = "تأكيد استلام تذكرة دعم رقم #$tid: $subject";
                     $email_body = "عزيزي العضو {$member->name}،\n\nتم استلام تذكرتكم بنجاح وسيقوم الفريق المختص بمراجعتها والرد عليكم في أقرب وقت ممكن.\n\nالموضوع: $subject\nالتفاصيل: $message";
@@ -253,11 +218,8 @@ class SM_Messaging_Manager {
         if (!is_user_logged_in()) {
             wp_send_json_error(['message' => 'Unauthorized']);
         }
-        if (isset($_REQUEST['nonce'])) {
-            check_ajax_referer('sm_ticket_action', 'nonce');
-        } else {
-            check_ajax_referer('sm_ticket_action', '_wpnonce');
-        }
+        SM_Access::verify_nonce('sm_ticket_action');
+
         $id = intval($_GET['id']);
         $ticket = SM_DB::get_ticket($id);
         if (!$ticket) {
@@ -285,36 +247,33 @@ class SM_Messaging_Manager {
             if (!is_user_logged_in()) {
                 wp_send_json_error(['message' => 'Unauthorized']);
             }
-            if (isset($_POST['nonce'])) {
-                check_ajax_referer('sm_ticket_action', 'nonce');
-            } else {
-                check_ajax_referer('sm_ticket_action', '_wpnonce');
-            }
-        $tid = intval($_POST['ticket_id']);
-        $ticket = SM_DB::get_ticket($tid);
-        if (!$ticket) wp_send_json_error(['message' => 'Ticket not found']);
+            SM_Access::verify_nonce('sm_ticket_action');
 
-        $url = null;
-        $attachment_path = null;
-        if (!empty($_FILES['attachment']['name'])) {
-            if (!function_exists('media_handle_upload')) {
-                require_once(ABSPATH . 'wp-admin/includes/file.php');
-                require_once(ABSPATH . 'wp-admin/includes/image.php');
-                require_once(ABSPATH . 'wp-admin/includes/media.php');
+            $tid = intval($_POST['ticket_id']);
+            $ticket = SM_DB::get_ticket($tid);
+            if (!$ticket) wp_send_json_error(['message' => 'Ticket not found']);
+
+            $url = null;
+            $attachment_path = null;
+            if (!empty($_FILES['attachment']['name'])) {
+                if (!function_exists('media_handle_upload')) {
+                    require_once(ABSPATH . 'wp-admin/includes/file.php');
+                    require_once(ABSPATH . 'wp-admin/includes/image.php');
+                    require_once(ABSPATH . 'wp-admin/includes/media.php');
+                }
+                $att_id = media_handle_upload('attachment', 0);
+                if (!is_wp_error($att_id)) {
+                    $url = wp_get_attachment_url($att_id);
+                    $attachment_path = get_attached_file($att_id);
+                }
             }
-            $att_id = media_handle_upload('attachment', 0);
-            if (!is_wp_error($att_id)) {
-                $url = wp_get_attachment_url($att_id);
-                $attachment_path = get_attached_file($att_id);
-            }
-        }
-        $msg = sanitize_textarea_field($_POST['message']);
-        $rid = SM_DB::add_ticket_reply([
-            'ticket_id' => $tid,
-            'sender_id' => get_current_user_id(),
-            'message' => $msg,
-            'file_url' => $url
-        ]);
+            $msg = sanitize_textarea_field($_POST['message']);
+            $rid = SM_DB::add_ticket_reply([
+                'ticket_id' => $tid,
+                'sender_id' => get_current_user_id(),
+                'message' => $msg,
+                'file_url' => $url
+            ]);
             if ($rid) {
                 $sender = wp_get_current_user();
                 $is_official_reply = !in_array('sm_syndicate_member', $sender->roles);
@@ -322,7 +281,6 @@ class SM_Messaging_Manager {
                 if ($is_official_reply) {
                     SM_DB::update_ticket_status($tid, 'in-progress');
 
-                    // Send email to member
                     $member = SM_DB::get_member_by_id($ticket->member_id);
                     if ($member && $member->email) {
                         $email_subject = "رد جديد على تذكرة الدعم: " . $ticket->subject;
@@ -343,11 +301,8 @@ class SM_Messaging_Manager {
         if (!is_user_logged_in()) {
             wp_send_json_error(['message' => 'Unauthorized']);
         }
-        if (isset($_POST['nonce'])) {
-            check_ajax_referer('sm_ticket_action', 'nonce');
-        } else {
-            check_ajax_referer('sm_ticket_action', '_wpnonce');
-        }
+        SM_Access::verify_nonce('sm_ticket_action');
+
         if (SM_DB::update_ticket_status(intval($_POST['id']), 'closed')) {
             wp_send_json_success();
         } else {
@@ -356,77 +311,72 @@ class SM_Messaging_Manager {
     }
 
     public static function ajax_get_communication_templates() {
-        self::check_capability('sm_manage_system');
+        SM_Access::check_capability('sm_manage_system');
         wp_send_json_success(SM_DB::get_notification_templates());
     }
 
     public static function ajax_send_direct_message() {
         try {
-            self::check_capability('sm_manage_system');
-            if (isset($_POST['nonce'])) {
-                check_ajax_referer('sm_message_action', 'nonce');
-            } else {
-                check_ajax_referer('sm_message_action', '_wpnonce');
+            SM_Access::check_capability('sm_manage_system');
+            SM_Access::verify_nonce('sm_message_action');
+
+            $member_ids = isset($_POST['member_ids']) ? array_map('intval', $_POST['member_ids']) : [];
+            if (empty($member_ids) && !empty($_POST['member_id'])) {
+                $member_ids[] = intval($_POST['member_id']);
             }
 
-        $member_ids = isset($_POST['member_ids']) ? array_map('intval', $_POST['member_ids']) : [];
-        if (empty($member_ids) && !empty($_POST['member_id'])) {
-            $member_ids[] = intval($_POST['member_id']);
-        }
+            if (empty($member_ids)) wp_send_json_error(['message' => 'لم يتم اختيار أعضاء']);
 
-        if (empty($member_ids)) wp_send_json_error(['message' => 'لم يتم اختيار أعضاء']);
+            $attachment_paths = [];
+            $attachment_urls = [];
+            if (!empty($_FILES['attachments']['name'][0])) {
+                if (!function_exists('media_handle_upload')) {
+                    require_once(ABSPATH . 'wp-admin/includes/file.php');
+                    require_once(ABSPATH . 'wp-admin/includes/image.php');
+                    require_once(ABSPATH . 'wp-admin/includes/media.php');
+                }
 
-        // Handle Attachments
-        $attachment_paths = [];
-        $attachment_urls = [];
-        if (!empty($_FILES['attachments']['name'][0])) {
-            if (!function_exists('media_handle_upload')) {
-                require_once(ABSPATH . 'wp-admin/includes/file.php');
-                require_once(ABSPATH . 'wp-admin/includes/image.php');
-                require_once(ABSPATH . 'wp-admin/includes/media.php');
-            }
-
-            foreach ($_FILES['attachments']['name'] as $key => $value) {
-                if ($_FILES['attachments']['error'][$key] === UPLOAD_ERR_OK) {
-                    $_FILES['single_attachment'] = [
-                        'name'     => $_FILES['attachments']['name'][$key],
-                        'type'     => $_FILES['attachments']['type'][$key],
-                        'tmp_name' => $_FILES['attachments']['tmp_name'][$key],
-                        'error'    => $_FILES['attachments']['error'][$key],
-                        'size'     => $_FILES['attachments']['size'][$key]
-                    ];
-                    $att_id = media_handle_upload('single_attachment', 0);
-                    if (!is_wp_error($att_id)) {
-                        $attachment_paths[] = get_attached_file($att_id);
-                        $attachment_urls[] = wp_get_attachment_url($att_id);
+                foreach ($_FILES['attachments']['name'] as $key => $value) {
+                    if ($_FILES['attachments']['error'][$key] === UPLOAD_ERR_OK) {
+                        $_FILES['single_attachment'] = [
+                            'name'     => $_FILES['attachments']['name'][$key],
+                            'type'     => $_FILES['attachments']['type'][$key],
+                            'tmp_name' => $_FILES['attachments']['tmp_name'][$key],
+                            'error'    => $_FILES['attachments']['error'][$key],
+                            'size'     => $_FILES['attachments']['size'][$key]
+                        ];
+                        $att_id = media_handle_upload('single_attachment', 0);
+                        if (!is_wp_error($att_id)) {
+                            $attachment_paths[] = get_attached_file($att_id);
+                            $attachment_urls[] = wp_get_attachment_url($att_id);
+                        }
                     }
                 }
             }
-        }
 
-        $subject = sanitize_text_field($_POST['subject'] ?? '');
-        $raw_message = sanitize_textarea_field($_POST['message'] ?? '');
-        $channels = $_POST['channels'] ?? [];
-        $template_type = sanitize_text_field($_POST['template_type'] ?? 'direct');
+            $subject = sanitize_text_field($_POST['subject'] ?? '');
+            $raw_message = sanitize_textarea_field($_POST['message'] ?? '');
+            $channels = $_POST['channels'] ?? [];
+            $template_type = sanitize_text_field($_POST['template_type'] ?? 'direct');
 
-        if (!empty($member_ids)) {
-            SM_Finance::prefetch_data($member_ids);
-        }
+            if (!empty($member_ids)) {
+                SM_Finance::prefetch_data($member_ids);
+            }
 
-        $results = [];
-        foreach ($member_ids as $mid) {
-            $member = SM_DB::get_member_by_id($mid);
-            if (!$member) continue;
+            $results = [];
+            foreach ($member_ids as $mid) {
+                $member = SM_DB::get_member_by_id($mid);
+                if (!$member) continue;
 
-            $finance = SM_Finance::calculate_member_dues($member);
-            $message = str_replace(
-                ['{member_name}', '{membership_number}', '{year}', '{amount}', '{balance}'],
-                [$member->name, $member->membership_number ?: '---', date('Y'), number_format($finance['balance'], 2), number_format($finance['balance'], 2)],
-                $raw_message
-            );
+                $finance = SM_Finance::calculate_member_dues($member);
+                $message = str_replace(
+                    ['{member_name}', '{membership_number}', '{year}', '{amount}', '{balance}'],
+                    [$member->name, $member->membership_number ?: '---', date('Y'), number_format($finance['balance'], 2), number_format($finance['balance'], 2)],
+                    $raw_message
+                );
 
-            $results[$mid] = self::process_single_direct_comm($mid, $member, $channels, $subject, $message, $template_type, $attachment_paths, $attachment_urls);
-        }
+                $results[$mid] = self::process_single_direct_comm($mid, $member, $channels, $subject, $message, $template_type, $attachment_paths, $attachment_urls);
+            }
 
             wp_send_json_success($results);
         } catch (Throwable $e) {
@@ -439,7 +389,6 @@ class SM_Messaging_Manager {
         $status_results = [];
         $primary_file_url = !empty($attachment_urls) ? $attachment_urls[0] : null;
 
-        // 1. WhatsApp
         if (in_array('whatsapp', $channels)) {
             SM_DB_Communications::log_notification([
                 'member_id' => $mid,
@@ -452,7 +401,6 @@ class SM_Messaging_Manager {
             $status_results['whatsapp'] = 'logged';
         }
 
-        // 2. Email
         if (in_array('email', $channels) && !empty($member->email)) {
             $sent = self::send_professional_html_email($member->email, $subject, $message, $attachment_paths, $member);
             if ($sent) {
@@ -468,7 +416,6 @@ class SM_Messaging_Manager {
             $status_results['email'] = $sent ? 'sent' : 'failed';
         }
 
-        // 3. Platform Ticket
         if (in_array('ticket', $channels)) {
             $tid = SM_DB::create_ticket([
                 'member_id' => $mid,
@@ -491,12 +438,10 @@ class SM_Messaging_Manager {
             $status_results['ticket'] = $tid ? 'created' : 'failed';
         }
 
-        // ALWAYS SYNC to sm_messages for Top Bar / Correspondence Tab visibility
         if ($member->wp_user_id) {
             SM_DB::send_message($sid, $member->wp_user_id, $message, $mid, $primary_file_url, $member->governorate);
         }
 
-        // Create targeted alert for Bell icon (Notifications tab)
         SM_DB::save_alert([
             'title' => $subject,
             'message' => $message,
@@ -561,7 +506,6 @@ class SM_Messaging_Manager {
             "Reply-To: $from_email"
         ];
 
-        // We use global filters because wp_mail can be tricky with inline headers for 'From' in some setups
         $from_filter = function() use ($from_email) { return $from_email; };
         $name_filter = function() use ($from_name) { return $from_name; };
         $type_filter = function() { return 'text/html'; };
@@ -580,7 +524,7 @@ class SM_Messaging_Manager {
     }
 
     public static function ajax_get_member_comms_log() {
-        self::check_capability('sm_manage_system');
+        SM_Access::check_capability('sm_manage_system');
         $mid = intval($_GET['member_id'] ?? 0);
         wp_send_json_success(SM_DB_Communications::get_member_notification_logs($mid));
     }

@@ -86,7 +86,7 @@ class SM_Auth {
         </div>
 
         <?php
-        include SM_PLUGIN_DIR . 'includes/modules/auth/login-modals.php';
+        include SM_PLUGIN_DIR . 'templates/login-modals.php';
         return ob_get_clean();
     }
 

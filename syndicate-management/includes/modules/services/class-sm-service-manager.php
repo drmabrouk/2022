@@ -23,41 +23,31 @@ class SM_Service_Manager {
         }
 
         ob_start();
-        include SM_PLUGIN_DIR . 'includes/modules/services/services-template.php';
+        include SM_PLUGIN_DIR . 'templates/public-services.php';
         return ob_get_clean();
-    }
-
-    private static function check_capability($cap) {
-        if (!current_user_can($cap)) {
-            wp_send_json_error(['message' => 'Unauthorized access.']);
-        }
     }
 
     public static function ajax_add_service() {
         try {
-            self::check_capability('sm_manage_system');
-            if (isset($_POST['nonce'])) {
-                check_ajax_referer('sm_admin_action', 'nonce');
-            } else {
-                check_ajax_referer('sm_admin_action', 'sm_admin_nonce');
-            }
+            SM_Access::check_capability('sm_manage_system');
+            SM_Access::verify_nonce('sm_admin_action', isset($_POST['nonce']) ? 'nonce' : 'sm_admin_nonce');
 
             if (empty($_POST['name'])) {
-            wp_send_json_error(['message' => 'اسم الخدمة مطلوب']);
-        }
+                wp_send_json_error(['message' => 'اسم الخدمة مطلوب']);
+            }
 
-        $data = [
-            'name' => sanitize_text_field($_POST['name']),
-            'category' => sanitize_text_field($_POST['category'] ?? 'عام'),
-            'branch' => sanitize_text_field($_POST['branch'] ?? 'all'),
-            'icon' => sanitize_text_field($_POST['icon'] ?? 'dashicons-cloud'),
-            'requires_login' => isset($_POST['requires_login']) ? (int)$_POST['requires_login'] : 1,
-            'description' => sanitize_textarea_field($_POST['description']),
-            'fees' => floatval($_POST['fees'] ?? 0),
-            'status' => in_array($_POST['status'], ['active', 'suspended']) ? $_POST['status'] : 'active',
-            'required_fields' => stripslashes($_POST['required_fields'] ?? '[]'),
-            'selected_profile_fields' => stripslashes($_POST['selected_profile_fields'] ?? '[]')
-        ];
+            $data = [
+                'name' => sanitize_text_field($_POST['name']),
+                'category' => sanitize_text_field($_POST['category'] ?? 'عام'),
+                'branch' => sanitize_text_field($_POST['branch'] ?? 'all'),
+                'icon' => sanitize_text_field($_POST['icon'] ?? 'dashicons-cloud'),
+                'requires_login' => isset($_POST['requires_login']) ? (int)$_POST['requires_login'] : 1,
+                'description' => sanitize_textarea_field($_POST['description']),
+                'fees' => floatval($_POST['fees'] ?? 0),
+                'status' => in_array($_POST['status'], ['active', 'suspended']) ? $_POST['status'] : 'active',
+                'required_fields' => stripslashes($_POST['required_fields'] ?? '[]'),
+                'selected_profile_fields' => stripslashes($_POST['selected_profile_fields'] ?? '[]')
+            ];
 
             if (SM_DB::add_service($data)) {
                 wp_send_json_success();
@@ -71,12 +61,9 @@ class SM_Service_Manager {
 
     public static function ajax_update_service() {
         try {
-            self::check_capability('sm_manage_system');
-            if (isset($_POST['nonce'])) {
-                check_ajax_referer('sm_admin_action', 'nonce');
-            } else {
-                check_ajax_referer('sm_admin_action', 'sm_admin_nonce');
-            }
+            SM_Access::check_capability('sm_manage_system');
+            SM_Access::verify_nonce('sm_admin_action', isset($_POST['nonce']) ? 'nonce' : 'sm_admin_nonce');
+
             if (SM_DB::update_service(intval($_POST['id']), $_POST)) {
                 wp_send_json_success();
             } else {
@@ -89,8 +76,9 @@ class SM_Service_Manager {
 
     public static function ajax_get_services_html() {
         try {
-            self::check_capability('sm_manage_system');
-            check_ajax_referer('sm_admin_action', 'nonce');
+            SM_Access::check_capability('sm_manage_system');
+            SM_Access::verify_nonce('sm_admin_action');
+
             ob_start();
             include SM_PLUGIN_DIR . 'templates/admin-services.php';
             wp_send_json_success(['html' => ob_get_clean()]);
@@ -101,8 +89,9 @@ class SM_Service_Manager {
 
     public static function ajax_delete_service() {
         try {
-            self::check_capability('sm_manage_system');
-            check_ajax_referer('sm_admin_action', 'nonce');
+            SM_Access::check_capability('sm_manage_system');
+            SM_Access::verify_nonce('sm_admin_action');
+
             if (SM_DB::delete_service(intval($_POST['id']), !empty($_POST['permanent']))) {
                 wp_send_json_success();
             } else {
@@ -115,8 +104,9 @@ class SM_Service_Manager {
 
     public static function ajax_restore_service() {
         try {
-            self::check_capability('sm_manage_system');
-            check_ajax_referer('sm_admin_action', 'nonce');
+            SM_Access::check_capability('sm_manage_system');
+            SM_Access::verify_nonce('sm_admin_action');
+
             if (SM_DB::restore_service(intval($_POST['id']))) {
                 wp_send_json_success();
             } else {
@@ -130,32 +120,30 @@ class SM_Service_Manager {
     public static function ajax_submit_service_request() {
         try {
             $sid = intval($_POST['service_id']);
-        $service = SM_DB_Services::get_service_by_id($sid);
+            $service = SM_DB_Services::get_service_by_id($sid);
 
-        if (!$service) {
-            wp_send_json_error(['message' => 'Service not found']);
-        }
+            if (!$service) {
+                wp_send_json_error(['message' => 'Service not found']);
+            }
 
-        $mid = intval($_POST['member_id'] ?? 0);
-        if ($service->requires_login) {
-            if (!is_user_logged_in()) {
-                wp_send_json_error(['message' => 'هذه الخدمة تتطلب تسجيل الدخول']);
+            $mid = intval($_POST['member_id'] ?? 0);
+            if ($service->requires_login) {
+                if (!is_user_logged_in()) {
+                    wp_send_json_error(['message' => 'هذه الخدمة تتطلب تسجيل الدخول']);
+                }
+                SM_Access::validate_member_access($mid);
             }
-            if (!SM_Member_Manager::can_access_member($mid)) {
-                wp_send_json_error(['message' => 'Access denied']);
-            }
-        }
 
-        $data = $_POST;
-        if (!empty($_FILES['payment_receipt'])) {
-            if (!function_exists('wp_handle_upload')) {
-                require_once(ABSPATH . 'wp-admin/includes/file.php');
+            $data = $_POST;
+            if (!empty($_FILES['payment_receipt'])) {
+                if (!function_exists('wp_handle_upload')) {
+                    require_once(ABSPATH . 'wp-admin/includes/file.php');
+                }
+                $upload = wp_handle_upload($_FILES['payment_receipt'], ['test_form' => false]);
+                if (isset($upload['url'])) {
+                    $data['payment_receipt_url'] = $upload['url'];
+                }
             }
-            $upload = wp_handle_upload($_FILES['payment_receipt'], ['test_form' => false]);
-            if (isset($upload['url'])) {
-                $data['payment_receipt_url'] = $upload['url'];
-            }
-        }
 
             $res = SM_DB::submit_service_request($data);
             if ($res) {
@@ -171,25 +159,19 @@ class SM_Service_Manager {
 
     public static function ajax_process_service_request() {
         try {
-            if (!current_user_can('sm_manage_members')) {
-                wp_send_json_error(['message' => 'Unauthorized']);
+            SM_Access::check_capability('sm_manage_members');
+            SM_Access::verify_nonce('sm_admin_action', isset($_POST['nonce']) ? 'nonce' : 'sm_admin_nonce');
+
+            $id = intval($_POST['id']);
+            $status = sanitize_text_field($_POST['status']);
+            $notes = sanitize_textarea_field($_POST['notes'] ?? '');
+
+            $req = SM_DB_Services::get_service_request_by_id($id);
+            if (!$req) {
+                wp_send_json_error(['message' => 'Request not found']);
             }
-            if (isset($_POST['nonce'])) {
-                check_ajax_referer('sm_admin_action', 'nonce');
-            } else {
-                check_ajax_referer('sm_admin_action', 'sm_admin_nonce');
-            }
 
-        $id = intval($_POST['id']);
-        $status = sanitize_text_field($_POST['status']);
-        $notes = sanitize_textarea_field($_POST['notes'] ?? '');
-
-        $req = SM_DB_Services::get_service_request_by_id($id);
-        if (!$req) {
-            wp_send_json_error(['message' => 'Request not found']);
-        }
-
-        $service = SM_DB_Services::get_service_by_id($req->service_id);
+            $service = SM_DB_Services::get_service_by_id($req->service_id);
 
             if (SM_DB::update_service_request_status($id, $status, ($status === 'approved' && $service) ? $service->fees : null, $notes)) {
                 if ($status === 'approved') {
@@ -222,95 +204,92 @@ class SM_Service_Manager {
 
     public static function ajax_track_service_request() {
         try {
-            if (isset($_REQUEST['nonce'])) {
-                check_ajax_referer('sm_contact_action', 'nonce');
-            } else {
-                check_ajax_referer('sm_contact_action', '_wpnonce');
-            }
-        $code = trim(sanitize_text_field($_POST['tracking_code'] ?? ''));
-        if (empty($code)) {
-            wp_send_json_error(['message' => 'يرجى إدخال كود التتبع']);
-        }
+            SM_Access::verify_nonce('sm_contact_action');
 
-        if (strpos($code, 'REG-') === 0) {
-            $id = substr($code, 12);
-            if (empty($id)) {
-                $id = str_replace('REG-', '', $code);
+            $code = trim(sanitize_text_field($_POST['tracking_code'] ?? ''));
+            if (empty($code)) {
+                wp_send_json_error(['message' => 'يرجى إدخال كود التتبع']);
             }
 
-            $req = SM_DB::get_membership_request((int)$id);
+            if (strpos($code, 'REG-') === 0) {
+                $id = substr($code, 12);
+                if (empty($id)) {
+                    $id = str_replace('REG-', '', $code);
+                }
+
+                $req = SM_DB::get_membership_request((int)$id);
+                if (!$req) {
+                    wp_send_json_error(['message' => 'لم يتم العثور على طلب عضوية بهذا الكود']);
+                }
+
+                $labels = [
+                    'Pending Shipment' => 'بانتظار شحن المستندات',
+                    'Shipment Received' => 'تم استلام الملف الورقي',
+                    'Under Review' => 'قيد المراجعة والتدقيق',
+                    'approved' => 'تم القبول والتفعيل',
+                    'rejected' => 'تم الرفض'
+                ];
+
+                wp_send_json_success([
+                    'id' => $req->id,
+                    'service' => 'طلب قيد عضوية جديدة',
+                    'status' => $labels[$req->status] ?? $req->status,
+                    'notes' => $req->notes ?? '',
+                    'date' => date('Y-m-d', strtotime($req->created_at)),
+                    'member' => $req->name,
+                    'email' => $req->email,
+                    'phone' => $req->phone,
+                    'branch' => $req->governorate
+                ]);
+                return;
+            }
+
+            $id = 0;
+            if (strlen($code) > 8 && is_numeric($code)) {
+                $id = substr($code, 8);
+            } elseif (strpos($code, 'SR-') === 0) {
+                $id = str_replace('SR-', '', $code);
+            } elseif (is_numeric($code)) {
+                $id = $code;
+            }
+
+            if (!$id || !is_numeric($id)) {
+                wp_send_json_error(['message' => 'كود تتبع غير صحيح']);
+            }
+
+            $req = SM_DB::get_service_request_by_id((int)$id);
+
             if (!$req) {
-                wp_send_json_error(['message' => 'لم يتم العثور على طلب عضوية بهذا الكود']);
+                wp_send_json_error(['message' => 'لم يتم العثور على طلب بهذا الكود']);
             }
 
-            $labels = [
-                'Pending Shipment' => 'بانتظار شحن المستندات',
-                'Shipment Received' => 'تم استلام الملف الورقي',
-                'Under Review' => 'قيد المراجعة والتدقيق',
-                'approved' => 'تم القبول والتفعيل',
-                'rejected' => 'تم الرفض'
+            $contact = [
+                'email' => $req->member_email ?: 'N/A',
+                'phone' => $req->member_phone ?: 'N/A',
+                'branch' => $req->member_branch ?: 'المركز الرئيسي'
             ];
 
-            wp_send_json_success([
-                'id' => $req->id,
-                'service' => 'طلب قيد عضوية جديدة',
-                'status' => $labels[$req->status] ?? $req->status,
-                'notes' => $req->notes ?? '',
-                'date' => date('Y-m-d', strtotime($req->created_at)),
-                'member' => $req->name,
-                'email' => $req->email,
-                'phone' => $req->phone,
-                'branch' => $req->governorate
-            ]);
-            return;
-        }
+            if ($req->member_id == 0) {
+                $data = json_decode($req->request_data, true);
+                $contact['email'] = $data['cust_email'] ?? 'N/A';
+                $contact['phone'] = $data['cust_phone'] ?? 'N/A';
+                $contact['branch'] = $data['cust_branch'] ?? 'طلب خارجي';
+            }
 
-        $id = 0;
-        if (strlen($code) > 8 && is_numeric($code)) {
-            $id = substr($code, 8);
-        } elseif (strpos($code, 'SR-') === 0) {
-            $id = str_replace('SR-', '', $code);
-        } elseif (is_numeric($code)) {
-            $id = $code;
-        }
-
-        if (!$id || !is_numeric($id)) {
-            wp_send_json_error(['message' => 'كود تتبع غير صحيح']);
-        }
-
-        $req = SM_DB::get_service_request_by_id((int)$id);
-
-        if (!$req) {
-            wp_send_json_error(['message' => 'لم يتم العثور على طلب بهذا الكود']);
-        }
-
-        $contact = [
-            'email' => $req->member_email ?: 'N/A',
-            'phone' => $req->member_phone ?: 'N/A',
-            'branch' => $req->member_branch ?: 'المركز الرئيسي'
-        ];
-
-        if ($req->member_id == 0) {
-            $data = json_decode($req->request_data, true);
-            $contact['email'] = $data['cust_email'] ?? 'N/A';
-            $contact['phone'] = $data['cust_phone'] ?? 'N/A';
-            $contact['branch'] = $data['cust_branch'] ?? 'طلب خارجي';
-        }
-
-        $statuses = [
-            'pending' => 'قيد الانتظار',
-            'under_review' => 'قيد المراجعة الفنية',
-            'processing' => 'جاري التنفيذ',
-            'awaiting_payment' => 'بانتظار السداد',
-            'payment_verified' => 'تم تأكيد الدفع',
-            'approved' => 'مكتمل / معتمد',
-            'issued' => 'تم إصدار المستند',
-            'delivered' => 'تم التسليم للعضو',
-            'rejected' => 'مرفوض',
-            'cancelled' => 'ملغى من العضو',
-            'on_hold' => 'معلق مؤقتاً',
-            'needs_info' => 'نقص في البيانات'
-        ];
+            $statuses = [
+                'pending' => 'قيد الانتظار',
+                'under_review' => 'قيد المراجعة الفنية',
+                'processing' => 'جاري التنفيذ',
+                'awaiting_payment' => 'بانتظار السداد',
+                'payment_verified' => 'تم تأكيد الدفع',
+                'approved' => 'مكتمل / معتمد',
+                'issued' => 'تم إصدار المستند',
+                'delivered' => 'تم التسليم للعضو',
+                'rejected' => 'مرفوض',
+                'cancelled' => 'ملغى من العضو',
+                'on_hold' => 'معلق مؤقتاً',
+                'needs_info' => 'نقص في البيانات'
+            ];
 
             wp_send_json_success([
                 'id' => $req->id,
@@ -330,9 +309,10 @@ class SM_Service_Manager {
 
     public static function ajax_print_service_request() {
         $req = SM_DB_Services::get_service_request_by_id(intval($_GET['id']));
-        if (!$req || !SM_Member_Manager::can_access_member($req->member_id)) {
-            wp_die('Unauthorized');
+        if (!$req) {
+            wp_die('Record not found');
         }
+        SM_Access::validate_member_access($req->member_id);
         include SM_PLUGIN_DIR . 'templates/print-service-request.php';
         exit;
     }
