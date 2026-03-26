@@ -13,7 +13,7 @@ class SM_Public {
     }
 
     public function hide_admin_bar_for_non_admins($show) {
-        return current_user_can('administrator') ? $show : false;
+        return (current_user_can('administrator') || current_user_can('sm_system_admin')) ? $show : false;
     }
 
     public function restrict_admin_access() {
@@ -38,7 +38,7 @@ class SM_Public {
 
         $user = wp_get_current_user();
         $roles = (array)$user->roles;
-        $is_admin_or_manager = in_array('sm_system_admin', $roles) || in_array('sm_syndicate_admin', $roles) || in_array('administrator', $roles);
+        $is_admin_or_manager = in_array('sm_system_admin', $roles) || in_array('sm_general_officer', $roles) || in_array('sm_syndicate_admin', $roles) || in_array('administrator', $roles);
         $is_member = in_array('sm_syndicate_member', $roles) || in_array('sm_member', $roles);
 
         global $wp;
@@ -59,7 +59,8 @@ class SM_Public {
 
     public function custom_login_redirect($redirect_to, $request, $user) {
         if (isset($user->roles) && is_array($user->roles)) {
-            if (in_array('administrator', $user->roles) || in_array('sm_system_admin', $user->roles) || in_array('sm_syndicate_admin', $user->roles)) {
+            $is_privileged = array_intersect(['administrator', 'sm_system_admin', 'sm_general_officer', 'sm_syndicate_admin'], (array)$user->roles);
+            if (!empty($is_privileged)) {
                 return home_url('/dashboard');
             } else {
                 return home_url('/my-account');

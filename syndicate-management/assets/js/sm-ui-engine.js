@@ -543,4 +543,37 @@
         });
     };
 
+    window.smSaveRolePermissions = function(nonce) {
+        const action = 'sm_save_role_permissions';
+        const permissions = {};
+
+        document.querySelectorAll('.sm-perm-check').forEach(cb => {
+            const role = cb.dataset.role;
+            const mod = cb.dataset.mod;
+            if (!permissions[role]) permissions[role] = {};
+            permissions[role][mod] = cb.checked;
+        });
+
+        const fd = new FormData();
+        fd.append('action', action);
+        fd.append('nonce', nonce);
+
+        // Complex objects in FormData need careful nesting or explicit keys
+        for (const [role, mods] of Object.entries(permissions)) {
+            for (const [mod, val] of Object.entries(mods)) {
+                fd.append(`permissions[${role}][${mod}]`, val);
+            }
+        }
+
+        fetch(ajaxurl + '?action=' + action, { method: 'POST', body: fd })
+        .then(r => r.json())
+        .then(res => {
+            if (res.success) {
+                smShowNotification('تم حفظ صلاحيات الأدوار بنجاح');
+            } else {
+                smHandleAjaxError(res.data);
+            }
+        });
+    };
+
 })(window);

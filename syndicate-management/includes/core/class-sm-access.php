@@ -64,6 +64,7 @@ class SM_Access {
 
     /**
      * Logic for member access scoping
+     * Strictly enforces the 4-tier role hierarchy constraints.
      */
     public static function can_access_member($member_id) {
         if (current_user_can('sm_full_access') || current_user_can('manage_options')) {
@@ -78,20 +79,91 @@ class SM_Access {
         $user = wp_get_current_user();
         $roles = (array)$user->roles;
 
-        // Members can access their own data
-        if ((in_array('sm_syndicate_member', $roles) || in_array('sm_member', $roles)) && $member->wp_user_id == $user->ID) {
-            return true;
+        // 1. Syndicate Members (Regular Members) - ONLY their own data
+        if (in_array('sm_syndicate_member', $roles) || in_array('sm_member', $roles)) {
+            return (int)$member->wp_user_id === (int)$user->ID;
         }
 
-        // Officers/Admins are scoped by governorate
-        $my_gov = get_user_meta($user->ID, 'sm_governorate', true);
-        if (in_array('sm_syndicate_admin', $roles) || in_array('sm_syndicate_member', $roles)) {
+        // 2. Branch Officers (sm_syndicate_admin) - Scoped by governorate
+        if (in_array('sm_syndicate_admin', $roles)) {
+            $my_gov = get_user_meta($user->ID, 'sm_governorate', true);
             if ($my_gov && $member->governorate !== $my_gov) {
                 return false;
             }
             return true;
         }
 
+        // Note: sm_system_admin and sm_general_officer are handled by sm_full_access capability check above.
+
         return false;
+    }
+
+    /**
+     * Check if a specific module is enabled for the current user's role.
+     */
+    public static function is_module_enabled($module) {
+        if (current_user_can('manage_options')) return true;
+
+        $user = wp_get_current_user();
+        $roles = (array)$user->roles;
+        $primary_role = !empty($roles) ? reset($roles) : '';
+
+        $permissions = get_option('sm_role_permissions', self::get_default_permissions());
+
+        if (isset($permissions[$primary_role][$module])) {
+            return (bool)$permissions[$primary_role][$module];
+        }
+
+        // Fallback to capability check if not explicitly defined in permissions
+        $cap_map = [
+            'members' => 'sm_manage_members',
+            'finance' => 'sm_manage_finance',
+            'licenses' => 'sm_manage_licenses',
+            'system' => 'sm_manage_system'
+        ];
+
+        return isset($cap_map[$module]) ? current_user_can($cap_map[$module]) : true;
+    }
+
+    public static function get_default_permissions() {
+        return [
+            'sm_system_admin' => [
+                'members' => true, 'finance' => true, 'licenses' => true, 'services' => true, 'surveys' => true, 'branches' => true, 'system' => true
+            ],
+            'sm_general_officer' => [
+                'members' => true, 'finance' => true, 'licenses' => true, 'services' => true, 'surveys' => true, 'branches' => true, 'system' => false
+            ],
+            'sm_syndicate_admin' => [
+                'members' => true, 'finance' => true, 'licenses' => true, 'services' => true, 'surveys' => true, 'branches' => false, 'system' => false
+            ],
+            'sm_syndicate_member' => [
+                'members' => false, 'finance' => false, 'licenses' => false, 'services' => true, 'surveys' => true, 'branches' => false, 'system' => false
+            ]
+        ];
+    }
+
+    public static function ajax_save_role_permissions() {
+        try {
+            self::check_capability('manage_options');
+            self::verify_nonce('sm_admin_action');
+
+            $permissions = $_POST['permissions'] ?? [];
+            if (empty($permissions)) {
+                wp_send_json_error(['message' => 'No data received']);
+            }
+
+            // Sanitize boolean values
+            foreach ($permissions as $role => $mods) {
+                foreach ($mods as $mod => $val) {
+                    $permissions[$role][$mod] = (string)$val === 'true' || $val === '1';
+                }
+            }
+
+            update_option('sm_role_permissions', $permissions);
+            SM_Logger::log('تحديث صلاحيات الأدوار', "تم تعديل مصفوفة الوصول للمودولات");
+            wp_send_json_success('Permissions saved');
+        } catch (Throwable $e) {
+            wp_send_json_error(['message' => $e->getMessage()]);
+        }
     }
 }

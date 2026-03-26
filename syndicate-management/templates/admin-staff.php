@@ -67,11 +67,12 @@
     $db_branches = SM_DB::get_branches_data();
     ?>
 
-    <?php if ($is_sys_manager): ?>
+    <?php if ($is_sys_manager || current_user_can('sm_full_access')): ?>
     <div class="sm-tabs-wrapper" style="display: flex; gap: 10px; margin-bottom: 20px; border-bottom: 2px solid #eee;">
         <a href="<?php echo remove_query_arg('role_filter'); ?>" class="sm-tab-btn <?php echo empty($_GET['role_filter']) ? 'sm-active' : ''; ?>" style="text-decoration:none;">الكل</a>
         <a href="<?php echo add_query_arg('role_filter', 'sm_system_admin'); ?>" class="sm-tab-btn <?php echo ($_GET['role_filter'] ?? '') == 'sm_system_admin' ? 'sm-active' : ''; ?>" style="text-decoration:none;">مدير النظام</a>
-        <a href="<?php echo add_query_arg('role_filter', 'sm_syndicate_admin'); ?>" class="sm-tab-btn <?php echo ($_GET['role_filter'] ?? '') == 'sm_syndicate_admin' ? 'sm-active' : ''; ?>" style="text-decoration:none;">مسؤول نقابة</a>
+        <a href="<?php echo add_query_arg('role_filter', 'sm_general_officer'); ?>" class="sm-tab-btn <?php echo ($_GET['role_filter'] ?? '') == 'sm_general_officer' ? 'sm-active' : ''; ?>" style="text-decoration:none;">مسؤول عام</a>
+        <a href="<?php echo add_query_arg('role_filter', 'sm_syndicate_admin'); ?>" class="sm-tab-btn <?php echo ($_GET['role_filter'] ?? '') == 'sm_syndicate_admin' ? 'sm-active' : ''; ?>" style="text-decoration:none;">مسؤول فرع</a>
         <a href="<?php echo add_query_arg('role_filter', 'sm_syndicate_member'); ?>" class="sm-tab-btn <?php echo ($_GET['role_filter'] ?? '') == 'sm_syndicate_member' ? 'sm-active' : ''; ?>" style="text-decoration:none;">عضو نقابة</a>
     </div>
     <?php endif; ?>
@@ -142,7 +143,8 @@
                 <?php 
                 $role_labels = array(
                     'sm_system_admin' => 'مدير النظام',
-                    'sm_syndicate_admin' => 'مسؤول نقابة',
+                    'sm_general_officer' => 'مسؤول عام',
+                    'sm_syndicate_admin' => 'مسؤول فرع',
                     'sm_syndicate_member' => 'عضو نقابة'
                 );
 

@@ -180,6 +180,7 @@ class Syndicate_Management {
             'sm_export_users_csv' => ['SM_Member_Manager', 'ajax_export_users_csv'],
             'sm_get_custom_print' => ['SM_Print_Manager', 'ajax_get_custom_print'],
             'sm_run_health_check' => ['SM_Health_Check', 'ajax_run_health_check'],
+            'sm_save_role_permissions' => ['SM_Access', 'ajax_save_role_permissions'],
 
             // Auth Module
             'sm_update_profile_ajax' => ['SM_Auth', 'ajax_update_profile'],
